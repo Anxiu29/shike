@@ -104,7 +104,7 @@ const response = await fetch('/api/recognitions', {
 
 保存先用共享 Zod schema 验证，再把 Vue 代理转换为普通 JSON 数据，防止 IndexedDB 的结构化克隆错误。界面等事务完成之后才关闭编辑器和提示成功。磁盘不足、存储权限或验证错误发生时，保留编辑草稿。
 
-只有用户确认保存的真实识别记录，且条目实际采用非 Mock 的 AI 估算，才写入个人估算库。未确认、关闭面板、模拟结果、手工营养和已经采用 USDA／配方的条目都不会写入。个人估算写入与饮食保存在同一事务中，任一失败会一起回滚。
+用户点击“保存记录”后，真实识别记录中实际采用非 Mock 的 AI 估算才写入个人估算库。不再要求“我已核对”复选框，相关勾选状态与保存门槛已删除；保存不表示数值经过测量。未保存、关闭面板、模拟结果、手工营养和已经采用 USDA／配方的条目都不会写入。个人估算写入与饮食保存在同一事务中，任一失败会一起回滚。
 
 同规范化精确名称更新一条个人估算，保留 ID 与最初创建时间。规范化只处理空白、括号与大小写，不删除“生”“熟”“糖”“酱”等重要词。完整三档资料、最近确认档位和当时中值一起存入库；新的同名餐默认重新选择中档，不能把上次少糖自动套给下一碗。编辑已保存的历史记录则保留原来的档位和范围。同名复用始终带有未经测量的 AI 标签；导入的 Mock 估算也不参与真实匹配。设置页面可查看和删除个人估算。
 
@@ -120,4 +120,4 @@ const response = await fetch('/api/recognitions', {
 
 前端测试覆盖独立快照、同日体重更新、无名食物拒绝、模拟标识备份、重复主键拒绝和恢复失败回滚，以及配方缩放、零油量、缺失传播、图片格式／大小边界和日历跨月。新增测试验证可靠数据优先、库外 AI 热量、模型不可估、确认后入库、Mock 不入库、同名更新、事务回滚、旧备份转换和 IndexedDB 升级。范围组件测试验证默认中档、切档、重量、确定值覆盖、历史选档、同名新餐回到中档、油配料同步及手动改油撤销范围。食物弹窗测试验证分类加关键词、配料推荐、生熟排除、没有线索时不推荐、分批加载、手动填写、保留重量和再次选择不重置油量。端到端测试验证实际页面上的识别编辑保存、刷新恢复、历史切换、体重目标与备份，以及弹窗键盘焦点、取消返回、分类搜索与选中保存。
 
-重要按钮和字段有 `data-testid`，例如 `manual-add`、`gallery-input`、`food-name-0`、`food-source-0`、`food-picker`、`food-picker-search`、`food-category-蔬菜`、`food-option-食物ID`、`food-recommendation-食物ID`、`food-picker-manual`、`food-basis-0`、`food-calories-0`、`food-range-0`、`estimate-low-0`、`estimate-medium-0`、`estimate-high-0`、`use-known-energy-0`、`daily-range`、`ai-assumptions-0`、`save-meal`、`confirm-ai`、`weight-input`、`save-weight`、`backup-input`、`confirm-restore`、`estimated-food-count`，便于自动化验证而不依赖视觉排版。`food-source-0` 现在是打开弹窗的按钮，当前选中 ID 放在 `data-source-id`，不再用 `selectOption()` 操作。
+重要按钮和字段有 `data-testid`，例如 `manual-add`、`gallery-input`、`food-name-0`、`food-source-0`、`food-picker`、`food-picker-search`、`food-category-蔬菜`、`food-option-食物ID`、`food-recommendation-食物ID`、`food-picker-manual`、`food-basis-0`、`food-calories-0`、`food-range-0`、`estimate-low-0`、`estimate-medium-0`、`estimate-high-0`、`use-known-energy-0`、`daily-range`、`ai-assumptions-0`、`save-meal`、`weight-input`、`save-weight`、`backup-input`、`confirm-restore`、`estimated-food-count`，便于自动化验证而不依赖视觉排版。`food-source-0` 现在是打开弹窗的按钮，当前选中 ID 放在 `data-source-id`，不再用 `selectOption()` 操作。

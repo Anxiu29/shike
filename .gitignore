@@ -3,6 +3,10 @@ dist/
 .npm-cache/
 .data-cache/
 /picture/
+/artifacts/
+*.apk
+*.jks
+*.keystore
 .playwright/
 coverage/
 test-results/

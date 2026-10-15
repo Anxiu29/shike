@@ -25,12 +25,20 @@ async function rename(form: VueWrapper, name: string) {
   await form.get('[data-testid="food-name-0"]').trigger('blur')
 }
 async function savedRecord(form: VueWrapper): Promise<MealRecord> {
-  await form.get('[data-testid="confirm-ai"]').setValue(true)
   await form.get('[data-testid="save-meal"]').trigger('click')
   return form.emitted('save')![0]![0] as MealRecord
 }
 
 describe('食物选择弹窗', () => {
+  it('AI 记录可以直接保存，不再要求勾选核对，仍保留估算与来源标识', async () => {
+    const form = openAIEditor()
+    expect(form.find('[data-testid="confirm-ai"]').exists()).toBe(false)
+    expect(form.text()).toContain('非实测')
+    const saved = await savedRecord(form)
+    expect(saved.mode).toBe('live')
+    expect(saved.items[0]!.kind).toBe('ai')
+    expect(saved.items[0]!.aiEstimateSnapshot?.provider).toBe('gemini')
+  })
   it('多食物删除中间一项，只删除该项，不连带下一项或交换剩余重量', async () => {
     const items = [createFoodEntry(findFood('米饭')!, 150), createFoodEntry(findFood('西兰花')!, 80), createFoodEntry(findFood('香蕉')!, 90)]
     const meal: MealRecord = { id: 'multi-delete', date: '2026-10-15', mealType: 'lunch', mode: 'manual', createdAt: '2026-10-15T04:00:00.000Z', updatedAt: '2026-10-15T04:00:00.000Z', items }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#367B5D</color>
+    <color name="colorPrimaryDark">#F5F8F0</color>
+    <color name="colorAccent">#367B5D</color>
+    <color name="shikeBackground">#F5F8F0</color>
+</resources>

@@ -5,6 +5,7 @@ import { foods, recipes, selectedEstimateOption, type Backup, type EstimatedFood
 import { db, exportBackup, parseBackup, restoreBackup } from '../lib/db'
 import type { Health } from '../lib/api'
 import { numberLabel, rangeLabel } from '../lib/dates'
+import { saveBackupFile } from '../lib/backup-file'
 const props = defineProps<{ health: Health | null; healthError: string; estimatedFoods: EstimatedFood[] }>()
 const emit = defineEmits<{ changed: []; notify: [message: string]; checkHealth: [] }>()
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -18,9 +19,7 @@ async function download() {
   busy.value = true; error.value = ''
   try {
     const backup = await exportBackup()
-    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }))
-    const link = document.createElement('a'); link.href = url; link.download = `食刻备份-${backup.exportedAt.slice(0, 10)}.json`; link.click()
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    await saveBackupFile(backup)
     emit('notify', '备份已导出，请妥善保存')
   } catch { error.value = '导出失败，请检查浏览器存储状态。' }
   finally { busy.value = false }

@@ -54,9 +54,9 @@ test('图片识别、修改、保存、刷新、编辑与删除形成完整闭�
   const picture = await sharp({ create: { width: 1400, height: 1000, channels: 3, background: '#e5efe8' } }).png().toBuffer();
   await page.getByTestId('gallery-input').setInputFiles({ name: '测试照片.png', mimeType: 'image/png', buffer: picture });
   await expect(page.getByTestId('food-item-2')).toBeVisible();
+  await expect(page.getByTestId('confirm-ai')).toHaveCount(0);
   await expect(page.getByTestId('mock-editor')).toContainText('模拟');
   await page.getByTestId('food-weight-0').fill('200');
-  await page.getByTestId('confirm-ai').check();
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await expect(page.getByTestId('meal-record')).toHaveCount(1);
@@ -67,7 +67,6 @@ test('图片识别、修改、保存、刷新、编辑与删除形成完整闭�
   await page.getByTestId('edit-meal').click();
   await expect(page.getByTestId('food-weight-0')).toHaveValue('200');
   await page.getByTestId('food-weight-0').fill('250');
-  await page.getByTestId('confirm-ai').check();
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await expect(page.getByTestId('daily-calories')).not.toHaveText(before);
@@ -181,7 +180,6 @@ test('估算默认中档中值、切档保存、历史保留、复用重置中�
   await expect(page.getByTestId('food-calories-1')).toContainText('150');
   await page.getByTestId('estimate-high-1').click();
   await expect(page.getByTestId('food-calories-1')).toContainText('315');
-  await page.getByTestId('confirm-ai').check();
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await openTab(page, 'settings');
@@ -196,7 +194,6 @@ test('估算默认中档中值、切档保存、历史保留、复用重置中�
   await expect(page.getByTestId('food-calories-1')).toContainText('420');
   await expect(page.getByTestId('food-range-1')).toContainText('360');
   await expect(page.getByTestId('food-range-1')).toContainText('480');
-  await page.getByTestId('confirm-ai').check();
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await upload();
@@ -210,7 +207,6 @@ test('估算默认中档中值、切档保存、历史保留、复用重置中�
   await expect(page.getByTestId('food-source-0')).toHaveAttribute('data-source-id', '');
   await expect(page.getByTestId('food-calories-0')).toHaveText('待补充');
   await expect(page.getByTestId('food-range-0')).toHaveCount(0);
-  await page.getByTestId('confirm-ai').check();
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await openTab(page, 'settings');
@@ -245,7 +241,6 @@ test('用油三档采用中值，手填确定热量覆盖区间并刷新保留',
   await expect(page.getByTestId('food-calories-0')).toContainText('240');
   await expect(page.getByTestId('food-range-0')).toHaveCount(0);
   await expect(page.getByTestId('estimate-high-0')).toHaveCount(0);
-  await page.getByTestId('confirm-ai').check();
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await page.reload();
@@ -331,7 +326,6 @@ test('食物弹窗推荐、分类搜索、取消返回及更换后保存刷新',
   await page.getByTestId('food-picker-search').fill('米饭');
   await page.keyboard.press('Escape');
   await expect(trigger).toHaveAttribute('data-source-id', findFood('苦瓜')!.id);
-  await page.getByTestId('confirm-ai').check();
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await page.reload();
@@ -479,7 +473,6 @@ test('一张照片逐项匹配多个食物和对应重量，混合菜不拆重�
   await expect(page.getByTestId('recognition-weight-2')).toHaveText('已手动填写 300.25 g');
   await page.getByTestId('recognized-row-0').click();
   await expect(page.getByTestId('food-name-0')).toBeInViewport();
-  await page.getByTestId('confirm-ai').check();
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await page.reload();

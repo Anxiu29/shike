@@ -40,10 +40,8 @@ const photoMatches = computed(() => photoItems.value.filter(entry => ['database'
 const photoWeights = computed(() => photoItems.value.filter(entry => recognitionWeights.value[entry.id] !== null).length)
 let pickerReturnFocus: HTMLElement | null = null
 let previousFocus: HTMLElement | null = null
-const draftConfirmed = ref(false)
 const totals = computed(() => aggregateNutrients(items.value))
 const busy = computed(() => ['compressing', 'recognizing'].includes(phase.value))
-const needsConfirmation = computed(() => mode.value !== 'manual' || items.value.some(item => item.kind === 'ai'))
 const containsMockEstimate = computed(() => items.value.some(item => item.aiEstimateSnapshot?.provider === 'mock'))
 const mealTypes: { value: MealType; label: string }[] = [{ value: 'breakfast', label: '早餐' }, { value: 'lunch', label: '午餐' }, { value: 'dinner', label: '晚餐' }, { value: 'snack', label: '加餐' }]
 const nutrientFields: { key: keyof Nutrients; label: string; unit: string }[] = [{ key: 'energyKcal', label: '热量', unit: 'kcal' }, { key: 'proteinG', label: '蛋白质', unit: 'g' }, { key: 'fatG', label: '脂肪', unit: 'g' }, { key: 'carbsG', label: '碳水', unit: 'g' }]
@@ -75,7 +73,6 @@ function addItem() { const entry = manualEntry('', 100); items.value.push(entry)
 function removeItem(entry: FoodEntry) {
   items.value = items.value.filter(item => item.id !== entry.id)
   delete recognitionContexts.value[entry.id]; delete recognitionWeights.value[entry.id]
-  draftConfirmed.value = false
 }
 function photoWeightLabel(entry: FoodEntry): string {
   const estimated = recognitionWeights.value[entry.id]
@@ -119,7 +116,7 @@ async function runRecognition() {
       return entry
     })
     notice.value = !response.result.isFood || !items.value.length ? '没有可靠识别到食物。你可以换一张照片，或手动添加食物。' : '已识别并估算这一餐。核对份量，也可以打开食物库，更换更符合实际的食物或做法。'
-    phase.value = 'done'; draftConfirmed.value = false
+    phase.value = 'done'
     await nextTick()
     document.querySelector<HTMLElement>('[data-testid="recognition-summary"]')?.scrollIntoView({ block: 'start' })
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '识别失败，请稍后再试。'; phase.value = 'error' }
@@ -154,7 +151,6 @@ function selectFood(id: string) {
   next.warnings = [...new Set([...next.warnings, ...recognitionWarnings.value[entry.id] ?? []])].slice(0, 30)
   sourceSelections.value[entry.id] = id
   items.value[items.value.findIndex(item => item.id === entry.id)] = next
-  draftConfirmed.value = false
   closeFoodPicker()
   if (!id) openManualFields(next)
 }
@@ -173,7 +169,6 @@ function matchManualName(entry: FoodEntry) {
   next.warnings = [...new Set([...next.warnings, ...recognitionWarnings.value[entry.id]!])].slice(0, 30)
   if (next.kind === 'ai') sourceSelections.value[entry.id] = `personal:${next.referenceId}`
   items.value[items.value.findIndex(item => item.id === entry.id)] = next
-  draftConfirmed.value = false
   if (next.kind === 'unknown' && next.name.trim()) notice.value = '名称已修改，原食物估值已清除。可补充营养数据，或重新识别。'
   else if (next.name.trim()) notice.value = '名称已修改，已重新匹配食物。请核对份量后保存。'
 }
@@ -192,7 +187,6 @@ function chooseEstimateLevel(entry: FoodEntry, level: EstimateLevel) {
   next.warnings = [...new Set([...next.warnings, ...recognitionWarnings.value[entry.id] ?? []])].slice(0, 30)
   items.value[items.value.findIndex(item => item.id === entry.id)] = next
   if (sourceSelections.value[entry.id] === 'ai-current') aiCandidates.value[entry.id] = JSON.parse(JSON.stringify(next))
-  draftConfirmed.value = false
 }
 function showKnownEnergy(index: number) {
   const details = document.querySelector<HTMLDetailsElement>(`[data-testid="nutrition-details-${index}"]`)
@@ -208,7 +202,6 @@ function ingredientChanged(entry: FoodEntry, id: string, event: Event) {
 async function submit() {
   error.value = ''
   if (busy.value || !items.value.length) return
-  if (needsConfirmation.value && !draftConfirmed.value) { error.value = '请勾选「我已核对食物和重量」后保存。'; return }
   const now = new Date().toISOString()
   const record: MealRecord = { id: props.record?.id ?? createId(), date: date.value, mealType: mealType.value, items: JSON.parse(JSON.stringify(items.value)), mode: mode.value, createdAt: props.record?.createdAt ?? now, updatedAt: now }
   const parsed = mealRecordSchema.safeParse(record)
@@ -270,7 +263,6 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
             <details class="nutrition-details" :data-testid="`nutrition-details-${index}`"><summary>{{ entry.estimateProfile ? '输入确定值／修改每 100 g 营养' : '每 100 g 营养 · 可手动修改' }} <ChevronDown :size="16" /></summary><div class="nutrient-inputs"><label v-for="field in nutrientFields" :key="field.key">{{ field.key === 'energyKcal' ? '确定热量' : field.label }} <span class="muted">{{ field.unit }}</span><input :value="inputNumberLabel(entry.nutrientsPer100g[field.key])" :data-testid="`food-${field.key}-${index}`" type="number" min="0" :max="field.key === 'energyKcal' ? 1000 : 100" step="0.01" placeholder="待补充" @input="nutrientChanged(entry, field.key, $event)" /><span v-if="entry.estimateProfile" class="nutrient-range-hint">范围 {{ rangeLabel(selectedEstimateOption(entry.estimateProfile, entry.estimateLevel ?? 'medium').rangesPer100g[field.key]) }}</span></label></div><p class="tiny source-note">来源：{{ entry.provenance }}</p><p v-if="entry.estimateProfile" class="tiny muted">填写确定值会撤销此食物的估算区间；未修改的营养字段保留当前值。</p></details>
             <div class="food-estimate"><span>{{ entryBasis(entry) }}</span><strong :data-testid="`food-calories-${index}`">{{ calculateNutrients(entry).energyKcal === null ? '待补充' : `约 ${numberLabel(calculateNutrients(entry).energyKcal)} kcal` }}</strong></div>
           </article>
-          <label v-if="needsConfirmation && items.length" class="confirm-check"><input v-model="draftConfirmed" data-testid="confirm-ai" type="checkbox" /><span>我已核对食物和重量，了解热量为估算值。</span></label>
           <p class="editor-footnote">照片无法准确判断份量、烹饪方式和隐藏配料。称重与包装营养表能帮助你记录得更准确。</p>
         </div>
         <footer class="editor-footer"><div><span class="tiny muted">{{ totals.incompleteEntries ? '已知部分估算' : '这一餐估算' }}</span><div class="footer-calories">约 {{ numberLabel(totals.energyKcal.known) }} <span>kcal</span></div><span v-if="totals.incompleteEntries" class="tiny amber-text">{{ totals.incompleteEntries }} 项营养待补充</span></div><button class="button primary" data-testid="save-meal" :disabled="busy || saveBusy || !items.length" @click="submit"><LoaderCircle v-if="saveBusy" class="spin" :size="18" /><Check v-else :size="18" /> {{ saveBusy ? '保存中' : '保存记录' }}</button></footer>

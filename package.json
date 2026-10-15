@@ -1,7 +1,16 @@
 {
-  "name": "shike", "version": "0.1.0", "private": true, "type": "module",
-  "workspaces": ["packages/shared", "packages/server", "packages/web"],
-  "engines": { "node": ">=24.0.0" },
+  "name": "shike",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "packages/server",
+    "packages/web"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "npm run build -w @shike/shared && npm run build -w @shike/server && concurrently -k -n shared,api-types,api,web -c gray,gray,green,cyan \"npm run dev -w @shike/shared\" \"npm run build:watch -w @shike/server\" \"npm run dev -w @shike/server\" \"npm run dev -w @shike/web\"",
     "dev:lan": "node scripts/dev-lan.mjs",
@@ -12,10 +21,19 @@
     "test:e2e": "node scripts/test-e2e.mjs",
     "test:e2e:lan": "node scripts/test-e2e.mjs --lan",
     "data:fndds": "node packages/shared/scripts/extract-fndds.mjs",
-    "start": "node scripts/start.mjs"
+    "start": "node scripts/start.mjs",
+    "android:apk": "node scripts/build-android.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.0", "@types/node": "^24.0.0", "@vitejs/plugin-vue": "6.0.10", "@vue/test-utils": "2.5.1",
-    "concurrently": "10.0.6", "fake-indexeddb": "6.2.5", "happy-dom": "21.0.1", "typescript": "5.9.3", "vitest": "5.0.4", "vue-tsc": "3.3.13"
+    "@playwright/test": "1.64.0",
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-vue": "6.0.10",
+    "@vue/test-utils": "2.5.1",
+    "concurrently": "10.0.6",
+    "fake-indexeddb": "6.2.5",
+    "happy-dom": "21.0.1",
+    "typescript": "5.9.3",
+    "vitest": "5.0.4",
+    "vue-tsc": "3.3.13"
   }
 }
