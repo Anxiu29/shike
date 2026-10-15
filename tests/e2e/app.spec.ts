@@ -36,6 +36,11 @@ async function manualMeal(page: Page, name: string, source?: string) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
+  if (process.env.SHIKE_E2E_LAN === '1') {
+    // 原问题仅在 LAN HTTP 出现；不能把 localhost 的通过结果当作手机局域网验证。
+    expect(await page.evaluate(() => window.isSecureContext)).toBe(false);
+    expect(await page.evaluate(() => typeof crypto.randomUUID)).toBe('undefined');
+  }
   await expect(page.getByTestId('daily-summary')).toBeVisible();
   await expect(page.getByTestId('header-mock')).toHaveText('模拟模式');
 });

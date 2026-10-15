@@ -30,6 +30,9 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     contentSecurityPolicy: { directives: {
       defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'blob:'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"],
+      // HTTP 局域网预览不能把脚本／样式升级到并不存在的 HTTPS 端口。
+      // 正式 HTTPS 来源仍保留升级指令；来源只信任服务端显式配置。
+      upgradeInsecureRequests: config.publicOrigin?.startsWith('https://') ? [] : null,
     } },
   });
   await app.register(multipart, { limits: { fileSize: MAX_IMAGE_BYTES, files: 1, fields: 0, parts: 1 } });

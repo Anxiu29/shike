@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Camera, ImagePlus, X, Plus, Trash2, Check, LoaderCircle, RotateCcw, ChevronDown, ChevronRight, Sparkles, Info, Scale } from '@lucide/vue'
-import { foods, recipes, normalizeFoodName, createFoodEntry, createRecipeEntry, createEstimatedFoodEntry, calculateNutrients, aggregateNutrients, applyEstimateLevel, calculateEnergyRange, selectedEstimateOption, mealRecordSchema, type MealRecord, type MealType, type FoodEntry, type Nutrients, type EstimatedFood, type EstimateLevel } from '@shike/shared'
+import { createId, foods, recipes, normalizeFoodName, createFoodEntry, createRecipeEntry, createEstimatedFoodEntry, calculateNutrients, aggregateNutrients, applyEstimateLevel, calculateEnergyRange, selectedEstimateOption, mealRecordSchema, type MealRecord, type MealType, type FoodEntry, type Nutrients, type EstimatedFood, type EstimateLevel } from '@shike/shared'
 import FoodPicker from './FoodPicker.vue'
 import type { FoodMatchContext } from '../lib/food-picker'
 import { compressImage } from '../lib/image'
@@ -210,7 +210,7 @@ async function submit() {
   if (busy.value || !items.value.length) return
   if (needsConfirmation.value && !draftConfirmed.value) { error.value = '请勾选「我已核对食物和重量」后保存。'; return }
   const now = new Date().toISOString()
-  const record: MealRecord = { id: props.record?.id ?? crypto.randomUUID(), date: date.value, mealType: mealType.value, items: JSON.parse(JSON.stringify(items.value)), mode: mode.value, createdAt: props.record?.createdAt ?? now, updatedAt: now }
+  const record: MealRecord = { id: props.record?.id ?? createId(), date: date.value, mealType: mealType.value, items: JSON.parse(JSON.stringify(items.value)), mode: mode.value, createdAt: props.record?.createdAt ?? now, updatedAt: now }
   const parsed = mealRecordSchema.safeParse(record)
   if (!parsed.success) { error.value = '请填写食物名称并检查数值：食物重量 0–20,000 g，每 100 g 热量 0–1,000 kcal，蛋白质、脂肪与碳水各 0–100 g。不确定的数据可留空。'; return }
   // 父组件在 IndexedDB 事务成功后关闭面板；失败时原草稿仍在。

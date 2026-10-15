@@ -1,5 +1,6 @@
 import { foods, type FoodDefinition } from './food-data.js';
 import { recipes, type Recipe } from './recipes.js';
+import { createId } from './id.js';
 import {
   estimatedFoodSchema, normalizeFoodName, numericRangeSchema, nutrientRangesSchema, nutritionEstimateProfileSchema,
   type EstimateLevel, type EstimatedFood, type FoodEntry, type NumericRange, type NutrientRanges,
@@ -110,7 +111,7 @@ export function createEstimatedFoodEntry(food: EstimatedFood, weightG: number | 
   }
   // 双份独立快照避免用户更新个人食物库后改写以前的日摄入记录。
   const entry: FoodEntry = {
-    id: crypto.randomUUID(), name: parsed.name, weightG,
+    id: createId(), name: parsed.name, weightG,
     nutrientsPer100g: { ...parsed.nutrientsPer100g },
     provenance: parsed.provenance, kind: 'ai', referenceId: parsed.id,
     aiEstimateSnapshot: {
@@ -130,7 +131,7 @@ export function createFoodEntry(food: FoodDefinition, weightG: number | null): F
     throw new Error('食物重量必须是 0 至 20000 g，或留空待补充');
   }
   return {
-    id: crypto.randomUUID(), name: food.name, weightG,
+    id: createId(), name: food.name, weightG,
     nutrientsPer100g: { ...food.nutrientsPer100g },
     provenance: `${food.source.dataset} ${food.source.version} · FDC ${food.source.fdcId} · ${food.source.description}`,
     kind: 'database', referenceId: food.id, warnings: [
@@ -208,7 +209,7 @@ export function createRecipeEntry(recipe: Recipe, weightG: number, ingredientOve
       : ingredients.reduce((total, item) => total + (item.nutrientsPer100g[key] ?? 0) * item.weightG / 100, 0) / weightG * 100;
   }
   const entry: FoodEntry = {
-    id: crypto.randomUUID(), name: recipe.name, weightG, nutrientsPer100g,
+    id: createId(), name: recipe.name, weightG, nutrientsPer100g,
     provenance: '参考配方 + USDA 基础食物；配比为假设，请确认实际配料与食用油。',
     kind: 'recipe', referenceId: recipe.id, recipeSnapshot: snapshot, warnings: [...recipe.warnings],
   };

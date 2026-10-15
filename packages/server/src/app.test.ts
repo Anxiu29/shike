@@ -152,6 +152,16 @@ describe('本地识别 API', () => {
     }
   });
 
+  it('HTTP 预览不升级静态资源到不存在的 HTTPS，HTTPS 来源仍保留升级指令', async () => {
+    const httpApp = await appWith({ config: loadConfig({ AI_MODE: 'mock', PUBLIC_ORIGIN: 'http://192.168.1.10:5180' }) });
+    const httpsApp = await appWith({ config: loadConfig({ AI_MODE: 'mock', PUBLIC_ORIGIN: 'https://shike.example.com' }) });
+    const http = await httpApp.inject({ url: '/api/health' });
+    const https = await httpsApp.inject({ url: '/api/health' });
+    expect(http.headers['content-security-policy']).not.toContain('upgrade-insecure-requests');
+    expect(https.headers['content-security-policy']).toContain('upgrade-insecure-requests');
+    for (const response of [http, https]) expect(response.headers['content-security-policy']).toContain("script-src 'self'");
+  });
+
   it('未来适配器不能绕过 API 的营养假设校验', async () => {
     const service: VisionService = { mode: 'live', provider: 'gemini', model: 'gemini-3.5-flash-lite', recognize: vi.fn().mockResolvedValue({
       isFood: true, uncertainties: [], foods: [{ name: '粥', estimatedWeightG: 200, visibleIngredients: [], uncertainties: [],

@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import { backupSchema, mealRecordSchema, weightRecordSchema, settingsSchema, estimatedFoodSchema, normalizeFoodName, type Backup, type MealRecord, type WeightRecord, type Settings, type EstimatedFood } from '@shike/shared'
+import { createId, backupSchema, mealRecordSchema, weightRecordSchema, settingsSchema, estimatedFoodSchema, normalizeFoodName, type Backup, type MealRecord, type WeightRecord, type Settings, type EstimatedFood } from '@shike/shared'
 
 interface SettingRow { id: 'preferences'; value: Settings }
 
@@ -44,7 +44,7 @@ export async function saveMeal(record: MealRecord, database = db): Promise<void>
       const existing = knownEstimates.find(food => normalizeFoodName(food.name) === normalizeFoodName(entry.name))
       const now = new Date().toISOString()
       const estimate = estimatedFoodSchema.parse({
-        id: existing?.id ?? crypto.randomUUID(), name: entry.name,
+        id: existing?.id ?? createId(), name: entry.name,
         nutrientsPer100g: entry.nutrientsPer100g,
         provenance: `AI 粗估 · ${entry.aiEstimateSnapshot.provider} / ${entry.aiEstimateSnapshot.model}；非实测营养数据。`,
         assumptions: entry.aiEstimateSnapshot.assumptions,

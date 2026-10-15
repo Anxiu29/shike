@@ -1,7 +1,7 @@
-import { findFood, findRecipe, findEstimatedFood, normalizeFoodName, selectedEstimateOption, rangesToMidpoints, applyEstimateLevel, calculateEnergyRange, calculateNutrients, createEstimatedFoodEntry, createFoodEntry, createRecipeEntry, emptyNutrients, nutrientKeys, type FoodEntry, type EstimatedFood, type Nutrients, type NutritionEstimateProfile } from '@shike/shared'
+import { createId, findFood, findRecipe, findEstimatedFood, normalizeFoodName, selectedEstimateOption, rangesToMidpoints, applyEstimateLevel, calculateEnergyRange, calculateNutrients, createEstimatedFoodEntry, createFoodEntry, createRecipeEntry, emptyNutrients, nutrientKeys, type FoodEntry, type EstimatedFood, type Nutrients, type NutritionEstimateProfile } from '@shike/shared'
 
 export function manualEntry(name = '', weightG: number | null = null): FoodEntry {
-  return { id: crypto.randomUUID(), name, weightG, nutrientsPer100g: emptyNutrients(), provenance: '未匹配营养数据，请选择基础食物、参考配方或手动补充。', kind: 'unknown', warnings: [] }
+  return { id: createId(), name, weightG, nutrientsPer100g: emptyNutrients(), provenance: '未匹配营养数据，请选择基础食物、参考配方或手动补充。', kind: 'unknown', warnings: [] }
 }
 
 export function matchedEntry(name: string, weightG: number | null, personalFoods: EstimatedFood[] = [], currentEstimate?: EstimatedFood): FoodEntry {
@@ -40,7 +40,7 @@ export function recognitionEstimate(name: string, nutrientsPer100g: Nutrients | 
   }
   if (!nutrientsPer100g || !nutrientKeys.some(key => nutrientsPer100g[key] !== null)) return undefined
   const now = new Date().toISOString()
-  return { id: crypto.randomUUID(), name, nutrientsPer100g: { ...nutrientsPer100g }, ...(profile ? { estimateProfile: JSON.parse(JSON.stringify(profile)), estimateLevel: 'medium' as const } : {}), provenance: `${provider === 'mock' ? '模拟' : 'AI'} 粗估 · ${provider} / ${model}；非实测营养数据。`, assumptions: [...assumptions], provider, model, createdAt: now, updatedAt: now }
+  return { id: createId(), name, nutrientsPer100g: { ...nutrientsPer100g }, ...(profile ? { estimateProfile: JSON.parse(JSON.stringify(profile)), estimateLevel: 'medium' as const } : {}), provenance: `${provider === 'mock' ? '模拟' : 'AI'} 粗估 · ${provider} / ${model}；非实测营养数据。`, assumptions: [...assumptions], provider, model, createdAt: now, updatedAt: now }
 }
 
 export function entryBasis(entry: FoodEntry): string {

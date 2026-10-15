@@ -1,10 +1,20 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
+import { networkInterfaces } from 'node:os';
 
 // 不经 cmd/npm 再生成一层服务进程，避免 Windows 测试结束时子进程树无法退出。
 // 只启动隔离的 Mock 服务，不修改 .env，也不会消耗真实模型的额度。
-const env = { ...process.env, PORT: '3101', HOST: '127.0.0.1', AI_MODE: 'mock', AI_REQUESTS_PER_MINUTE: '100', AI_REQUESTS_PER_DAY: '10000' };
+const args = process.argv.slice(2);
+const lanIndex = args.indexOf('--lan');
+const lan = lanIndex !== -1;
+if (lan) args.splice(lanIndex, 1);
+const lanAddress = Object.values(networkInterfaces()).flat().find(item => item?.family === 'IPv4' && !item.internal && /^(?:10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(item.address))?.address;
+if (lan && !lanAddress) throw new Error('局域网测试需要本机存在局域网 IPv4 地址。');
+const origin = lan ? `http://${lanAddress}:3101` : 'http://127.0.0.1:3101';
+// localhost 被浏览器特殊信任；LAN 测试必须真正使用非安全的 HTTP IP 来源，避免漏测受限 API。
+const env = { ...process.env, PORT: '3101', HOST: lan ? '0.0.0.0' : '127.0.0.1', PUBLIC_ORIGIN: origin, SHIKE_E2E_ORIGIN: origin, SHIKE_E2E_LAN: lan ? '1' : '0', AI_MODE: 'mock', AI_REQUESTS_PER_MINUTE: '100', AI_REQUESTS_PER_DAY: '10000' };
+console.log(`浏览器测试地址：${origin} (${lan ? 'LAN HTTP，非安全上下文' : 'localhost'})`);
 const server = spawn(process.execPath, ['scripts/start.mjs'], { env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 let serverError = '';
 server.stderr.on('data', chunk => { serverError += String(chunk); });
@@ -27,7 +37,7 @@ try {
   }
   if (!ready) throw new Error('Mock 测试服务未能就绪。');
   const cli = fileURLToPath(new URL('../node_modules/@playwright/test/cli.js', import.meta.url));
-  runner = spawn(process.execPath, [cli, 'test', ...process.argv.slice(2)], { stdio: 'inherit', env, windowsHide: true });
+  runner = spawn(process.execPath, [cli, 'test', ...args], { stdio: 'inherit', env, windowsHide: true });
   const [code] = await once(runner, 'exit');
   process.exitCode = typeof code === 'number' ? code : 1;
 } catch (error) {
