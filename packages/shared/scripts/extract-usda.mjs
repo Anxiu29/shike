@@ -35,7 +35,7 @@ const nutrientsCsv = readFileSync(resolve(dataDirectory, 'food_nutrient.csv'), '
 const foodMap = new Map(parseCsv(foodCsv).map((food) => [Number(food.fdc_id), food]));
 const chosenIds = new Set(selection.map(([id]) => id));
 if (chosenIds.size !== selection.length) throw new Error('选择清单有重复的 fdc_id');
-const categories = new Set(['主食', '肉类', '水产', '蛋与豆制品', '奶类', '蔬菜', '水果', '坚果种子', '油脂调味', '饮品', '零食']);
+const categories = new Set(['主食', '熟食菜肴', '汤羹', '肉类', '水产', '蛋与豆制品', '奶类', '蔬菜', '水果', '坚果种子', '油脂调味', '饮品', '零食']);
 const states = new Set(['raw', 'cooked', 'ready', 'dry']);
 const normalizeName = (name) => name.trim().toLowerCase().replace(/[\s（）()]/g, '');
 const nutrientMap = new Map();

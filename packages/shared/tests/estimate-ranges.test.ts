@@ -154,6 +154,11 @@ describe('本地参考配方油量三档', () => {
   it('每个配方默认普通档中值维持原配方和独立油重量', () => {
     for (const recipe of recipes) {
       const entry = createRecipeEntry(recipe, recipe.referenceWeightG);
+      if (!recipe.ingredients.some(ingredient => ingredient.id === 'oil')) {
+        expect(entry.estimateProfile).toBeUndefined();
+        expect(foodEntrySchema.safeParse(entry).success).toBe(true);
+        continue;
+      }
       expect(entry.estimateProfile!.factor).toBe('oil');
       expect(entry.estimateLevel).toBe('medium');
       expect(foodEntrySchema.safeParse(entry).success).toBe(true);

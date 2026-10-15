@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { calculateNutrients, createRecipeEntry, recipes } from '@shike/shared'
 import { matchedEntry, recognitionEstimate, aggregateEnergyRanges, manualEntry, recalculateRecipe, resizeEntry } from '../src/lib/entries'
 import { porridgeProfile } from './range-fixture'
-import { localDate, shiftDate } from '../src/lib/dates'
+import { inputNumberLabel, localDate, numberLabel, rangeLabel, shiftDate } from '../src/lib/dates'
 import { MAX_ORIGINAL_BYTES, validateOriginal } from '../src/lib/image'
 
 describe('编辑中的营养与重量', () => {
@@ -87,6 +87,16 @@ describe('AI 粗估与可靠数据优先级', () => {
 })
 
 describe('图片输入边界与本地日期', () => {
+  it('数字和范围最多显示两位小数，不补尾零，输入框不用千分位', () => {
+    expect(numberLabel(12.3456)).toBe('12.35')
+    expect(numberLabel(12.3)).toBe('12.3')
+    expect(numberLabel(12)).toBe('12')
+    expect(numberLabel(12.3456, 10)).toBe('12.35')
+    expect(numberLabel(null)).toBe('待补充')
+    expect(rangeLabel({ min: 40.123456, max: 60.789123 })).toBe('40.12–60.79')
+    expect(inputNumberLabel(1234.56789)).toBe('1234.57')
+    expect(inputNumberLabel(null)).toBe('')
+  })
   it('拒绝 HEIC、空文件和超限原图', () => {
     expect(() => validateOriginal({ size: 123, type: 'image/heic' })).toThrow('先转换')
     expect(() => validateOriginal({ size: 0, type: 'image/jpeg' })).toThrow('空文件')

@@ -18,6 +18,18 @@ const result = { isFood: true, foods: [{ name: '米饭', estimatedWeightG: 120, 
 const image = { mimeType: 'image/jpeg' as const, data: Buffer.from('test-image') };
 
 describe('供应商适配器和 JSON 校验', () => {
+  it('多食物响应按各自条目保留重量，无法估重为 null，不把可见配料增加为记录', () => {
+    const foods = [
+      { ...result.foods[0]!, name: '米饭', estimatedWeightG: 165.5 },
+      { ...result.foods[0]!, name: '番茄炒蛋', estimatedWeightG: 240.25, visibleIngredients: ['番茄', '鸡蛋'] },
+      { ...result.foods[0]!, name: '香蕉', estimatedWeightG: 90 },
+      { ...result.foods[0]!, name: '冬瓜豆腐汤', estimatedWeightG: null },
+    ];
+    const parsed = parseRecognition(JSON.stringify({ ...result, foods }), { requireProfile: true });
+    expect(parsed.foods.map(food => food.estimatedWeightG)).toEqual([165.5, 240.25, 90, null]);
+    expect(parsed.foods).toHaveLength(4);
+    expect(parsed.foods[1]!.visibleIngredients).toEqual(['番茄', '鸡蛋']);
+  });
   it('Gemini 只发送图片、固定模型与 store:false，支持 REST steps', async () => {
     const fakeFetch = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ status: 'completed', steps: [
       { type: 'thought', summary: [{ type: 'text', text: '不应被当作结果' }] },

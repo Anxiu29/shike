@@ -2,7 +2,7 @@
 import 'fake-indexeddb/auto'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { calculateNutrients, applyEstimateLevel, createRecipeEntry, findRecipe, createEstimatedFoodEntry, findFood, type MealRecord, type NutritionEstimateProfile, type EstimateLevel } from '@shike/shared'
+import { calculateNutrients, applyEstimateLevel, createRecipeEntry, findRecipe, createEstimatedFoodEntry, createFoodEntry, findFood, recipes, type MealRecord, type NutritionEstimateProfile, type EstimateLevel } from '@shike/shared'
 import FoodEditor from '../src/components/FoodEditor.vue'
 import { recognitionEstimate, matchedEntry } from '../src/lib/entries'
 import { ShikeDatabase, saveMeal } from '../src/lib/db'
@@ -30,27 +30,107 @@ async function savedRecord(form: VueWrapper): Promise<MealRecord> {
   return form.emitted('save')![0]![0] as MealRecord
 }
 
-describe('食物来源筛选', () => {
-  it('按名称收窄 USDA 分组，并保留当前计算依据', async () => {
+describe('食物选择弹窗', () => {
+  it('多食物删除中间一项，只删除该项，不连带下一项或交换剩余重量', async () => {
+    const items = [createFoodEntry(findFood('米饭')!, 150), createFoodEntry(findFood('西兰花')!, 80), createFoodEntry(findFood('香蕉')!, 90)]
+    const meal: MealRecord = { id: 'multi-delete', date: '2026-10-15', mealType: 'lunch', mode: 'manual', createdAt: '2026-10-15T04:00:00.000Z', updatedAt: '2026-10-15T04:00:00.000Z', items }
+    wrapper = mount(FoodEditor, { attachTo: document.body, props: { date: meal.date, mealType: 'lunch', record: meal, start: 'edit', estimatedFoods: [], health: null }, global: { stubs: { teleport: true } } })
+    await wrapper.get('[aria-label="删除食物 2"]').trigger('click')
+    expect(wrapper.findAll('.food-edit-card')).toHaveLength(2)
+    expect(wrapper.get('[data-testid="food-name-1"]').element).toHaveProperty('value', findFood('香蕉')!.name)
+    expect(wrapper.get('[data-testid="food-weight-1"]').element).toHaveProperty('value', '90')
+    await wrapper.get('[data-testid="save-meal"]').trigger('click')
+    const saved = wrapper.emitted('save')![0]![0] as MealRecord
+    expect(saved.items.map(item => item.id)).toEqual([items[0]!.id, items[2]!.id])
+    expect(saved.items.map(item => item.weightG)).toEqual([150, 90])
+  })
+  it('分类和别名搜索后选中食物，保留重量，取消不改变原选择', async () => {
     wrapper = mount(FoodEditor, { attachTo: document.body, props: { date: '2026-10-14', mealType: 'lunch', start: 'manual', estimatedFoods: [], health: null }, global: { stubs: { teleport: true } } })
-    await wrapper.get('[data-testid="add-food"]').trigger('click')
-    const select = wrapper.get('[data-testid="food-source-0"]')
-    expect(select.text()).toContain('米饭')
-    expect(select.text()).toContain('苦瓜（水煮）')
-    const filter = wrapper.get('[data-testid="food-source-filter-0"]')
-    await filter.setValue('苦瓜')
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    const filtered = wrapper.get('[data-testid="food-source-0"]')
-    expect(filtered.text()).toContain('苦瓜（水煮）')
-    expect(filtered.text()).not.toContain('白米饭')
-    await filtered.setValue(findFood('苦瓜')!.id)
-    await filter.setValue('米饭')
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    const kept = wrapper.get('[data-testid="food-source-0"]')
-    expect(kept.element).toHaveProperty('value', findFood('苦瓜')!.id)
-    expect(kept.text()).toContain('苦瓜（水煮）')
+    await wrapper.vm.$nextTick()
+    await wrapper.get('[data-testid="food-weight-0"]').setValue('230')
+    await wrapper.get('[data-testid="food-source-0"]').trigger('click')
+    expect(wrapper.get('[data-testid="food-editor"]').attributes('inert')).toBeDefined()
+    await wrapper.get('[data-testid="food-category-蔬菜"]').trigger('click')
+    await wrapper.get('[data-testid="food-picker-search"]').setValue('苦瓜')
+    expect(wrapper.get('[data-testid="food-result-count"]').text()).toContain('1 项')
+    expect(wrapper.get('[data-testid="food-picker"]').text()).not.toContain('苦瓜（生）')
+    await wrapper.get('[data-testid="include-raw-ingredients"]').setValue(true)
+    expect(wrapper.get('[data-testid="food-result-count"]').text()).toContain('2 项')
+    expect(wrapper.get('[data-testid="food-picker"]').text()).not.toContain('白米饭')
+    await wrapper.get(`[data-testid="food-option-${findFood('苦瓜')!.id}"]`).trigger('click')
+    expect(wrapper.find('[data-testid="food-picker"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="food-source-0"]').attributes('data-source-id')).toBe(findFood('苦瓜')!.id)
+    expect(wrapper.get('[data-testid="food-weight-0"]').element).toHaveProperty('value', '230')
+    await wrapper.get('[data-testid="food-source-0"]').trigger('click')
+    await wrapper.get('[data-testid="food-picker-search"]').setValue('米饭')
+    await wrapper.get('[data-testid="food-picker"]').trigger('keydown', { key: 'Escape' })
+    expect(wrapper.emitted('close')).toBeUndefined()
+    expect(wrapper.get('[data-testid="food-source-0"]').text()).toContain('苦瓜（水煮）')
+    expect(wrapper.get('[data-testid="food-editor"]').attributes('inert')).toBeUndefined()
+  })
+  it('没有结果时支持清空，分批浏览后切分类会重置列表', async () => {
+    const form = openAIEditor()
+    await form.get('[data-testid="food-source-0"]').trigger('click')
+    expect(form.findAll('.food-choice-row')).toHaveLength(60)
+    await form.get('[data-testid="food-load-more"]').trigger('click')
+    expect(form.findAll('.food-choice-row')).toHaveLength(120)
+    await form.get('[data-testid="food-picker-search"]').setValue('不存在的食物123')
+    expect(form.find('[data-testid="food-search-empty"]').exists()).toBe(true)
+    await form.get('[data-testid="clear-food-search"]').trigger('click')
+    expect(form.findAll('.food-choice-row')).toHaveLength(60)
+    await form.get('[data-testid="food-category-家常菜"]').trigger('click')
+    expect(form.findAll('.food-choice-row')).toHaveLength(recipes.filter(recipe => !recipe.category || recipe.category === '家常菜').length)
+    expect(form.get('[data-testid="food-picker"]').text()).toContain('参考配方')
+  })
+  it('转为手动填写时打开营养表，不沿用 AI 估值', async () => {
+    const form = openAIEditor({ profile: porridgeProfile })
+    await form.get('[data-testid="food-source-0"]').trigger('click')
+    await form.get('[data-testid="food-picker-manual"]').trigger('click')
+    expect(form.get('[data-testid="nutrition-details-0"]').attributes()).toHaveProperty('open')
+    expect(form.get('[data-testid="food-calories-0"]').text()).toBe('待补充')
+    expect(form.find('[data-testid="food-range-0"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(form.get('[data-testid="food-energyKcal-0"]').element)
+  })
+  it('选配方时保留未填重量，再次选择同项保留编辑的油量', async () => {
+    const form = openAIEditor()
+    await form.get('[data-testid="food-weight-0"]').setValue('')
+    await form.get('[data-testid="food-source-0"]').trigger('click')
+    await form.get('[data-testid="food-picker-search"]').setValue('蛋炒饭')
+    await form.get(`[data-testid="food-option-${findRecipe('蛋炒饭')!.id}"]`).trigger('click')
+    expect(form.get('[data-testid="food-weight-0"]').element).toHaveProperty('value', '')
+    expect(form.get('[data-testid="estimate-high-0"]').attributes()).toHaveProperty('disabled')
+    await form.get('[data-testid="food-weight-0"]').setValue('300')
+    await form.get('[data-testid="estimate-high-0"]').trigger('click')
+    const oil = (form.get('[data-testid="recipe-ingredient-oil-0"]').element as HTMLInputElement).value
+    await form.get('[data-testid="food-source-0"]').trigger('click')
+    await form.get('[data-testid="food-picker-search"]').setValue('蛋炒饭')
+    await form.get(`[data-testid="food-option-${findRecipe('蛋炒饭')!.id}"]`).trigger('click')
+    expect(form.get('[data-testid="estimate-high-0"]').attributes('aria-pressed')).toBe('true')
+    expect(form.get('[data-testid="recipe-ingredient-oil-0"]').element).toHaveProperty('value', oil)
+  })
+  it('生重历史仍能看见已选条目，默认筛选不改写历史', async () => {
+    const entry = createFoodEntry(findFood('生鸡蛋')!, 123.456)
+    const meal: MealRecord = { id: 'raw-history', date: '2026-10-15', mealType: 'lunch', mode: 'manual', createdAt: '2026-10-15T04:00:00.000Z', updatedAt: '2026-10-15T04:00:00.000Z', items: [entry] }
+    wrapper = mount(FoodEditor, { attachTo: document.body, props: { date: meal.date, mealType: 'lunch', record: meal, start: 'edit', estimatedFoods: [], health: null }, global: { stubs: { teleport: true } } })
+    expect(wrapper.get('[data-testid="food-weight-0"]').element).toHaveProperty('value', '123.46')
+    await wrapper.get('[data-testid="food-source-0"]').trigger('click')
+    await wrapper.get('[data-testid="food-picker-search"]').setValue('生鸡蛋')
+    expect(wrapper.get(`[data-testid="food-option-${entry.referenceId}"]`).attributes('aria-pressed')).toBe('true')
+    await wrapper.get('[data-testid="food-picker"]').trigger('keydown', { key: 'Escape' })
+    await wrapper.get('[data-testid="save-meal"]').trigger('click')
+    const saved = wrapper.emitted('save')![0]![0] as MealRecord
+    expect(saved.items[0]!.weightG).toBe(123.456)
+    expect(saved.items[0]!.referenceId).toBe(entry.referenceId)
   })
 })
+
+async function hasAICandidate(form: VueWrapper) {
+  await form.get('[data-testid="food-source-0"]').trigger('click')
+  await form.get('[data-testid="food-picker-search"]').setValue('杂粮粥')
+  const exists = form.find('[data-testid="food-option-ai-current"]').exists()
+  await form.get('[data-testid="food-picker"]').trigger('keydown', { key: 'Escape' })
+  return exists
+}
 
 describe('食物名称纠正与估算依据', () => {
   it('AI 杂粮粥改为库内燕麦片时重新匹配，并同步下一次改名基准', async () => {
@@ -58,7 +138,7 @@ describe('食物名称纠正与估算依据', () => {
     await rename(form, '燕麦片')
     expect(form.get('[data-testid="food-source-0"]').element).toHaveProperty('value', findFood('燕麦片')!.id)
     expect(form.get('[data-testid="food-basis-0"]').text()).toContain('USDA')
-    expect(form.find('option[value="ai-current"]').exists()).toBe(false)
+    expect(await hasAICandidate(form)).toBe(false)
     expect(form.get('[data-testid="food-calories-0"]').text()).not.toContain('100 kcal')
     await rename(form, '自制新菜')
     expect(form.get('[data-testid="food-source-0"]').element).toHaveProperty('value', '')
@@ -68,7 +148,7 @@ describe('食物名称纠正与估算依据', () => {
     const form = openAIEditor()
     await rename(form, '自制新菜')
     expect(form.get('[data-testid="food-calories-0"]').text()).toBe('待补充')
-    expect(form.find('option[value="ai-current"]').exists()).toBe(false)
+    expect(await hasAICandidate(form)).toBe(false)
     const saved = await savedRecord(form)
     expect(saved.items[0]!.id).toBe((form.props('record') as MealRecord).items[0]!.id)
     expect(saved.items[0]!.weightG).toBe(200)
@@ -83,7 +163,7 @@ describe('食物名称纠正与估算依据', () => {
     const form = openAIEditor()
     await rename(form, ' 杂粮（粥） ')
     expect(form.get('[data-testid="food-calories-0"]').text()).toContain('100 kcal')
-    expect(form.find('option[value="ai-current"]').exists()).toBe(true)
+    expect(await hasAICandidate(form)).toBe(true)
     const saved = await savedRecord(form)
     expect(saved.items[0]!.kind).toBe('ai')
     expect(saved.items[0]!.nutrientsPer100g.energyKcal).toBe(50)
@@ -160,6 +240,20 @@ describe('AI 估算区间与确定值', () => {
 })
 
 describe('参考配方的用油区间', () => {
+  it('缩放产生的小数只在输入框显示时截至两位，不破坏区间中值和配料精度', async () => {
+    const form = openAIEditor()
+    await rename(form, '蛋炒饭')
+    await form.get('[data-testid="food-weight-0"]').setValue('333.33')
+    const expected = createRecipeEntry(findRecipe('蛋炒饭')!, 333.33)
+    const oil = expected.recipeSnapshot!.ingredients.find(ingredient => ingredient.id === 'oil')!.weightG
+    expect(form.get('[data-testid="recipe-ingredient-oil-0"]').element).toHaveProperty('value', String(Number(oil.toFixed(2))))
+    const record = await savedRecord(form)
+    expect(record.items[0]!.recipeSnapshot!.ingredients.find(ingredient => ingredient.id === 'oil')!.weightG).toBeCloseTo(oil, 10)
+    expect(record.items[0]!.nutrientsPer100g.energyKcal).toBeCloseTo(expected.nutrientsPer100g.energyKcal!, 10)
+    await form.get('[data-testid="recipe-ingredient-oil-0"]').setValue('5.678')
+    expect(form.get('[data-testid="recipe-ingredient-oil-0"]').element).toHaveProperty('value', '5.68')
+    expect(form.find('[data-testid="food-range-0"]').exists()).toBe(false)
+  })
   it('重新编辑少油历史后改为多油，仅保留当前假设；确定值覆盖也不恢复旧档', async () => {
     const entry = applyEstimateLevel(createRecipeEntry(findRecipe('蛋炒饭')!, 300), 'low')
     entry.warnings.push('照片中酱料无法确认。')

@@ -4,7 +4,11 @@
 
 ## 1. 数据来源和许可
 
-内置 **388 条 USDA FoodData Central 的 SR Legacy 基础食物**，实际从官方 **2018 年 4 月 CSV ZIP** 下载并提取。SR Legacy 是冻结的历史参考数据；它适合离线原型，并不意味着代表当下每种中国食材或每个品牌。
+内置 **5,675 条 USDA 食物参考**（472 条 SR Legacy + 5,203 条 FNDDS），另有 60 个应用参考配方。条目数包含同一食物的多种配方、加工与做法，不能解释为 5,675 种独立中国菜。运行时直接读取随应用发布的数据，不需要营养 API Key 或联网查询。
+
+### SR Legacy 基础食物
+
+**472 条 SR Legacy 基础食物**实际从官方 **2018 年 4 月 CSV ZIP** 下载并提取，包含熟食、早餐面点、饮品、奶类和零食。SR Legacy 是冻结的历史参考数据；它适合离线原型，并不意味着代表当下每种中国食材或每个品牌。
 
 - 官方下载页：[FoodData Central Download Datasets](https://fdc.nal.usda.gov/download-datasets/)。
 - 原始压缩包：[FoodData_Central_sr_legacy_food_csv_2018-04.zip](https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip)。
@@ -26,11 +30,32 @@ food_nutrient.csv SHA-256:
 
 营养值原样来自 `food_nutrient.csv` 的 `amount`，不是 AI 补齐的数值。只取以下 USDA 营养 ID：`1008` 为 Energy / KCAL，`1003` 为 Protein / G，`1004` 为 Total lipid (fat) / G，`1005` 为 Carbohydrate, by difference / G。`1062` 对应 kJ，不能当 kcal 使用。基础食物值以 **每 100 g 可食部分**为口径。
 
+### FNDDS 膳食调查参考
+
+新增 **5,203 条 FNDDS 2021–2023** 参考来自 USDA 官方 2024-10-31 JSON 发布包。FNDDS 为美国饮食调查提供按食用状态整理的食物、饮品及份量资料；包含包子、春卷、蒸饺、寿司、面食、汤粥，以及大量不同配料、糖油和品牌版本。它是美国膳食参考，不能把同名条目直接视为中国本地做法的精确值。
+
+- 官方说明：[FoodData Central Data Documentation](https://fdc.nal.usda.gov/data-documentation/)。
+- 原始 ZIP：[FoodData_Central_survey_food_json_2024-10-31.zip](https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip)。同样遵循前述 USDA 公共领域／CC0 许可。
+- 原文件包含 5,432 条，排除 229 条婴幼儿专用、母乳及调查未分类条目。营养棒、蛋白粉与营养饮品保留原品牌和粉状／冲调限定；不据此推荐特定产品。
+- `packages/shared/data/fndds-import-manifest.json` 记录来源、原始与导入数量、排除数量、哈希及本地化统计；`fndds-localization.mjs` 只维护名称与检索词；营养写入 `src/fndds-foods.generated.ts`。
+- 5,149 条名称包含中文，其中 4,102 条无英文字母；其余包含品牌、专名或尚未翻译的词，54 条名称保留英文。中文索引通过本地词表转换，可能需要继续人工校对；原始英文描述始终可检索和核对。不使用 AI 批量编写营养值。
+
+每条保留 `fdcId`、原始英文描述、`foodCode`、`USDA FNDDS`、`2021-2023`、发布日期与官方链接。营养从 JSON 的 `foodNutrients[].nutrient.id` 及 `amount` 原样提取，使用相同的四个营养 ID，并检查原始单位与合法数值。缺失值保留 `null`。名称／别名与原有基础食物及应用配方冲突时，新增记录保留“膳食参考”限定，避免扩库改变常用精确匹配。新增名称的批量本地化不是 USDA 官方中文译名。
+
+```text
+ZIP SHA-256:
+dfb06ae7ddc397ccd570b91c14b75438ab2ba39f64f22d321f61d4a52a77f3eb
+surveyDownload.json SHA-256:
+2e7eb9fda92adf1d4d784dba5eaa3a7fd4418cd86ccff383c7c9294d79e9b808
+```
+
 ## 2. 从官方 CSV 复现数据
 
 日常启动不需要下载原始数据库，也不需要 USDA API Key。只有维护或审计数据时执行本节。
 
 从项目根目录，用 PowerShell 下载、解压，然后运行离线提取脚本：
+
+### SR Legacy CSV
 
 ```powershell
 New-Item -ItemType Directory -Force .data-cache | Out-Null
@@ -46,6 +71,21 @@ node packages/shared/scripts/extract-usda.mjs 'D:/指定目录/FoodData_Central_
 ```
 
 脚本通过 `fdc_id` 关联食物和营养值，正确解析带逗号和引号的 CSV，检查数据是否存在、是否有限且非负，然后生成 TypeScript 数组。缺失字段保留 `null`。中文名称与别名是食刻人工维护的索引，原始英文描述始终保留。添加食物时先确认官方描述及烹饪状态，再更新选择清单并重新提取；不能手改生成文件里的营养数值。
+
+### FNDDS JSON
+
+使用 Node 24 下载官方包（此工作区 PowerShell 的 TLS 下载失败，Node HTTPS 下载已验证成功）：
+
+```powershell
+New-Item -ItemType Directory -Force .data-cache | Out-Null
+node --input-type=module -e "const r=await fetch('https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_json_2024-10-31.zip');if(!r.ok)throw new Error('下载失败 '+r.status);const {writeFile}=await import('node:fs/promises');await writeFile('.data-cache/usda-fndds-2021-2023.zip',new Uint8Array(await r.arrayBuffer()));"
+Expand-Archive -LiteralPath '.data-cache/usda-fndds-2021-2023.zip' -DestinationPath '.data-cache/usda-fndds-2021-2023' -Force
+npm run data:fndds
+```
+
+也可指定 JSON：`npm run data:fndds -- 'D:/指定目录/surveyDownload.json'`。脚本依赖 Node 24 的 TypeScript 类型剥离能力，直接读取配方源码以预留名称，不依赖旧构建产物。生成文件采用紧凑行数据，公共来源字段只在物化时赋值；不要把整个原始调查 JSON 打包进前端。原始下载包放在已忽略的 `.data-cache/`，日常启动无需下载。更新词表后重新生成，并运行单元测试、类型检查与构建；`fndds.test.ts` 校验导入清单、数值范围、包子样本原值、中文匹配、旧配方优先级和快照隔离。
+
+本轮另用原始 JSON 逐条核对生成数据，5,203 × 4 = 20,812 个营养字段均一致。产物的单个 JS 约 1.41 MB（gzip 约 308 kB），构建工具会提示超过 500 kB；当前仍可正常构建，三种浏览器场景的搜索和分批浏览均已通过。公网部署时应启用静态资源压缩与带哈希文件的缓存；后续继续扩大数据时可改为独立数据包或离线数据库，不靠调高告警阈值隐藏体积。
 
 ## 3. 基础食物如何计算
 
@@ -67,11 +107,17 @@ if (rice) {
 
 USDA 原味酸奶、强化豆奶、具体肉类部位都只是对应原始描述的参考。商业品牌、含糖饮品、自制豆浆及带酱汁混合菜不能假定与这些数据相同；有包装营养标示时建议改为手动输入。
 
+新增的美式中餐、冷冻烤制点心和罐头汤均在名称保留做法与来源限定。例如“宫保鸡丁（美式中餐参考）”不添加“宫保鸡丁”这个通用别名，避免把对应样本静默当作中国菜的通用数据；普通“宫保鸡丁”仍匹配可编辑的应用参考配方。
+
+食物选择默认隐藏生肉、生蛋、需烹调的蔬菜和需要复水的干米／干面等原料；水果、黄瓜、生菜、坚果等即食项保留。开启“包含生重／干重食材”可查看全部库，已有生重历史条目也仍显示为已选。筛选不删除原始数据，也不改变配方所需的原料与历史快照。
+
 ## 4. 参考配方如何计算
 
-参考配方包括番茄炒蛋、蛋炒饭、清炒西兰花、青椒肉丝、土豆炖牛肉、鸡胸肉沙拉，以及宫保鸡丁、鱼香茄子、麻婆豆腐等家常菜。完整列表在 `packages/shared/src/recipes.ts`。它们是 **人工设定的配比假设 + USDA 基础食物**，不是 USDA 对中国菜的精确测量，也不是模型确认的配方。
+现有 **60 个参考配方**，包括番茄炒蛋、蛋炒饭、清炒西兰花、宫保鸡丁等家常菜，并新增汤羹、无糖参考粥、三明治、酸奶水果碗和无糖拿铁等。完整列表在 `packages/shared/src/recipes.ts`。它们是 **人工设定的配比假设 + USDA 基础食物**，不是 USDA 对中国菜的精确测量，也不是模型确认的配方。
 
-每个配方的 `referenceWeightG` 等于基准配料最终可食重量之和。例如清炒西兰花基准为 200 g 熟西兰花 + 8 g 实际摄入油，共 208 g。照片估为 104 g 时，默认把所有配料按 0.5 倍缩放。每个参考配方提供少油／普通／多油情景，默认普通档的油量中值仍等于原配方基准。熟肉、熟米饭、熟菜使用相应熟制参考数据；沙拉里的蔬菜使用即食生重。番茄炒蛋使用不含额外油的水煮全蛋近似熟蛋，并明确提示这个替代关系，避免选用已经含油的炒蛋数据后再重复加油。
+每个配方的 `referenceWeightG` 等于基准配料最终可食重量之和。例如清炒西兰花基准为 200 g 熟西兰花 + 8 g 实际摄入油，共 208 g。照片估为 104 g 时，默认把所有配料按 0.5 倍缩放。含独立油配料的配方提供少油／普通／多油情景，默认普通档的油量中值仍等于原配方基准；没有额外油的粥、三明治和饮品不凭空添加油档。熟肉、熟米饭、熟菜使用相应熟制参考数据；沙拉里的蔬菜使用即食生重。番茄炒蛋使用不含额外油的水煮全蛋近似熟蛋，并明确提示这个替代关系，避免选用已经含油的炒蛋数据后再重复加油。
+
+新增汤和粥中的水代表实际吃下／喝下的水。小米粥基准为 100 g 已煮熟小米饭与 200 g 额外水，并不是 100 g 干小米加水；无糖只是这个配方的明确假设，含水量和额外糖可修改。肉汤溶出的脂肪不能按零热量清水直接忽略，因此莲藕排骨汤等保留该限制提示。
 
 ```ts
 import { findRecipe, createRecipeEntry, calculateNutrients } from '@shike/shared'
@@ -144,9 +190,9 @@ if (entry.estimateProfile) {
 }
 ```
 
-`rangeMidpoint` 不提前取整；最终显示才按界面精度格式化。`rangesToMidpoints` 保留未知字段为 `null`。`applyEstimateLevel` 复制完整三档资料，更新顶层营养值、AI 来源快照与选中假设；历史记录从已保存资料计算，模型或个人库后来更新不会改变旧记录。`calculateEnergyRange` 不会给没有范围的 USDA 数据、旧记录或手动确定数伪造 `[相同数, 相同数]`。明确吃了 0 g 的范围记录为 `[0,0]`；未知重量仍返回 `null`。
+`rangeMidpoint` 不提前取整；界面热量、重量、营养、范围和输入框统一最多显示两位小数，不补尾零；格式化不改写营养值或历史快照。`rangesToMidpoints` 保留未知字段为 `null`。`applyEstimateLevel` 复制完整三档资料，更新顶层营养值、AI 来源快照与选中假设；历史记录从已保存资料计算，模型或个人库后来更新不会改变旧记录。`calculateEnergyRange` 不会给没有范围的 USDA 数据、旧记录或手动确定数伪造 `[相同数, 相同数]`。明确吃了 0 g 的范围记录为 `[0,0]`；未知重量仍返回 `null`。
 
-每个本地参考配方以原油量为基准，少油范围为 0.5–0.8 倍、普通为 0.8–1.2 倍、多油为 1.2–1.6 倍。**这些倍数是食刻应用情景假设，不是烹饪标准。** 非油配料保持固定，每个端点为「非油配料营养总量 + 对应油量营养」，仅计算一次油；仍除以用户输入的固定成品重量。普通中值为原油量，少油中值为 0.65 倍，多油中值为 1.4 倍。切档还会更新配方快照中唯一的 `id: 'oil'` 配料重量。
+含独立油配料的本地参考配方以原油量为基准，少油范围为 0.5–0.8 倍、普通为 0.8–1.2 倍、多油为 1.2–1.6 倍。**这些倍数是食刻应用情景假设，不是烹饪标准。** 非油配料保持固定，每个端点为「非油配料营养总量 + 对应油量营养」，仅计算一次油；仍除以用户输入的固定成品重量。普通中值为原油量，少油中值为 0.65 倍，多油中值为 1.4 倍。切档还会更新配方快照中唯一的 `id: 'oil'` 配料重量。
 
 配方档位中的 `oilWeightPer100g` 为每 100 g 成品的油克数范围，实际油重量为其中值乘成品重量除以 100。换份量后范围自然缩放，不能另加一次油。例如 208 g 西兰花配方原油量 8 g；多油档中值为 11.2 g，104 g 的同档份量则为 5.6 g。
 

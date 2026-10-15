@@ -62,4 +62,117 @@ a { text-decoration: none; color: var(--green); }
   .heading-symbol { display: none; }.weight-stats { gap: 10px; }.stat-card { padding: 17px 12px; border-radius: 17px; }.stat-card>span { font-size: 9px; gap: 4px; }.stat-card>span svg { width: 13px; }.stat-card>strong { font-size: 25px; margin-top: 11px; }.stat-card strong small { font-size: 9px; }.stat-card>p { font-size: 8px; line-height: 1.7; margin-top: 6px; }.weight-layout { grid-template-columns: 1fr; gap: 17px; }.chart-card { padding: 21px 18px; border-radius: 18px; }.chart-card h2 { font-size: 16px; }.chart-empty { min-height: 220px; }.weight-chart { margin-top: 23px; }.weight-form { padding: 22px; border-radius: 18px; }.weight-form h2 { font-size: 17px; }.weight-form>form { gap: 15px; }.weight-history { padding: 20px; border-radius: 18px; }.weight-history h2 { font-size: 16px; }.settings-grid { grid-template-columns: 1fr; gap: 17px; }.settings-card { padding: 24px; border-radius: 18px; }.settings-card h2 { font-size: 18px; }.settings-card>p { font-size: 11px; }.settings-icon { width: 43px; height: 43px; margin-bottom: 17px; }.backup-buttons .button { height: 41px; font-size: 11px; padding: 0 14px; }.settings-footer { font-size: 9px; flex-direction: column; align-items: center; gap: 7px; margin-top: 26px; }
   .modal-overlay { padding: 0; align-items: end; }.editor-modal { width: 100%; max-height: 100dvh; border-radius: 21px 21px 0 0; }.modal-header { padding: 19px 21px; }.modal-header h2 { font-size: 19px; }.editor-scroll { padding: 20px 19px 8px; }.capture-area { padding: 20px 12px; border-radius: 15px; }.capture-area.has-photo { gap: 12px; padding: 13px; }.photo-preview { width: 105px; height: 135px; }.has-photo .capture-content h3 { font-size: 13px; }.has-photo .capture-content>p { font-size: 9px; }.has-photo .capture-buttons { gap: 7px; margin-top: 11px; }.has-photo .button.compact { height: 32px; font-size: 10px; padding: 0 9px; }.has-photo .capture-content>.tiny { font-size: 7px; }.food-edit-card { padding: 14px; }.food-form-grid { grid-template-columns: .65fr 1.35fr; gap: 10px; }.food-form-grid select { font-size: 10px; padding: 8px 6px; }.food-form-grid input { padding: 8px; }.ingredient-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.nutrient-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 9px; }.nutrient-inputs label { font-size: 10px; }.nutrient-inputs input { height: 38px; }.editor-footer { padding: 14px 21px max(14px, env(safe-area-inset-bottom)); }.editor-footer>.button { padding: 0 18px; font-size: 12px; height: 44px; }.footer-calories { font-size: 22px; }.editor-footer .tiny { font-size: 9px; }.notice { padding: 11px 12px; font-size: 11px; }.notice svg { width: 16px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }.spin { animation-duration: 2s; } }
-.source-picker { display: flex; flex-direction: column; }.source-filter { height: 34px; margin-top: 7px; }.source-picker select { margin-top: 6px; }
+.food-picker-field > span { display: block; color: #667267; font-size: 10px; font-weight: 500; }
+.food-picker-field > button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; margin-top: 7px; padding: 8px 11px; border: 1px solid #dfe5db; border-radius: 10px; background: #fbfdf8; text-align: left; color: #354d3d; font-size: 12px; }
+.food-picker-field > button:hover { background: #f0f6eb; border-color: #91b58c; }
+.food-picker-field > button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.food-picker-field small { display: block; margin-top: 3px; font-size: 9px; color: #8b9c81; }
+.food-picker-field svg { flex: 0 0 auto; color: #8a9f7f; }
+.recognition-summary { margin: 14px 0 20px; padding: 15px 16px; border: 1px solid #dfe9d5; border-radius: 13px; background: #f2f7eb; color: #567748; }
+.recognition-summary > div { display: flex; align-items: center; gap: 11px; }
+.recognition-summary-icon { display: grid; place-items: center; width: 37px; height: 37px; flex-shrink: 0; border-radius: 11px; background: #e6efdb; color: #749260; }
+.recognition-summary h3 { font-size: 14px; font-weight: 550; }
+.recognition-summary p { margin-top: 5px; font-size: 11px; line-height: 1.7; color: #7f9571; }
+.recognition-summary > span { display: block; margin-top: 10px; padding-left: 48px; font-size: 10px; color: #99a88b; }
+.recognition-overview { list-style: none; margin: 13px 0 0; padding: 0; border-top: 1px solid #e0e9d5; }
+.recognition-overview li + li { border-top: 1px solid #e5ecdd; }
+.recognition-overview button { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding: 10px 0; border: 0; background: transparent; text-align: left; color: #6e8b5f; }
+.recognition-overview button > span:first-child { min-width: 0; }
+.recognition-overview strong { display: block; font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
+.recognition-overview small { display: block; margin-top: 3px; color: #98a98a; font-size: 9px; }
+.recognition-overview button > span:last-child { display: flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 12px; font-variant-numeric: tabular-nums; }
+.recognition-item-match { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; gap: 7px; padding: 9px 10px; margin: -3px 0 13px; border-radius: 8px; background: #f6f8f1; font-size: 10px; line-height: 1.7; color: #91a080; overflow-wrap: anywhere; }
+.recognition-item-match strong { color: #6f8b5e; font-size: 10px; font-weight: 500; }
+.recognition-weight-note { display: flex; align-items: start; gap: 5px; font-size: 10px; color: #91a080; line-height: 1.7; margin-top: 10px; }
+.recognition-weight-note svg { flex-shrink: 0; margin-top: 2px; }
+.food-picker-overlay { position: fixed; inset: 0; z-index: 150; display: flex; align-items: center; justify-content: center; padding: 28px; background: #203d3470; backdrop-filter: blur(5px); }
+.food-picker-dialog { display: flex; flex-direction: column; width: min(940px, 100%); height: min(820px, calc(100dvh - 56px)); min-height: 0; overflow: hidden; border-radius: 25px; background: #fff; box-shadow: 0 28px 90px #18332640; }
+.food-picker-header { display: flex; align-items: center; gap: 12px; padding: 22px 25px 14px; }
+.food-picker-header h2 { font-size: 22px; color: #2e4b39; }
+.food-picker-header .eyebrow { margin-bottom: 6px; font-size: 9px; letter-spacing: 1px; }
+.picker-back { display: none; }
+.picker-count { margin-left: auto; padding: 6px 9px; color: #7b9372; background: #f1f6eb; border-radius: 7px; font-size: 11px; white-space: nowrap; }
+.food-picker-search-area { padding: 0 25px 15px; border-bottom: 1px solid #e9eee3; }
+.food-picker-search { display: flex; align-items: center; gap: 10px; padding: 0 13px; border: 1px solid #dce6d6; border-radius: 12px; background: #f6f9f1; color: #8a9d7f; }
+.food-picker-search:focus-within { border-color: #7ba777; box-shadow: 0 0 0 3px #367b620b; }
+.food-picker-search input { height: 45px; padding: 8px 0; margin: 0; font-size: 13px; border: 0; background: transparent; box-shadow: none; }
+.food-picker-search input:focus { box-shadow: none; }
+.food-picker-search input::-webkit-search-cancel-button { display: none; }
+.food-picker-search svg { flex-shrink: 0; }
+.food-picker-search-area > p { display: flex; align-items: start; gap: 6px; color: #899b80; font-size: 11px; line-height: 1.6; margin-top: 10px; overflow-wrap: anywhere; }
+.food-picker-search-area > p svg { flex-shrink: 0; margin-top: 1px; }
+.food-picker-search-area strong { font-weight: 500; color: #607c57; }
+.food-picker-filter { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 11px; color: #94a38a; font-size: 10px; flex-wrap: wrap; }
+.food-picker-filter label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 10px; cursor: pointer; }
+.food-picker-filter input { width: 14px; height: 14px; margin: 0; accent-color: #367b62; }
+.food-picker-body { display: grid; grid-template-columns: 138px minmax(0, 1fr); flex: 1; min-height: 0; }
+.food-picker-categories { display: flex; flex-direction: column; gap: 5px; padding: 16px 12px; overflow-y: auto; background: #f7f9f3; border-right: 1px solid #edf1e7; overscroll-behavior: contain; }
+.food-picker-categories button { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: 0 0 auto; min-height: 38px; padding: 9px 11px; border: 0; border-radius: 9px; color: #87937e; background: transparent; text-align: left; font-size: 12px; }
+.food-picker-categories button:hover { background: #edf3e6; }
+.food-picker-categories button.active { color: #386c43; background: #e6efdd; font-weight: 600; }
+.food-picker-categories small { color: #a1ad96; font-size: 9px; font-weight: 400; }
+.food-picker-content { min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 21px 22px 26px; }
+.picker-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.picker-section-heading h3 { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #4b6545; }
+.picker-section-heading h3 svg { color: #819c72; }
+.picker-section-heading p { margin-top: 6px; color: #9baa91; font-size: 10px; line-height: 1.7; }
+.picker-section-heading > span { font-size: 11px; color: #9aa88f; white-space: nowrap; }
+.food-recommendations { padding-bottom: 24px; margin-bottom: 21px; border-bottom: 1px solid #edf1e7; }
+.food-recommendation-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.food-recommendation { display: flex; flex-direction: column; align-items: start; position: relative; min-width: 0; padding: 13px; text-align: left; border: 1px solid #e3eadb; border-radius: 13px; background: #fff; }
+.food-recommendation:hover, .food-choice-row:hover { border-color: #a0bd91; background: #fafcf6; }
+.food-recommendation.selected, .food-choice-row.selected { border-color: #8ead79; background: #f2f7eb; }
+.food-choice-symbol { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 11px; background: #f2f6eb; font-size: 21px; }
+.food-choice-check { position: absolute; top: 14px; right: 12px; color: #5e874e; }
+.food-recommendation > strong { margin: 9px 0 5px; font-size: 12px; line-height: 1.6; font-weight: 550; color: #49613e; overflow-wrap: anywhere; }
+.food-choice-description { font-size: 9px; color: #9aa88e; line-height: 1.7; }
+.food-choice-energy { display: block; font-size: 12px; font-variant-numeric: tabular-nums; color: #668553; white-space: nowrap; }
+.food-recommendation > .food-choice-energy { margin-top: 10px; font-size: 11px; }
+.food-choice-energy small { font-size: 9px; color: #a0ae93; font-weight: 400; }
+.food-recommendation-reason { margin-top: 9px; padding: 4px 6px; font-size: 9px; color: #8c9c75; background: #f3f7ed; border-radius: 5px; line-height: 1.5; overflow-wrap: anywhere; }
+.food-choice-list { display: grid; gap: 8px; }
+.food-choice-row { display: flex; align-items: center; gap: 11px; min-width: 0; width: 100%; padding: 12px; border: 1px solid #e8eddf; border-radius: 12px; background: #fff; text-align: left; }
+.food-choice-text { display: block; flex: 1; min-width: 0; }
+.food-choice-text strong { display: block; font-size: 13px; color: #465d3c; line-height: 1.6; font-weight: 500; overflow-wrap: anywhere; }
+.food-choice-text > span { display: block; color: #9caa91; font-size: 10px; margin-top: 4px; }
+.food-choice-row > .food-choice-energy { text-align: right; }
+.food-choice-row .food-choice-energy small { display: block; margin-top: 5px; }
+.food-choice-indicator { display: grid; place-items: center; width: 23px; flex-shrink: 0; color: #95a783; }
+.food-search-empty { display: flex; min-height: 245px; flex-direction: column; align-items: center; justify-content: center; color: #afbea0; text-align: center; }
+.food-search-empty h3 { font-size: 15px; color: #7d926a; margin-top: 17px; }
+.food-search-empty p { color: #9eac92; font-size: 12px; line-height: 1.9; margin: 10px 0 14px; }
+.food-load-more { margin-top: 16px; font-size: 12px; height: 40px; }
+.food-picker-footer { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 15px 24px; border-top: 1px solid #e7eddf; background: #fbfcf8; }
+.food-picker-footer > span { font-size: 11px; color: #9aa88d; }
+.food-picker-footer .text-button { font-size: 12px; }
+@media (max-width: 767px) {
+  .food-picker-overlay { padding: 0; align-items: stretch; }
+  .food-picker-dialog { width: 100%; height: 100dvh; border-radius: 0; }
+  .food-picker-header { padding: max(16px, env(safe-area-inset-top)) 17px 14px; gap: 9px; }
+  .food-picker-header h2 { font-size: 20px; }
+  .food-picker-header .eyebrow { display: none; }
+  .picker-back { display: inline-flex; margin-left: -5px; }
+  .picker-desktop-close { display: none; }
+  .picker-count { font-size: 10px; }
+  .food-picker-search-area { padding: 0 19px 12px; }
+  .food-picker-search input { font-size: 16px; }
+  .food-picker-search input::placeholder { font-size: 12px; }
+  .food-picker-search-area > p { font-size: 10px; }
+  .food-picker-body { display: flex; flex-direction: column; }
+  .food-picker-categories { flex-direction: row; overflow-y: hidden; overflow-x: auto; padding: 9px 19px; border-right: 0; border-bottom: 1px solid #edf1e7; gap: 6px; min-height: 53px; }
+  .food-picker-categories button { min-height: 33px; gap: 6px; padding: 7px 11px; white-space: nowrap; font-size: 12px; }
+  .food-picker-categories small { font-size: 8px; }
+  .food-picker-content { padding: 20px 19px 25px; flex: 1; }
+  .food-recommendations { margin-bottom: 18px; padding-bottom: 21px; }
+  .food-recommendation-grid { display: flex; overflow-x: auto; gap: 9px; padding: 1px 1px 8px; scroll-snap-type: x proximity; }
+  .food-recommendation { flex: 0 0 160px; scroll-snap-align: start; }
+  .food-choice-row { gap: 9px; padding: 12px 10px; }
+  .food-choice-row .food-choice-symbol { width: 32px; height: 34px; font-size: 19px; }
+  .food-choice-text strong { font-size: 12px; }
+  .food-choice-text > span { font-size: 9px; }
+  .food-choice-row > .food-choice-energy { font-size: 11px; }
+  .food-choice-indicator { width: 17px; }
+  .food-picker-footer { padding: 13px 19px max(16px, env(safe-area-inset-bottom)); }
+  .food-picker-footer > span { font-size: 10px; }
+  .food-picker-footer .text-button { font-size: 11px; }
+}

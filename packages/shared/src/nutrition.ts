@@ -8,13 +8,19 @@ import {
 
 export const nutrientKeys = ['energyKcal', 'proteinG', 'fatG', 'carbsG'] as const;
 export const emptyNutrients = (): Nutrients => ({ energyKcal: null, proteinG: null, fatG: null, carbsG: null });
+// 大食物库用索引查找，避免每次识别／配方换算都遍历几千条记录。
+const foodsById = new Map(foods.map(food => [food.id, food]));
+const foodsByName = new Map<string, FoodDefinition>();
+for (const food of foods) for (const label of [food.name, ...food.aliases]) {
+  const key = normalizeFoodName(label);
+  if (!foodsByName.has(key)) foodsByName.set(key, food);
+}
+const recipesByName = new Map(recipes.flatMap(recipe => [recipe.name, ...recipe.aliases].map(label => [normalizeFoodName(label), recipe] as const)));
 export function findFood(name: string): FoodDefinition | undefined {
-  const normalized = normalizeFoodName(name);
-  return foods.find((food) => [food.name, ...food.aliases].some((alias) => normalizeFoodName(alias) === normalized));
+  return foodsByName.get(normalizeFoodName(name));
 }
 export function findRecipe(name: string): Recipe | undefined {
-  const normalized = normalizeFoodName(name);
-  return recipes.find((recipe) => [recipe.name, ...recipe.aliases].some((alias) => normalizeFoodName(alias) === normalized));
+  return recipesByName.get(normalizeFoodName(name));
 }
 export function findEstimatedFood(name: string, estimatedFoods: EstimatedFood[]): EstimatedFood | undefined {
   const normalized = normalizeFoodName(name);
@@ -127,7 +133,10 @@ export function createFoodEntry(food: FoodDefinition, weightG: number | null): F
     id: crypto.randomUUID(), name: food.name, weightG,
     nutrientsPer100g: { ...food.nutrientsPer100g },
     provenance: `${food.source.dataset} ${food.source.version} · FDC ${food.source.fdcId} · ${food.source.description}`,
-    kind: 'database', referenceId: food.id, warnings: food.state === 'raw' ? ['此数据对应生食／生重；熟食需选择相符的数据或配方。'] : [],
+    kind: 'database', referenceId: food.id, warnings: [
+      ...(food.state === 'raw' ? ['此数据对应生食／生重；熟食需选择相符的数据或配方。'] : []),
+      ...(food.source.dataset === 'USDA FNDDS' ? ['USDA 膳食调查参考，可能采用美国常见配方；请核对具体做法、糖、油和品牌，不能视为这份食物的实测值。'] : []),
+    ],
   };
 }
 /**
@@ -177,7 +186,7 @@ export function createRecipeEntry(recipe: Recipe, weightG: number, ingredientOve
   if (!Number.isFinite(weightG) || weightG <= 0 || weightG > 20000) throw new Error('配方份量必须是大于 0 至 20000 g');
   const factor = weightG / recipe.referenceWeightG;
   const ingredients = recipe.ingredients.map((ingredient) => {
-    const food = foods.find((item) => item.id === ingredient.foodId);
+    const food = foodsById.get(ingredient.foodId);
     if (!food) throw new Error(`配方缺少食物数据：${ingredient.foodId}`);
     const ingredientWeight = ingredientOverrides[ingredient.id] ?? ingredient.weightG * factor;
     if (!Number.isFinite(ingredientWeight) || ingredientWeight < 0 || ingredientWeight > 20000) throw new Error('配料重量必须是 0 至 20000 g');

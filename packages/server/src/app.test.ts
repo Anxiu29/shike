@@ -140,6 +140,18 @@ describe('本地识别 API', () => {
     expect(response.json().error.code).toBe('AI_INVALID_RESULT');
   });
 
+  it('局域网预览只接受显式配置的精确页面来源，不放开其他地址或端口', async () => {
+    const app = await appWith({ config: loadConfig({ AI_MODE: 'mock', PUBLIC_ORIGIN: 'http://192.168.1.10:5180' }) });
+    const body = multipart(await png());
+    const accepted = await app.inject({ method: 'POST', url: '/api/recognitions', ...body, headers: { ...body.headers, origin: 'http://192.168.1.10:5180' } });
+    expect(accepted.statusCode).toBe(200);
+    expect(accepted.json().mode).toBe('mock');
+    for (const origin of ['http://192.168.1.11:5180', 'http://192.168.1.10:5173', 'http://192.168.1.10:5180.evil.example']) {
+      const blocked = await app.inject({ method: 'POST', url: '/api/recognitions', ...body, headers: { ...body.headers, origin } });
+      expect(blocked.statusCode).toBe(403);
+    }
+  });
+
   it('未来适配器不能绕过 API 的营养假设校验', async () => {
     const service: VisionService = { mode: 'live', provider: 'gemini', model: 'gemini-3.5-flash-lite', recognize: vi.fn().mockResolvedValue({
       isFood: true, uncertainties: [], foods: [{ name: '粥', estimatedWeightG: 200, visibleIngredients: [], uncertainties: [],

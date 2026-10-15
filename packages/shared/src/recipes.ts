@@ -11,6 +11,7 @@ export interface Recipe {
   referenceWeightG: number;
   ingredients: RecipeIngredient[];
   warnings: string[];
+  category?: '家常菜' | '主食' | '汤羹' | '饮品' | '轻食早餐';
 }
 const ingredient = (id: string, fdcId: number, weightG: number, note: string): RecipeIngredient => ({
   id, foodId: `fdc-${fdcId}`, weightG, note,
@@ -20,6 +21,12 @@ const commonWarnings = [
   '配料重量均为最终可食部分。食用油只记录实际摄入量，不能把下锅量全部算作吃掉。',
   '酱汁、糖、额外配料需要另行补充；配方已含的食用油不要重复新增。',
 ];
+/** 新配方只定义可编辑的配比，营养仍由引用的 USDA 食物逐项计算。 */
+function referenceRecipe(id: string, name: string, aliases: string[], parts: Array<[string, number, number]>, warnings: string[] = [], category: Recipe['category'] = '家常菜'): Recipe {
+  return { id, name, aliases, category, referenceWeightG: parts.reduce((sum, part) => sum + part[2], 0),
+    ingredients: parts.map(([key, fdcId, weight]) => ingredient(key, fdcId, weight, key === 'water' ? '额外加入并实际喝下的水；不包含未计算的肉汤、糖或酱汁。' : key === 'oil' ? '参考实际摄入的食用油，不是下锅油量。' : '最终可食重量；采用条目注明的生熟／即食状态，不是生料投料重量。')),
+    warnings: [...commonWarnings, ...warnings] };
+}
 // referenceWeightG 等于各最终可食配料重量之和，避免把生料总重直接当熟菜重量。
 export const recipes: Recipe[] = [
   {
@@ -279,4 +286,36 @@ export const recipes: Recipe[] = [
     ],
     warnings: [...commonWarnings, '蔬菜为即食生重，三文鱼为熟重；生鱼片不能使用这条烤熟数据。'],
   },
+  referenceRecipe('zucchini-egg', '西葫芦炒蛋', ['西葫芦炒鸡蛋'], [['zucchini', 169292, 150], ['egg', 173424, 100], ['oil', 171411, 8]], ['水煮全蛋近似无额外油的熟蛋，炒制失水差异需确认。']),
+  referenceRecipe('cucumber-egg', '黄瓜炒蛋', ['黄瓜炒鸡蛋'], [['cucumber', 168409, 130], ['egg', 173424, 100], ['oil', 171411, 8]], ['黄瓜暂用生食数据近似轻炒；请确认失水量。熟蛋采用水煮全蛋近似。']),
+  referenceRecipe('cabbage-egg', '卷心菜炒蛋', ['包菜炒蛋'], [['cabbage', 169976, 150], ['egg', 173424, 100], ['oil', 171411, 8]], ['水煮全蛋近似无额外油的熟蛋。']),
+  referenceRecipe('stir-fried-bok-choy', '清炒小白菜', ['炒小白菜'], [['bok-choy', 170391, 200], ['oil', 171411, 7]], ['蒜、蚝油等未计入。']),
+  referenceRecipe('stir-fried-gai-lan', '清炒芥兰', ['炒芥兰'], [['gai-lan', 169392, 200], ['oil', 171411, 7]], ['蒜、蚝油和糖未计入。']),
+  referenceRecipe('stir-fried-cabbage', '手撕包菜', ['清炒包菜', '炒卷心菜'], [['cabbage', 169976, 200], ['oil', 171411, 8]], ['辣椒、糖和酱汁未计入。']),
+  referenceRecipe('stir-fried-asparagus', '清炒芦笋', ['炒芦笋'], [['asparagus', 168390, 180], ['oil', 171411, 6]], ['采用无额外油的水煮芦笋近似。']),
+  referenceRecipe('stir-fried-zucchini', '清炒西葫芦', ['炒西葫芦'], [['zucchini', 169292, 200], ['oil', 171411, 7]], ['采用无额外油的水煮西葫芦近似。']),
+  referenceRecipe('mushroom-chicken-stew', '香菇炖鸡', ['香菇炖鸡肉'], [['chicken', 172388, 120], ['shiitake', 168437, 100], ['oil', 171411, 6]], ['去皮烤鸡腿近似炖熟鸡肉，不包含鸡皮和肉汤；调味糖另计。']),
+  referenceRecipe('winter-melon-shrimp', '冬瓜炒虾仁', ['虾仁炒冬瓜'], [['winter-melon', 170475, 160], ['shrimp', 175180, 80], ['oil', 171411, 6]]),
+  referenceRecipe('zucchini-pork', '西葫芦炒肉片', ['西葫芦炒肉'], [['zucchini', 169292, 140], ['pork', 168250, 80], ['oil', 171411, 8]], ['采用熟瘦猪里脊参考，肥肉及勾芡另计。']),
+  referenceRecipe('potato-chicken', '土豆鸡丁', ['土豆炒鸡丁'], [['potato', 170440, 120], ['chicken', 171477, 100], ['pepper', 170428, 40], ['oil', 171411, 8]], ['鸡胸肉为熟重，酱料与勾芡另计。']),
+  referenceRecipe('pepper-beef', '青椒炒牛肉', ['青椒牛肉'], [['pepper', 170428, 120], ['beef', 168634, 100], ['oil', 171411, 8]], ['烤熟瘦牛肉近似炒熟牛肉，勾芡和酱汁另计。']),
+  referenceRecipe('onion-beef', '洋葱炒牛肉', ['洋葱牛肉'], [['onion', 170001, 120], ['beef', 168634, 100], ['oil', 171411, 8]], ['烤熟瘦牛肉近似炒熟牛肉，勾芡和酱汁另计。']),
+  referenceRecipe('radish-beef-stew', '萝卜炖牛肉', ['白萝卜炖牛肉'], [['radish', 168452, 150], ['beef', 171203, 100], ['oil', 171411, 6]], ['采用炖牛肉含可分离脂肪的数据；此份按固体可食部分，不包含肉汤。']),
+  referenceRecipe('cabbage-pork-stew', '白菜炖肉', ['白菜炖猪肉'], [['cabbage', 169980, 160], ['pork', 167846, 100], ['oil', 171411, 6]], ['采用熟瘦猪肩肉近似；肉汤、粉条和肥肉另计。']),
+  referenceRecipe('tomato-egg-soup', '番茄鸡蛋汤', ['西红柿鸡蛋汤', '番茄蛋花汤'], [['tomato', 170050, 100], ['egg', 173424, 50], ['water', 173647, 200], ['oil', 171411, 3]], ['熟蛋采用水煮全蛋近似；水代表实际喝下的清水，不含浓汤、糖或勾芡。'], '汤羹'),
+  referenceRecipe('winter-melon-tofu-soup', '冬瓜豆腐汤', [], [['winter-melon', 170475, 120], ['tofu', 172476, 80], ['water', 173647, 200], ['oil', 171411, 3]], ['不包含肉汤、虾皮等额外配料，豆腐数据按普通硫酸钙凝固豆腐参考。'], '汤羹'),
+  referenceRecipe('lotus-pork-soup', '莲藕排骨汤', ['排骨莲藕汤'], [['lotus', 168430, 120], ['pork', 167854, 80], ['water', 173647, 200]], ['排骨采用炖熟可食肉重，不含骨重；清水不能反映肉汤溶出脂肪，喝汤时应补充实际油量。'], '汤羹'),
+  referenceRecipe('millet-porridge-unsweetened', '小米粥（无糖参考）', ['小米粥', '无糖小米粥'], [['millet', 168871, 100], ['water', 173647, 200]], ['已煮熟小米饭与额外水按 1:2 混合，不是干小米与水的投料比例；无额外糖，稀稠请按实际调整。'], '主食'),
+  referenceRecipe('rice-porridge-unsweetened', '白米粥（无糖参考）', ['白米粥', '白粥', '无糖白米粥'], [['rice', 168878, 100], ['water', 173647, 200]], ['已煮熟白米饭与额外水按 1:2 混合，不是干米配水；无额外糖，实际含水量可能不同。'], '主食'),
+  referenceRecipe('pumpkin-millet-porridge', '南瓜小米粥（无糖参考）', ['南瓜小米粥'], [['millet', 168871, 80], ['pumpkin', 168449, 80], ['water', 173647, 140]], ['小米和南瓜均为熟重，不是干小米；没有添加糖，实际含水量请调整。'], '主食'),
+  referenceRecipe('red-bean-millet-porridge', '红豆小米粥（无糖参考）', ['红豆小米粥'], [['millet', 168871, 70], ['red-bean', 173728, 70], ['water', 173647, 160]], ['红豆和小米均为熟重；没有添加糖，不代表所有红豆粥的通用配方。'], '主食'),
+  referenceRecipe('milk-oatmeal', '牛奶燕麦粥（无糖参考）', ['牛奶燕麦粥'], [['oatmeal', 173905, 150], ['milk', 172217, 150]], ['燕麦采用已经水煮的燕麦粥，不能填干燕麦片重量；无额外糖，全脂牛奶可改包装数值。'], '轻食早餐'),
+  referenceRecipe('egg-sandwich', '鸡蛋三明治', ['全麦鸡蛋三明治'], [['bread', 172688, 60], ['egg', 173424, 50], ['lettuce', 169249, 20], ['cucumber', 168409, 20]], ['全麦面包、水煮蛋及即食蔬菜；未计蛋黄酱、黄油或其他酱。'], '轻食早餐'),
+  referenceRecipe('chicken-sandwich', '鸡胸肉三明治', ['鸡肉三明治'], [['bread', 172688, 60], ['chicken', 171477, 70], ['lettuce', 169249, 20], ['tomato', 170457, 30]], ['去皮熟鸡胸配即食蔬菜，不包含沙拉酱与黄油。'], '轻食早餐'),
+  referenceRecipe('tuna-sandwich', '金枪鱼三明治', [], [['bread', 172688, 60], ['tuna', 171986, 60], ['lettuce', 169249, 20], ['cucumber', 168409, 20]], ['采用无盐水浸金枪鱼，不包含油浸罐头的油和蛋黄酱。'], '轻食早餐'),
+  referenceRecipe('yogurt-fruit-bowl', '酸奶水果碗', ['水果酸奶碗'], [['yogurt', 171284, 150], ['banana', 173944, 60], ['blueberry', 171711, 30]], ['原味全脂酸奶搭配水果，未计蜂蜜、麦片或坚果；具体品牌酸奶需核对包装。'], '轻食早餐'),
+  referenceRecipe('latte-unsweetened', '拿铁（无糖参考）', ['无糖拿铁', '拿铁咖啡'], [['coffee', 171890, 30], ['milk', 172217, 170]], ['黑咖啡近似咖啡基底；无额外糖、糖浆与奶油，按 g 而非杯数计算。'], '饮品'),
+  referenceRecipe('shrimp-fried-rice', '虾仁炒饭', [], [['rice', 168878, 180], ['shrimp', 175180, 70], ['egg', 173424, 50], ['peas', 170420, 30], ['oil', 171411, 10]], ['配料均为熟重，熟蛋用水煮蛋近似；未计额外酱料。'], '主食'),
+  referenceRecipe('chicken-vegetable-rice', '鸡肉蔬菜饭', ['鸡胸肉蔬菜饭'], [['rice', 168878, 180], ['chicken', 171477, 100], ['broccoli', 169967, 80], ['carrot', 170394, 40], ['oil', 171411, 8]], ['食材均按熟重，不含甜酱汁。'], '主食'),
+  referenceRecipe('beef-vegetable-rice', '牛肉蔬菜盖饭', ['牛肉蔬菜饭'], [['rice', 168878, 180], ['beef', 168634, 100], ['onion', 170001, 60], ['broccoli', 169967, 50], ['oil', 171411, 8]], ['采用烤熟瘦牛肉近似炒熟牛肉；不含勾芡、甜酱汁和额外糖。'], '主食'),
 ];

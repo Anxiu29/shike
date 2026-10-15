@@ -5,15 +5,15 @@ import {
 } from '../src/index.js';
 
 describe('可追溯营养数据与计算', () => {
-  it('包含 388 条官方基础食物，来源及营养值齐全，名称不重复', () => {
-    expect(foods).toHaveLength(388);
-    expect(new Set(foods.map((food) => food.id)).size).toBe(388);
+  it('包含扩充后的官方基础食物，来源及营养值齐全，名称不重复', () => {
+    expect(foods.length).toBeGreaterThanOrEqual(5630);
+    expect(new Set(foods.map((food) => food.id)).size).toBe(foods.length);
     const names = foods.flatMap((food) => [food.name, ...food.aliases].map(normalizeFoodName));
     expect(new Set(names).size).toBe(names.length);
     for (const food of foods) {
       expect(foodCategories).toContain(food.category);
-      expect(food.source.dataset).toBe('USDA SR Legacy');
-      expect(food.source.version).toBe('2018-04');
+      expect(['USDA SR Legacy', 'USDA FNDDS']).toContain(food.source.dataset);
+      expect(food.source.version).toBe(food.source.dataset === 'USDA FNDDS' ? '2021-2023' : '2018-04');
       expect(food.source.description.length).toBeGreaterThan(0);
       expect(food.source.url).toContain(`/food-details/${food.source.fdcId}/nutrients`);
       expect(food.source.downloadUrl).toMatch(/^https:\/\/fdc\.nal\.usda\.gov\//);
@@ -88,12 +88,13 @@ describe('可追溯营养数据与计算', () => {
 
 describe('参考配方', () => {
   it('每个配方的基准总重等于最终可食配料之和，油单列且不采用生肉干米', () => {
-    expect(recipes).toHaveLength(28);
+    expect(recipes.length).toBeGreaterThanOrEqual(60);
     const recipeNames = recipes.flatMap((recipe) => [recipe.name, ...recipe.aliases].map(normalizeFoodName));
     expect(new Set(recipeNames).size).toBe(recipeNames.length);
     for (const recipe of recipes) {
       expect(recipe.ingredients.reduce((sum, item) => sum + item.weightG, 0)).toBe(recipe.referenceWeightG);
-      expect(recipe.ingredients.filter((item) => item.id === 'oil')).toHaveLength(1);
+      expect(recipe.ingredients.filter((item) => item.id === 'oil').length).toBeLessThanOrEqual(1);
+      expect(new Set(recipe.ingredients.map(item => item.id)).size).toBe(recipe.ingredients.length);
       expect(recipe.warnings.length).toBeGreaterThan(1);
       for (const alias of [recipe.name, ...recipe.aliases]) expect(findFood(alias)).toBeUndefined();
       for (const ingredient of recipe.ingredients) {
@@ -112,6 +113,21 @@ describe('参考配方', () => {
     const half = createRecipeEntry(recipe, recipe.referenceWeightG / 2);
     expect(calculateNutrients(half).energyKcal).toBeCloseTo(calculateNutrients(full).energyKcal! / 2);
     expect(half.recipeSnapshot!.ingredients.find((item) => item.id === 'rice')!.weightG).toBe(100);
+  });
+
+  it('新增早餐和汤粥只按实际配料计算，水不伪装成干粮，无额外油不显示油档', () => {
+    for (const name of ['小米粥', '白米粥', '南瓜小米粥', '鸡蛋三明治', '无糖拿铁']) {
+      const recipe = findRecipe(name)!;
+      expect(recipe).toBeDefined();
+      const entry = createRecipeEntry(recipe, recipe.referenceWeightG);
+      expect(entry.estimateProfile).toBeUndefined();
+      const total = entry.recipeSnapshot!.ingredients.reduce((sum, item) => sum + item.nutrientsPer100g.energyKcal! * item.weightG / 100, 0);
+      expect(calculateNutrients(entry).energyKcal).toBeCloseTo(total, 10);
+      expect(calculateNutrients(createRecipeEntry(recipe, recipe.referenceWeightG / 2)).energyKcal).toBeCloseTo(total / 2, 10);
+    }
+    const porridge = createRecipeEntry(findRecipe('小米粥')!, 300);
+    expect(porridge.recipeSnapshot!.ingredients.find(item => item.id === 'millet')!.foodId).toBe('fdc-168871');
+    expect(porridge.recipeSnapshot!.ingredients.find(item => item.id === 'water')!.weightG).toBe(200);
   });
 
   it('调整实际摄入油量只改变一次油的贡献，汇总不会再累计内部快照', () => {

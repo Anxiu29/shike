@@ -7,7 +7,12 @@ export function manualEntry(name = '', weightG: number | null = null): FoodEntry
 export function matchedEntry(name: string, weightG: number | null, personalFoods: EstimatedFood[] = [], currentEstimate?: EstimatedFood): FoodEntry {
   // 可靠来源先匹配：已有数据库和参考配方不能被模型粗估静默替换。
   const recipe = findRecipe(name)
-  if (recipe && weightG !== null && weightG > 0) return createRecipeEntry(recipe, weightG)
+  if (recipe) {
+    // 菜名确定但照片无法估重时也能匹配配方；整份营养仍待补重量，不套默认份量。
+    const entry = createRecipeEntry(recipe, weightG !== null && weightG > 0 ? weightG : recipe.referenceWeightG)
+    entry.weightG = weightG
+    return entry
+  }
   const food = findFood(name)
   if (food) return createFoodEntry(food, weightG)
   const personal = findEstimatedFood(name, personalFoods.filter(item => item.provider !== 'mock' && Object.values(item.nutrientsPer100g).some(value => value !== null)))
@@ -40,7 +45,7 @@ export function recognitionEstimate(name: string, nutrientsPer100g: Nutrients | 
 
 export function entryBasis(entry: FoodEntry): string {
   if (entry.kind === 'ai') return entry.provenance.startsWith('个人估算库') ? '个人估算库 · AI 粗估' : entry.aiEstimateSnapshot?.provider === 'mock' ? '模拟 AI 估算' : 'AI 估算'
-  return entry.kind === 'recipe' ? '参考配方估算' : entry.kind === 'database' ? 'USDA 基础食物' : entry.kind === 'manual' ? '手动营养数据' : '暂无法估算'
+  return entry.kind === 'recipe' ? '参考配方估算' : entry.kind === 'database' ? entry.provenance.startsWith('USDA FNDDS') ? 'USDA 膳食参考' : 'USDA 基础食物' : entry.kind === 'manual' ? '手动营养数据' : '暂无法估算'
 }
 
 /** 名称纠正代表另一种食物时，旧模型的数值不能冒充新食物的估算。 */
@@ -101,5 +106,6 @@ export function resizeEntry(entry: FoodEntry, value: number | null): void {
 
 export function inputNumber(event: Event): number | null {
   const input = event.target as HTMLInputElement
-  return input.value === '' ? null : Number(input.value)
+  // 只约束用户输入；配方缩放和营养中值继续保留完整计算精度。
+  return input.value === '' ? null : Math.round((Number(input.value) + Number.EPSILON) * 100) / 100
 }

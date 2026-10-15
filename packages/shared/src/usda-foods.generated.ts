@@ -9415,5 +9415,2003 @@ export const usdaFoods: FoodDefinition[] = [
       "url": "https://fdc.nal.usda.gov/food-details/169596/nutrients",
       "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
     }
+  },
+  {
+    "id": "fdc-172675",
+    "name": "法式长棍面包",
+    "aliases": [
+      "法棍"
+    ],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 272,
+      "proteinG": 10.75,
+      "fatG": 2.42,
+      "carbsG": 51.88
+    },
+    "source": {
+      "fdcId": 172675,
+      "description": "Bread, french or vienna (includes sourdough)",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172675/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174091",
+    "name": "全麦法式面包",
+    "aliases": [],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 239,
+      "proteinG": 8.33,
+      "fatG": 1.04,
+      "carbsG": 49.1
+    },
+    "source": {
+      "fdcId": 174091,
+      "description": "Bread, french or vienna, whole wheat",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174091/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172678",
+    "name": "燕麦面包",
+    "aliases": [],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 269,
+      "proteinG": 8.4,
+      "fatG": 4.4,
+      "carbsG": 48.5
+    },
+    "source": {
+      "fdcId": 172678,
+      "description": "Bread, oatmeal",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172678/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172680",
+    "name": "葡萄干面包",
+    "aliases": [],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 274,
+      "proteinG": 7.9,
+      "fatG": 4.4,
+      "carbsG": 52.3
+    },
+    "source": {
+      "fdcId": 172680,
+      "description": "Bread, raisin, enriched",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172680/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174900",
+    "name": "原味烤贝果",
+    "aliases": [
+      "烤贝果"
+    ],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 287,
+      "proteinG": 11.14,
+      "fatG": 1.43,
+      "carbsG": 57.39
+    },
+    "source": {
+      "fdcId": 174900,
+      "description": "Bagels, plain, enriched, with calcium propionate (includes onion, poppy, sesame), toasted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174900/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172765",
+    "name": "蓝莓玛芬",
+    "aliases": [
+      "蓝莓马芬",
+      "蓝莓麦芬"
+    ],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 375,
+      "proteinG": 4.49,
+      "fatG": 16.07,
+      "carbsG": 53
+    },
+    "source": {
+      "fdcId": 172765,
+      "description": "Muffins, blueberry, commercially prepared (Includes mini-muffins)",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172765/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-175039",
+    "name": "原味华夫饼（现制）",
+    "aliases": [
+      "现制华夫饼"
+    ],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 291,
+      "proteinG": 7.9,
+      "fatG": 14.1,
+      "carbsG": 32.9
+    },
+    "source": {
+      "fdcId": 175039,
+      "description": "Waffles, plain, prepared from recipe",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/175039/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-175048",
+    "name": "烤华夫饼（冷冻加热）",
+    "aliases": [
+      "烤华夫饼"
+    ],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 312,
+      "proteinG": 7.19,
+      "fatG": 9.61,
+      "carbsG": 49.29
+    },
+    "source": {
+      "fdcId": 175048,
+      "description": "Waffles, plain, frozen, ready -to-heat, toasted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/175048/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174988",
+    "name": "苹果牛角包",
+    "aliases": [],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 254,
+      "proteinG": 7.4,
+      "fatG": 8.7,
+      "carbsG": 37.1
+    },
+    "source": {
+      "fdcId": 174988,
+      "description": "Croissants, apple",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174988/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174989",
+    "name": "芝士牛角包",
+    "aliases": [
+      "奶酪牛角包"
+    ],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 414,
+      "proteinG": 9.2,
+      "fatG": 20.9,
+      "carbsG": 47
+    },
+    "source": {
+      "fdcId": 174989,
+      "description": "Croissants, cheese",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174989/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174909",
+    "name": "玉米面包（牛奶鸡蛋配方）",
+    "aliases": [
+      "玉米面包"
+    ],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 330,
+      "proteinG": 6.59,
+      "fatG": 9.58,
+      "carbsG": 54.46
+    },
+    "source": {
+      "fdcId": 174909,
+      "description": "Bread, cornbread, dry mix, prepared with 2% milk, 80% margarine, and eggs",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174909/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172667",
+    "name": "美式比司吉（烤制）",
+    "aliases": [
+      "比司吉"
+    ],
+    "state": "ready",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 338,
+      "proteinG": 6.2,
+      "fatG": 11.03,
+      "carbsG": 53.87
+    },
+    "source": {
+      "fdcId": 172667,
+      "description": "Biscuits, plain or buttermilk, frozen, baked",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172667/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170317",
+    "name": "芝士披萨（普通饼底，冷冻烤熟）",
+    "aliases": [
+      "普通底芝士披萨"
+    ],
+    "state": "cooked",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 268,
+      "proteinG": 10.36,
+      "fatG": 12.28,
+      "carbsG": 29.02
+    },
+    "source": {
+      "fdcId": 170317,
+      "description": "Pizza, cheese topping, regular crust, frozen, cooked",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170317/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170373",
+    "name": "薄底芝士披萨（冷冻烤熟）",
+    "aliases": [
+      "薄底芝士披萨"
+    ],
+    "state": "cooked",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 263,
+      "proteinG": 11.91,
+      "fatG": 11.07,
+      "carbsG": 28.8
+    },
+    "source": {
+      "fdcId": 170373,
+      "description": "Pizza, cheese topping, thin crust, frozen, cooked",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170373/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-173273",
+    "name": "薯饼（快餐参考）",
+    "aliases": [
+      "薯饼"
+    ],
+    "state": "cooked",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 272,
+      "proteinG": 2.58,
+      "fatG": 17.04,
+      "carbsG": 28.88
+    },
+    "source": {
+      "fdcId": 173273,
+      "description": "Fast foods, potatoes, hash browns, round pieces or patty",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/173273/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172103",
+    "name": "猪肉春卷（USDA 参考）",
+    "aliases": [
+      "美式猪肉春卷"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 227,
+      "proteinG": 9.94,
+      "fatG": 8.18,
+      "carbsG": 28.49
+    },
+    "source": {
+      "fdcId": 172103,
+      "description": "Egg rolls, pork, refrigerated, heated",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172103/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172104",
+    "name": "鸡肉春卷（USDA 参考）",
+    "aliases": [
+      "美式鸡肉春卷"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 197,
+      "proteinG": 10.44,
+      "fatG": 4.51,
+      "carbsG": 28.54
+    },
+    "source": {
+      "fdcId": 172104,
+      "description": "Egg rolls, chicken, refrigerated, heated",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172104/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172105",
+    "name": "蔬菜春卷（USDA 参考）",
+    "aliases": [
+      "美式蔬菜春卷"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 214,
+      "proteinG": 5.95,
+      "fatG": 6.97,
+      "carbsG": 31.77
+    },
+    "source": {
+      "fdcId": 172105,
+      "description": "Egg rolls, vegetable, frozen, prepared",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172105/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-167668",
+    "name": "蔬菜炒饭（美式中餐参考）",
+    "aliases": [
+      "美式蔬菜炒饭"
+    ],
+    "state": "cooked",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 174,
+      "proteinG": 4.05,
+      "fatG": 2.96,
+      "carbsG": 32.79
+    },
+    "source": {
+      "fdcId": 167668,
+      "description": "Restaurant, Chinese, fried rice, without meat",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/167668/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-167676",
+    "name": "宫保鸡丁（美式中餐参考）",
+    "aliases": [
+      "美式宫保鸡丁"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 129,
+      "proteinG": 9.76,
+      "fatG": 6.98,
+      "carbsG": 6.87
+    },
+    "source": {
+      "fdcId": 167676,
+      "description": "Restaurant, Chinese, kung pao chicken",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/167676/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-167678",
+    "name": "鸡肉炒蔬菜（美式中餐参考）",
+    "aliases": [
+      "美式鸡肉炒蔬菜"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 95,
+      "proteinG": 8.18,
+      "fatG": 4.56,
+      "carbsG": 5.38
+    },
+    "source": {
+      "fdcId": 167678,
+      "description": "Restaurant, Chinese, chicken and vegetables",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/167678/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168072",
+    "name": "牛肉炒蔬菜（美式中餐参考）",
+    "aliases": [
+      "美式牛肉炒蔬菜"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 105,
+      "proteinG": 7.08,
+      "fatG": 5.3,
+      "carbsG": 7.29
+    },
+    "source": {
+      "fdcId": 168072,
+      "description": "Restaurant, Chinese, beef and vegetables",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168072/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168080",
+    "name": "虾仁炒蔬菜（美式中餐参考）",
+    "aliases": [
+      "美式虾仁炒蔬菜"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 78,
+      "proteinG": 5.9,
+      "fatG": 4.05,
+      "carbsG": 4.52
+    },
+    "source": {
+      "fdcId": 168080,
+      "description": "Restaurant, Chinese, shrimp and vegetables",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168080/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168081",
+    "name": "糖醋鸡肉（美式中餐参考）",
+    "aliases": [
+      "美式糖醋鸡"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 250,
+      "proteinG": 10.1,
+      "fatG": 12.65,
+      "carbsG": 23.86
+    },
+    "source": {
+      "fdcId": 168081,
+      "description": "Restaurant, Chinese, sweet and sour chicken",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168081/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168082",
+    "name": "糖醋猪肉（美式中餐参考）",
+    "aliases": [
+      "美式糖醋猪肉"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 270,
+      "proteinG": 8.91,
+      "fatG": 15.66,
+      "carbsG": 23.34
+    },
+    "source": {
+      "fdcId": 168082,
+      "description": "Restaurant, Chinese, sweet and sour pork",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168082/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168087",
+    "name": "芝麻鸡（美式中餐参考）",
+    "aliases": [
+      "美式芝麻鸡"
+    ],
+    "state": "cooked",
+    "category": "熟食菜肴",
+    "nutrientsPer100g": {
+      "energyKcal": 293,
+      "proteinG": 14.33,
+      "fatG": 14.25,
+      "carbsG": 26.88
+    },
+    "source": {
+      "fdcId": 168087,
+      "description": "Restaurant, Chinese, sesame chicken",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168087/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-167677",
+    "name": "蔬菜捞面（美式中餐参考）",
+    "aliases": [
+      "美式蔬菜捞面"
+    ],
+    "state": "cooked",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 121,
+      "proteinG": 4.77,
+      "fatG": 2.35,
+      "carbsG": 20.16
+    },
+    "source": {
+      "fdcId": 167677,
+      "description": "Restaurant, Chinese, vegetable lo mein, without meat",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/167677/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168083",
+    "name": "鸡肉炒面（美式中餐参考）",
+    "aliases": [
+      "美式鸡肉炒面"
+    ],
+    "state": "cooked",
+    "category": "主食",
+    "nutrientsPer100g": {
+      "energyKcal": 85,
+      "proteinG": 6.76,
+      "fatG": 2.8,
+      "carbsG": 8.29
+    },
+    "source": {
+      "fdcId": 168083,
+      "description": "Restaurant, Chinese, chicken chow mein",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168083/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171821",
+    "name": "馄饨汤（美式中餐参考）",
+    "aliases": [
+      "美式馄饨汤"
+    ],
+    "state": "cooked",
+    "category": "汤羹",
+    "nutrientsPer100g": {
+      "energyKcal": 32,
+      "proteinG": 2.08,
+      "fatG": 0.26,
+      "carbsG": 5.25
+    },
+    "source": {
+      "fdcId": 171821,
+      "description": "Soup, wonton, Chinese restaurant",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171821/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174807",
+    "name": "蛋花汤（美式中餐参考）",
+    "aliases": [
+      "美式蛋花汤"
+    ],
+    "state": "cooked",
+    "category": "汤羹",
+    "nutrientsPer100g": {
+      "energyKcal": 27,
+      "proteinG": 1.16,
+      "fatG": 0.61,
+      "carbsG": 4.29
+    },
+    "source": {
+      "fdcId": 174807,
+      "description": "Soup, egg drop, Chinese restaurant",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174807/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174808",
+    "name": "酸辣汤（美式中餐参考）",
+    "aliases": [
+      "美式酸辣汤"
+    ],
+    "state": "cooked",
+    "category": "汤羹",
+    "nutrientsPer100g": {
+      "energyKcal": 39,
+      "proteinG": 2.58,
+      "fatG": 1.21,
+      "carbsG": 4.35
+    },
+    "source": {
+      "fdcId": 174808,
+      "description": "Soup, hot and sour, Chinese restaurant",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174808/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171176",
+    "name": "番茄汤（罐头加水冲调）",
+    "aliases": [
+      "罐装番茄汤"
+    ],
+    "state": "ready",
+    "category": "汤羹",
+    "nutrientsPer100g": {
+      "energyKcal": 32,
+      "proteinG": 0.71,
+      "fatG": 0.21,
+      "carbsG": 7.45
+    },
+    "source": {
+      "fdcId": 171176,
+      "description": "Soup, tomato, canned, prepared with equal volume water, commercial",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171176/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172909",
+    "name": "鸡汤面（罐头加水冲调）",
+    "aliases": [
+      "罐装鸡汤面"
+    ],
+    "state": "ready",
+    "category": "汤羹",
+    "nutrientsPer100g": {
+      "energyKcal": 24,
+      "proteinG": 1.16,
+      "fatG": 0.76,
+      "carbsG": 2.97
+    },
+    "source": {
+      "fdcId": 172909,
+      "description": "Soup, chicken noodle, canned, prepared with equal volume water",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172909/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-169392",
+    "name": "芥兰（熟）",
+    "aliases": [
+      "熟芥兰",
+      "芥兰"
+    ],
+    "state": "cooked",
+    "category": "蔬菜",
+    "nutrientsPer100g": {
+      "energyKcal": 22,
+      "proteinG": 1.14,
+      "fatG": 0.72,
+      "carbsG": 3.81
+    },
+    "source": {
+      "fdcId": 169392,
+      "description": "Broccoli, chinese, cooked",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/169392/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168483",
+    "name": "烤红薯（薯肉）",
+    "aliases": [
+      "烤红薯",
+      "烤地瓜"
+    ],
+    "state": "cooked",
+    "category": "蔬菜",
+    "nutrientsPer100g": {
+      "energyKcal": 90,
+      "proteinG": 2.01,
+      "fatG": 0.15,
+      "carbsG": 20.71
+    },
+    "source": {
+      "fdcId": 168483,
+      "description": "Sweet potato, cooked, baked in skin, flesh, without salt",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168483/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168450",
+    "name": "南瓜泥（罐装，无盐）",
+    "aliases": [
+      "罐装南瓜泥"
+    ],
+    "state": "ready",
+    "category": "蔬菜",
+    "nutrientsPer100g": {
+      "energyKcal": 34,
+      "proteinG": 1.1,
+      "fatG": 0.28,
+      "carbsG": 8.09
+    },
+    "source": {
+      "fdcId": 168450,
+      "description": "Pumpkin, canned, without salt",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168450/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-169987",
+    "name": "根芹（水煮，无盐）",
+    "aliases": [
+      "熟根芹"
+    ],
+    "state": "cooked",
+    "category": "蔬菜",
+    "nutrientsPer100g": {
+      "energyKcal": 27,
+      "proteinG": 0.96,
+      "fatG": 0.19,
+      "carbsG": 5.9
+    },
+    "source": {
+      "fdcId": 169987,
+      "description": "Celeriac, cooked, boiled, drained, without salt",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/169987/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170573",
+    "name": "板栗（烤熟）",
+    "aliases": [
+      "烤板栗",
+      "烤栗子"
+    ],
+    "state": "cooked",
+    "category": "坚果种子",
+    "nutrientsPer100g": {
+      "energyKcal": 239,
+      "proteinG": 4.48,
+      "fatG": 1.19,
+      "carbsG": 52.36
+    },
+    "source": {
+      "fdcId": 170573,
+      "description": "Nuts, chestnuts, chinese, roasted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170573/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170189",
+    "name": "芝麻酱（烤芝麻）",
+    "aliases": [
+      "芝麻酱"
+    ],
+    "state": "ready",
+    "category": "油脂调味",
+    "nutrientsPer100g": {
+      "energyKcal": 595,
+      "proteinG": 17,
+      "fatG": 53.76,
+      "carbsG": 21.19
+    },
+    "source": {
+      "fdcId": 170189,
+      "description": "Seeds, sesame butter, tahini, from roasted and toasted kernels (most common type)",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170189/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174304",
+    "name": "油炸豆腐（硫酸钙凝固）",
+    "aliases": [],
+    "state": "cooked",
+    "category": "蛋与豆制品",
+    "nutrientsPer100g": {
+      "energyKcal": 270,
+      "proteinG": 18.82,
+      "fatG": 20.18,
+      "carbsG": 8.86
+    },
+    "source": {
+      "fdcId": 174304,
+      "description": "Tofu, fried, prepared with calcium sulfate",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174304/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174280",
+    "name": "腐乳（盐渍发酵豆腐）",
+    "aliases": [
+      "腐乳"
+    ],
+    "state": "ready",
+    "category": "蛋与豆制品",
+    "nutrientsPer100g": {
+      "energyKcal": 116,
+      "proteinG": 8.92,
+      "fatG": 8,
+      "carbsG": 4.38
+    },
+    "source": {
+      "fdcId": 174280,
+      "description": "Tofu, salted and fermented (fuyu)",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174280/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171112",
+    "name": "鸭腿肉（带皮，烤熟）",
+    "aliases": [
+      "带皮烤鸭腿"
+    ],
+    "state": "cooked",
+    "category": "肉类",
+    "nutrientsPer100g": {
+      "energyKcal": 217,
+      "proteinG": 26.75,
+      "fatG": 11.4,
+      "carbsG": 0
+    },
+    "source": {
+      "fdcId": 171112,
+      "description": "Duck, young duckling, domesticated, White Pekin, leg, meat and skin, bone in, cooked, roasted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171112/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171511",
+    "name": "鸭胸肉（去皮，烤熟）",
+    "aliases": [
+      "去皮烤鸭胸"
+    ],
+    "state": "cooked",
+    "category": "肉类",
+    "nutrientsPer100g": {
+      "energyKcal": 140,
+      "proteinG": 27.6,
+      "fatG": 2.5,
+      "carbsG": 0
+    },
+    "source": {
+      "fdcId": 171511,
+      "description": "Duck, young duckling, domesticated, White Pekin, breast, meat only, boneless, cooked without skin, broiled",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171511/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172409",
+    "name": "鸭肉（带皮，烤熟）",
+    "aliases": [
+      "带皮烤鸭肉"
+    ],
+    "state": "cooked",
+    "category": "肉类",
+    "nutrientsPer100g": {
+      "energyKcal": 337,
+      "proteinG": 18.99,
+      "fatG": 28.35,
+      "carbsG": 0
+    },
+    "source": {
+      "fdcId": 172409,
+      "description": "Duck, domesticated, meat and skin, cooked, roasted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172409/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171496",
+    "name": "火鸡胸肉（去皮，烤熟）",
+    "aliases": [
+      "去皮烤火鸡胸"
+    ],
+    "state": "cooked",
+    "category": "肉类",
+    "nutrientsPer100g": {
+      "energyKcal": 147,
+      "proteinG": 30.13,
+      "fatG": 2.08,
+      "carbsG": 0
+    },
+    "source": {
+      "fdcId": 171496,
+      "description": "Turkey, whole, breast, meat only, cooked, roasted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171496/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170887",
+    "name": "原味脱脂酸奶",
+    "aliases": [
+      "脱脂原味酸奶"
+    ],
+    "state": "ready",
+    "category": "奶类",
+    "nutrientsPer100g": {
+      "energyKcal": 56,
+      "proteinG": 5.73,
+      "fatG": 0.18,
+      "carbsG": 7.68
+    },
+    "source": {
+      "fdcId": 170887,
+      "description": "Yogurt, plain, skim milk",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170887/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170894",
+    "name": "希腊酸奶（原味脱脂）",
+    "aliases": [
+      "原味脱脂希腊酸奶"
+    ],
+    "state": "ready",
+    "category": "奶类",
+    "nutrientsPer100g": {
+      "energyKcal": 59,
+      "proteinG": 10.19,
+      "fatG": 0.39,
+      "carbsG": 3.6
+    },
+    "source": {
+      "fdcId": 170894,
+      "description": "Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170894/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171304",
+    "name": "希腊酸奶（原味全脂）",
+    "aliases": [
+      "原味全脂希腊酸奶"
+    ],
+    "state": "ready",
+    "category": "奶类",
+    "nutrientsPer100g": {
+      "energyKcal": 97,
+      "proteinG": 9,
+      "fatG": 5,
+      "carbsG": 3.98
+    },
+    "source": {
+      "fdcId": 171304,
+      "description": "Yogurt, Greek, plain, whole milk",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171304/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170889",
+    "name": "低脂水果酸奶",
+    "aliases": [
+      "水果低脂酸奶"
+    ],
+    "state": "ready",
+    "category": "奶类",
+    "nutrientsPer100g": {
+      "energyKcal": 99,
+      "proteinG": 3.98,
+      "fatG": 1.15,
+      "carbsG": 18.64
+    },
+    "source": {
+      "fdcId": 170889,
+      "description": "Yogurt, fruit, low fat,9 g protein/8 oz",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170889/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-169898",
+    "name": "脱脂水果酸奶",
+    "aliases": [],
+    "state": "ready",
+    "category": "奶类",
+    "nutrientsPer100g": {
+      "energyKcal": 95,
+      "proteinG": 4.4,
+      "fatG": 0.2,
+      "carbsG": 19
+    },
+    "source": {
+      "fdcId": 169898,
+      "description": "Yogurt, fruit variety, nonfat",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/169898/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170901",
+    "name": "希腊酸奶（草莓，脱脂）",
+    "aliases": [
+      "脱脂草莓希腊酸奶"
+    ],
+    "state": "ready",
+    "category": "奶类",
+    "nutrientsPer100g": {
+      "energyKcal": 82,
+      "proteinG": 8.05,
+      "fatG": 0.15,
+      "carbsG": 12.07
+    },
+    "source": {
+      "fdcId": 170901,
+      "description": "Yogurt, Greek, strawberry, nonfat",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170901/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171300",
+    "name": "希腊酸奶（草莓，低脂）",
+    "aliases": [
+      "低脂草莓希腊酸奶"
+    ],
+    "state": "ready",
+    "category": "奶类",
+    "nutrientsPer100g": {
+      "energyKcal": 105,
+      "proteinG": 8.17,
+      "fatG": 2.57,
+      "carbsG": 12.29
+    },
+    "source": {
+      "fdcId": 171300,
+      "description": "Yogurt, Greek, strawberry, lowfat",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171300/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171275",
+    "name": "甜炼乳",
+    "aliases": [
+      "加糖炼乳",
+      "炼乳"
+    ],
+    "state": "ready",
+    "category": "奶类",
+    "nutrientsPer100g": {
+      "energyKcal": 321,
+      "proteinG": 7.91,
+      "fatG": 8.7,
+      "carbsG": 54.4
+    },
+    "source": {
+      "fdcId": 171275,
+      "description": "Milk, canned, condensed, sweetened",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171275/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171691",
+    "name": "苹果干（硫处理）",
+    "aliases": [
+      "苹果干"
+    ],
+    "state": "ready",
+    "category": "水果",
+    "nutrientsPer100g": {
+      "energyKcal": 243,
+      "proteinG": 0.93,
+      "fatG": 0.32,
+      "carbsG": 65.89
+    },
+    "source": {
+      "fdcId": 171691,
+      "description": "Apples, dried, sulfured, uncooked",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171691/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-173941",
+    "name": "杏干（硫处理）",
+    "aliases": [
+      "杏干"
+    ],
+    "state": "ready",
+    "category": "水果",
+    "nutrientsPer100g": {
+      "energyKcal": 241,
+      "proteinG": 3.39,
+      "fatG": 0.51,
+      "carbsG": 62.64
+    },
+    "source": {
+      "fdcId": 173941,
+      "description": "Apricots, dried, sulfured, uncooked",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/173941/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-167767",
+    "name": "菠萝罐头（果汁浸，沥干）",
+    "aliases": [
+      "果汁浸菠萝罐头"
+    ],
+    "state": "ready",
+    "category": "水果",
+    "nutrientsPer100g": {
+      "energyKcal": 60,
+      "proteinG": 0.51,
+      "fatG": 0.11,
+      "carbsG": 15.56
+    },
+    "source": {
+      "fdcId": 167767,
+      "description": "Pineapple, canned, juice pack, drained",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/167767/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168181",
+    "name": "桃罐头（浓糖浆浸，沥干）",
+    "aliases": [
+      "沥干桃罐头"
+    ],
+    "state": "ready",
+    "category": "水果",
+    "nutrientsPer100g": {
+      "energyKcal": 72,
+      "proteinG": 0.52,
+      "fatG": 0.18,
+      "carbsG": 18.43
+    },
+    "source": {
+      "fdcId": 168181,
+      "description": "Peaches, canned, heavy syrup, drained",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168181/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-169929",
+    "name": "桃罐头（水浸，含汁）",
+    "aliases": [
+      "水浸桃罐头"
+    ],
+    "state": "ready",
+    "category": "水果",
+    "nutrientsPer100g": {
+      "energyKcal": 24,
+      "proteinG": 0.44,
+      "fatG": 0.06,
+      "carbsG": 6.11
+    },
+    "source": {
+      "fdcId": 169929,
+      "description": "Peaches, canned, water pack, solids and liquids",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/169929/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171942",
+    "name": "无糖米奶",
+    "aliases": [
+      "米奶"
+    ],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 47,
+      "proteinG": 0.28,
+      "fatG": 0.97,
+      "carbsG": 9.17
+    },
+    "source": {
+      "fdcId": 171942,
+      "description": "Beverages, rice milk, unsweetened",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171942/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-173768",
+    "name": "无糖低热量强化豆奶",
+    "aliases": [],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 34,
+      "proteinG": 2.62,
+      "fatG": 0.85,
+      "carbsG": 3.85
+    },
+    "source": {
+      "fdcId": 173768,
+      "description": "Soymilk, original and vanilla, light, unsweetened, with added calcium, vitamins A and D",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/173768/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171911",
+    "name": "即饮无糖绿茶",
+    "aliases": [
+      "瓶装无糖绿茶"
+    ],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 0,
+      "proteinG": 0,
+      "fatG": 0,
+      "carbsG": 0
+    },
+    "source": {
+      "fdcId": 171911,
+      "description": "Beverages, tea, green, ready to drink, unsweetened",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171911/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174128",
+    "name": "即饮含糖绿茶",
+    "aliases": [
+      "瓶装含糖绿茶"
+    ],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 27,
+      "proteinG": 0,
+      "fatG": 0.22,
+      "carbsG": 6.2
+    },
+    "source": {
+      "fdcId": 174128,
+      "description": "Beverages, tea, green, ready-to-drink, sweetened",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174128/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171888",
+    "name": "即饮含糖柠檬红茶",
+    "aliases": [
+      "含糖柠檬红茶"
+    ],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 45,
+      "proteinG": 0,
+      "fatG": 0.22,
+      "carbsG": 10.8
+    },
+    "source": {
+      "fdcId": 171888,
+      "description": "Beverages, tea, black, ready-to-drink, lemon, sweetened",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171888/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-171892",
+    "name": "低热量柠檬红茶饮料",
+    "aliases": [],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 1,
+      "proteinG": 0,
+      "fatG": 0,
+      "carbsG": 0.22
+    },
+    "source": {
+      "fdcId": 171892,
+      "description": "Beverages, tea, black, ready-to-drink, lemon, diet",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/171892/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-169947",
+    "name": "菠萝汁（无额外糖）",
+    "aliases": [
+      "菠萝汁"
+    ],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 53,
+      "proteinG": 0.36,
+      "fatG": 0.12,
+      "carbsG": 12.87
+    },
+    "source": {
+      "fdcId": 169947,
+      "description": "Pineapple juice, canned or bottled, unsweetened, without added ascorbic acid",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/169947/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174116",
+    "name": "甜椰乳饮料（强化）",
+    "aliases": [
+      "甜椰乳饮料"
+    ],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 31,
+      "proteinG": 0.21,
+      "fatG": 2.08,
+      "carbsG": 2.92
+    },
+    "source": {
+      "fdcId": 174116,
+      "description": "Beverages, coconut milk, sweetened, fortified with calcium, vitamins A, B12, D2",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174116/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-173187",
+    "name": "无糖巧克力杏仁奶（强化）",
+    "aliases": [
+      "无糖巧克力杏仁奶"
+    ],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 21,
+      "proteinG": 0.83,
+      "fatG": 1.46,
+      "carbsG": 1.25
+    },
+    "source": {
+      "fdcId": 173187,
+      "description": "Beverages, chocolate almond milk, unsweetened, shelf-stable, fortified with vitamin D2 and E",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/173187/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-168751",
+    "name": "香草杏仁奶（加糖）",
+    "aliases": [
+      "甜香草杏仁奶"
+    ],
+    "state": "ready",
+    "category": "饮品",
+    "nutrientsPer100g": {
+      "energyKcal": 38,
+      "proteinG": 0.42,
+      "fatG": 1.04,
+      "carbsG": 6.59
+    },
+    "source": {
+      "fdcId": 168751,
+      "description": "Beverages, almond milk, sweetened, vanilla flavor, ready-to-drink",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/168751/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172819",
+    "name": "黄油曲奇",
+    "aliases": [
+      "黄油饼干"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 467,
+      "proteinG": 6.1,
+      "fatG": 18.8,
+      "carbsG": 68.9
+    },
+    "source": {
+      "fdcId": 172819,
+      "description": "Cookies, butter, commercially prepared, unenriched",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172819/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172725",
+    "name": "燕麦饼干",
+    "aliases": [],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 450,
+      "proteinG": 6.2,
+      "fatG": 18.1,
+      "carbsG": 68.7
+    },
+    "source": {
+      "fdcId": 172725,
+      "description": "Cookies, oatmeal, commercially prepared, regular",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172725/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172716",
+    "name": "巧克力豆曲奇（强化）",
+    "aliases": [
+      "巧克力豆曲奇"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 492,
+      "proteinG": 5.1,
+      "fatG": 24.72,
+      "carbsG": 65.36
+    },
+    "source": {
+      "fdcId": 172716,
+      "description": "Cookies, chocolate chip, commercially prepared, regular, higher fat, enriched",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172716/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172727",
+    "name": "花生酱饼干",
+    "aliases": [],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 473,
+      "proteinG": 8.92,
+      "fatG": 23.82,
+      "carbsG": 58.15
+    },
+    "source": {
+      "fdcId": 172727,
+      "description": "Cookies, peanut butter, commercially prepared, regular",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172727/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172746",
+    "name": "苏打饼干",
+    "aliases": [
+      "梳打饼干"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 418,
+      "proteinG": 9.46,
+      "fatG": 8.64,
+      "carbsG": 74.05
+    },
+    "source": {
+      "fdcId": 172746,
+      "description": "Crackers, saltines (includes oyster, soda, soup)",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172746/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-169677",
+    "name": "原味薯片（加盐）",
+    "aliases": [
+      "原味薯片",
+      "薯片"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 532,
+      "proteinG": 6.39,
+      "fatG": 33.98,
+      "carbsG": 53.83
+    },
+    "source": {
+      "fdcId": 169677,
+      "description": "Snacks, potato chips, plain, salted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/169677/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-170649",
+    "name": "原味薯片（无盐）",
+    "aliases": [
+      "无盐薯片"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 536,
+      "proteinG": 7,
+      "fatG": 34.6,
+      "carbsG": 52.9
+    },
+    "source": {
+      "fdcId": 170649,
+      "description": "Snacks, potato chips, plain, unsalted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/170649/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-167555",
+    "name": "椒盐脆饼",
+    "aliases": [
+      "椒盐饼干"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 384,
+      "proteinG": 10.04,
+      "fatG": 2.93,
+      "carbsG": 80.39
+    },
+    "source": {
+      "fdcId": 167555,
+      "description": "Snacks, pretzels, hard, plain, salted",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/167555/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172706",
+    "name": "海绵蛋糕",
+    "aliases": [],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 290,
+      "proteinG": 5.4,
+      "fatG": 2.7,
+      "carbsG": 61
+    },
+    "source": {
+      "fdcId": 172706,
+      "description": "Cake, sponge, commercially prepared",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172706/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172711",
+    "name": "芝士蛋糕",
+    "aliases": [
+      "奶酪蛋糕"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 321,
+      "proteinG": 5.5,
+      "fatG": 22.5,
+      "carbsG": 25.5
+    },
+    "source": {
+      "fdcId": 172711,
+      "description": "Cake, cheesecake, commercially prepared",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172711/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-172713",
+    "name": "布朗尼",
+    "aliases": [
+      "巧克力布朗尼"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 405,
+      "proteinG": 4.8,
+      "fatG": 16.3,
+      "carbsG": 63.9
+    },
+    "source": {
+      "fdcId": 172713,
+      "description": "Cookies, brownies, commercially prepared",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/172713/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-174990",
+    "name": "原味甜甜圈（蛋糕型）",
+    "aliases": [
+      "原味甜甜圈"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 434,
+      "proteinG": 5.31,
+      "fatG": 24.93,
+      "carbsG": 47.06
+    },
+    "source": {
+      "fdcId": 174990,
+      "description": "Doughnuts, cake-type, plain (includes unsugared, old-fashioned)",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/174990/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-169595",
+    "name": "烤蛋奶布丁",
+    "aliases": [
+      "蛋奶布丁"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 104,
+      "proteinG": 5.02,
+      "fatG": 4.58,
+      "carbsG": 11
+    },
+    "source": {
+      "fdcId": 169595,
+      "description": "Desserts, egg custard, baked, prepared-from-recipe",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/169595/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-167574",
+    "name": "焦糖布丁",
+    "aliases": [
+      "焦糖蛋奶布丁"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 145,
+      "proteinG": 4.53,
+      "fatG": 4.03,
+      "carbsG": 22.78
+    },
+    "source": {
+      "fdcId": 167574,
+      "description": "Desserts, flan, caramel custard, prepared-from-recipe",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/167574/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-169614",
+    "name": "木薯布丁",
+    "aliases": [],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 130,
+      "proteinG": 1.95,
+      "fatG": 3.88,
+      "carbsG": 21.69
+    },
+    "source": {
+      "fdcId": 169614,
+      "description": "Puddings, tapioca, ready-to-eat",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/169614/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
+  },
+  {
+    "id": "fdc-167577",
+    "name": "橙味雪葩",
+    "aliases": [
+      "橙味冰沙甜点"
+    ],
+    "state": "ready",
+    "category": "零食",
+    "nutrientsPer100g": {
+      "energyKcal": 144,
+      "proteinG": 1.1,
+      "fatG": 2,
+      "carbsG": 30.4
+    },
+    "source": {
+      "fdcId": 167577,
+      "description": "Sherbet, orange",
+      "dataset": "USDA SR Legacy",
+      "version": "2018-04",
+      "publicationDate": "2019-04-01",
+      "url": "https://fdc.nal.usda.gov/food-details/167577/nutrients",
+      "downloadUrl": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip"
+    }
   }
 ];

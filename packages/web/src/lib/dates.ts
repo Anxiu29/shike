@@ -13,10 +13,15 @@ export function dateLabel(value: string): string {
   return date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })
 }
 
-export function numberLabel(value: number | null | undefined, digits = 0): string {
-  return value == null ? '待补充' : value.toLocaleString('zh-CN', { maximumFractionDigits: digits })
+export function numberLabel(value: number | null | undefined, digits = 2): string {
+  return value == null ? '待补充' : value.toLocaleString('zh-CN', { maximumFractionDigits: Math.min(2, Math.max(0, digits)) })
 }
 
 export function rangeLabel(range: { min: number; max: number } | null | undefined): string {
-  return range ? `${numberLabel(range.min, 1)}–${numberLabel(range.max, 1)}` : '待补充'
+  return range ? `${numberLabel(range.min)}–${numberLabel(range.max)}` : '待补充'
+}
+
+/** 输入框不加千分位。仅格式化显示，避免四舍五入破坏区间中值和历史快照。 */
+export function inputNumberLabel(value: number | null | undefined): string {
+  return value == null ? '' : value.toLocaleString('en-US', { maximumFractionDigits: 2, useGrouping: false })
 }
