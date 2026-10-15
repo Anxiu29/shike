@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.npm-cache/
+.data-cache/
+.playwright/
+coverage/
+test-results/
+playwright-report/
+.env
+.env.*
+*.env
+!.env.example
+*.log
+.DS_Store
