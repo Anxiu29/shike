@@ -1,5 +1,19 @@
 # 食刻 AI 模型调用教学
 
+0.10.0-test新增文字记餐助手，复用模型平台但独立JSON契约：模型只解析描述，营养查本地库，未知重量由代码填参考份量。[完整调用与保存流程](meal-assistant.md)。
+
+0.9.9-test新增DeepSeek官方`deepseek-flash`视觉模型，共六个平台十个选项；显式关闭思考，使用内联图片与JSON Object。[DeepSeek教学](deepseek.md)。
+
+0.9.8-test新增硅基流动与OpenRouter适配器、百炼`qwen3-vl-plus`，共五个平台九个模型。新平台的固定端点、参数、免费类型与操作说明见[免费视觉模型教学](free-vision-models.md)；新增型号尚未真实账号调用。
+
+0.7.0 可在识别面板手动切换已配置模型；网页只得到模型元数据，Android 只读取本机加密配置的元数据，不返回 Key。切换不调用模型，失败不自动改选。AI 允许付费，自建云端入口暂时关闭。条码查询走独立免费的 [Open Food Facts API](open-food-facts.md)，不调用视觉模型。
+
+0.6.0 增加包装分支：同一次视觉请求可输出 `packageLabel` 原标注，包装不要求三档，也不使用同名基础食物替换。模型抄表，代码换算 kJ、每份及实际摄入量；无法读清则留空。原标签与消费快照的完整字段、优先级和实现见 [包装食品教学](packaged-food.md)。下文的每 100 g 三档规则适用于普通餐食。
+
+安卓 0.3.0 新增默认的手机自配 Key，多提供商、多配置可手动切换，无需自建后端；密钥存储、原生 HTTP 和操作教程见 [手机多模型教学](personal-models.md)。以下后端调用流程仍适用于普通网页或“连接食刻服务”模式。
+
+后端连接模式补充：App 从内置页面启动，`lib/connection.ts` 将 HTTPS 服务地址与短期访问令牌留在本机；`lib/api.ts` 将固定 `/api/` 路径拼接到所选来源，只向该服务发送 Bearer 令牌，不跟随重定向。供应商 Key 仍只在后端。照片请求最多等待 70 秒，云端识别 45 秒，额度检查另留时间。云端的访问码、CORS、OSS 原子日限额与实际部署步骤见 [独立手机版部署教学](cloud-deployment.md)。
+
 这份文档配合 `packages/server/src/vision/` 阅读。视觉模型在一次请求中回答名称、可食重量、可见配料、不确定性，以及每 100 g 营养的低、中、高三种范围情景和具体假设。页面优先使用可信数据库或已有配方，仅在缺少可靠匹配时使用明确标注的 AI 粗估，默认采用中档范围的中值，再按重量计算整份营养。照片无法直接测量隐藏的油量，也无法保证重量准确；用户可检查编辑后直接点击“保存记录”，不再要求额外勾选“我已核对”。保存仍保留估算、模拟来源和缺失值，不把点击保存当作营养实测证明。
 
 ## 1. 一次识别经历了什么
@@ -50,13 +64,13 @@ if (!response.ok) throw new Error(payload.error.message);
 ```ts
 interface VisionService {
   readonly mode: 'live' | 'mock';
-  readonly provider: 'gemini' | 'glm' | 'mock';
+  readonly provider: 'gemini' | 'glm' | 'qwen' | 'mock';
   readonly model: string;
   recognize(image: { data: Buffer; mimeType: 'image/jpeg' }): Promise<RecognitionResult>;
 }
 ```
 
-`buildApp()` 只依赖这个接口，供应商差异集中在 `gemini.ts` 和 `glm.ts`。所以更换模型时，页面和饮食记录都不需要修改。测试可以注入假的 Service，稳定验证 API 故障而不消耗免费额度。
+`buildApp()` 只依赖这个接口，供应商差异集中在 `gemini.ts`、`glm.ts` 和 `qwen.ts`。业务页面和营养计算不依赖上游接口格式；新增供应商时，也要同步扩展共享的 provider 白名单、设置页名称和备份校验测试。测试可以注入假的 Service，稳定验证 API 故障而不消耗免费额度。
 
 项目没有接受前端传入的模型名、提示词或上游 URL。这样用户上传文件时就不能把后端当作通用模型代理，也不会意外选到收费模型。
 
@@ -122,6 +136,11 @@ GEMINI_API_KEY=你自己在本机填写的密钥
 # 切换国内 GLM 时修改上述 provider，并配置这一项
 # AI_PROVIDER=glm
 # ZHIPU_API_KEY=你自己在本机填写的智谱密钥
+
+# 切换百炼时修改 provider，使用北京区通用 API Key
+# AI_PROVIDER=qwen
+# DASHSCOPE_API_KEY=你自己在本机填写的百炼密钥
+# QWEN_MODEL=qwen3.7-flash
 ```
 
 三种模式的含义：
@@ -132,7 +151,35 @@ GEMINI_API_KEY=你自己在本机填写的密钥
 
 配置 Gemini 密钥却把 `AI_PROVIDER` 改成 `glm` 时，auto 会检查智谱密钥，不会借用 Gemini 密钥。真实调用出现故障不会偷偷切换成模拟结果。
 
-GLM 使用 `https://open.bigmodel.cn/api/paas/v4/chat/completions`、`Authorization: Bearer ...`、固定 `glm-4.6v-flash`；图片包装为 `image_url` 的 data URL，关闭额外思考。响应读取 `choices[0].message.content`，再进入同一解析器。首版对 GLM 不假设原生结构化输出一定可用，由提示词约束和本地 Zod 共同把关。[智谱官方模型文档](https://docs.bigmodel.cn/cn/guide/models/free/glm-4.6v-flash)
+GLM 使用 `https://open.bigmodel.cn/api/paas/v4/chat/completions`、`Authorization: Bearer ...`、白名单 `glm-4.1v-thinking-flash`、`glm-4.6v-flash`、`glm-4.6v-flashx`；图片包装为 `image_url` 的 data URL。4.6V与付费FlashX关闭额外思考，4.1V保留内置思考，按完整think/answer标签读取最终答案。响应须正常结束，再进入同一解析器。首版对 GLM 不假设原生结构化输出一定可用，由提示词约束和本地 Zod 共同把关。[智谱官方模型文档](https://docs.bigmodel.cn/cn/guide/models/free/glm-4.6v-flash)
+
+### 百炼 Qwen 是怎么调用的
+
+`vision/qwen.ts` 使用北京区通用兼容端点 `https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions`，通过 `Authorization: Bearer ...` 传密钥。固定白名单为 `qwen3.7-flash`、`qwen3.8-flash`、`qwen3.7-plus`，默认第一个；上传页面不能选择其他模型、提示词或 URL。[地域与密钥说明](https://help.aliyun.com/zh/model-studio/get-api-key)
+
+下面是后端请求体的教学摘录，完整超时和错误处理见实际 Service：
+
+```ts
+{
+  model: 'qwen3.7-flash',
+  enable_thinking: false,
+  max_tokens: 8192,
+  response_format: { type: 'json_object' },
+  messages: [
+    { role: 'system', content: FOOD_PROMPT },
+    { role: 'user', content: [
+      { type: 'text', text: '识别照片中的食物，只输出JSON。' },
+      { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${jpeg.toString('base64')}` } },
+    ] },
+  ],
+}
+```
+
+Base64 图片只随这一次 HTTPS 请求发送，不创建 OSS 对象或供应商文件。没有设置 `tools` 或聊天历史，也不自动重试，从而避免隐含的工具及重复调用。关闭思考能减少额外用量，但不是免费保证。
+
+百炼官方说明视觉输入的 `json_schema` 会降级为 `json_object`，Schema 约束不生效，所以这里明确请求 JSON Object，再用固定提示词和本地 Zod 验证字段、数值和三档假设。Qwen 响应必须有 `finish_reason:'stop'`，只解析 `choices[0].message.content`，不解析 `reasoning_content`。即使 HTTP 200，也可能被截断、字段错误或缺少范围，必须显示失败并保留草稿。[结构化输出边界](https://help.aliyun.com/zh/model-studio/qwen-structured-output)
+
+单元测试的 fake fetch 不收费。需要手动真实对照时运行 `npm run test:vision:live -- --live`；没有 `--live` 会拒绝执行。脚本只发送固定的 Google 公开司康样图和程序生成的非食物图，每个已配置模型最多两次，不读取 `picture/`。它报告 HTTP 状态、结构校验、耗时和 token，脱敏摘要写入已忽略的 `artifacts/vision/model-smoke.json`，不保存原始响应。结构失败也可能消耗额度，超时的用量未知，不能记为零费用。该脚本不能替代有称重真值的准确率评测。
 
 `.env` 已被 Git 忽略，教学和示例文件只允许出现占位符。不能用 `VITE_GEMINI_API_KEY` 或 `VITE_ZHIPU_API_KEY`，因为 Vite 会把 `VITE_` 前缀变量打包进网页。此前旧智谱密钥曾进入本地 Git 历史；现已清理该文件的本地历史、旧恢复记录及敏感 Git 对象，本机配置保留。仅停止跟踪不足以清除旧版本；历史清理也不会让 API Key 失效，仍须在智谱控制台撤销旧密钥并换新。如有旧仓库副本，需要一并处理，避免重新带回敏感历史。[GitHub 官方处理说明](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository)
 

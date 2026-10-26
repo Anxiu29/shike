@@ -1,123 +1,113 @@
-# 前端教学：从照片到本地记录
+# 前端教学：对照代码追踪一次编辑与保存
 
-这篇文档说明食刻的前端实现。模型提供商切换与服务端请求格式见 [AI 调用教学](ai-models.md)。前端从不接收 API Key，也不直接请求 Google 或智谱的模型接口。
+项目全景先看 [开发指南](development-guide.md)。这里聚焦Vue状态、条目转换、本地事务与原生桥。当前IndexedDB结构版本5，JSON备份格式版本10。
 
-## 1. 代码从哪里开始
+## 1. 从App.vue理解状态和事件
 
-`packages/web/src/main.ts` 创建 Vue 应用并加载全局样式。`App.vue` 管理当前页面、选中日期、数据库记录、识别服务状态和编辑面板。
-
-界面按职责拆开：`DiaryView.vue` 汇总每天与每餐的已知营养；`FoodEditor.vue` 负责照片识别和确认编辑；`FoodPicker.vue` 负责食物分类、搜索和相近推荐；`WeightView.vue` 管理体重与 SVG 趋势；`SettingsView.vue` 负责备份、恢复和状态说明。`PlateArt.vue` 的餐盘是 SVG 插画，不是真实用户照片。
-
-## 2. 上传前如何压缩图片
-
-相机入口是带 `capture="environment"` 的文件输入；相册入口是不带 capture 的另一个输入。手机浏览器是否直接打开相机由系统决定，桌面会显示文件选择器。
-
-`lib/image.ts` 的 `compressImage(file)` 按以下步骤执行：
-
-1. 检查 MIME、空文件与 20 MB 原图上限。支持 JPEG、PNG、WebP，HEIC 提示先转换。
-2. 使用 `createImageBitmap()` 解码；超过 5,000 万像素时拒绝，减少内存占用风险。
-3. 用 canvas 把最长边缩到 1,280 px，在白色背景上重编码 JPEG。
-4. 逐步降低质量和尺寸，直到文件不超过 1 MB。失败时提供中文提示。
-5. 无论成功失败，释放 ImageBitmap。预览只使用内存 Object URL，关闭面板或换图时调用 `URL.revokeObjectURL()`。
-
-重编码后不会保留原始 EXIF。IndexedDB 与 JSON 备份只存记录，图片永远不进入本地数据库。
-
-## 3. 前端怎样请求 AI
-
-`lib/api.ts` 的 `recognizeImage()` 只请求自己的后端：
+[main.ts](../packages/web/src/main.ts)创建Vue应用，[App.vue](../packages/web/src/App.vue)持有页面数据和顶层状态：
 
 ```ts
-const form = new FormData()
-form.append('image', compressedFile)
-const response = await fetch('/api/recognitions', {
-  method: 'POST',
-  body: form,
-  signal: controller.signal,
-})
+const tab = ref<'diary' | 'weight' | 'goals' | 'settings'>('diary')
+const meals = ref<MealRecord[]>([])
 ```
 
-浏览器自动设置 multipart boundary，所以这里不能手动设置 `Content-Type`。开发时，Vite 把 `/api` 代理到本机 3001 端口；生产时，由 Node 后端提供同源接口与前端静态文件。
+ref变化会让依赖它的界面更新，脚本写meals.value，模板通常直接写meals。这是当前内存状态；保存的数据来自lib/db.ts。refresh读取本地后更新ref，checkHealth另行异步执行，断网不阻塞打开记录。
 
-请求有 50 秒客户端超时，服务端默认上游超时为 45 秒。若将 `AI_TIMEOUT_MS` 调高至超过 50 秒，需要同步调整前端超时，否则浏览器会先中止请求。响应通过共享 `recognitionResponseSchema` 再次校验。HTTP 错误使用服务端的中文错误消息，网络失败、超时与非法结构单独提示。错误不会切换成伪装的 Mock 成功。
+views是页面，components是可组合界面，lib放网络/存储/业务转换。当前用tab和v-if切页面，没有Vue Router或Pinia。KeepAlive只缓存目标页实例，不能当成全应用永久草稿存储。
 
-`/api/health` 只说明后端运行与模型配置；真实模型是否能调用，以识别请求为准。
+跟随模板的`:属性`与`@事件`阅读：FoodEditor收到record等props，发出save后由App.persist保存，成功再刷新/关闭，失败调用saveFailed保留草稿。子组件发事件表示意图，父层决定如何提交。
 
-## 4. 模型结果怎样变成营养记录
+## 2. 编辑中的数据为什么先复制
 
-一次视觉调用同时给出名称、估计重量、可见配料、不确定提示、每 100 g 营养粗估及配比假设。前端仍优先使用可靠的现有数据，避免模型覆盖已经核实的 USDA 营养值。`lib/entries.ts` 的匹配顺序是基础食物／参考配方、已确认的同名个人估算，最后才是本次模型粗估。
+[FoodEditor.vue](../packages/web/src/components/FoodEditor.vue)从历史记录复制items，防止取消编辑时已经改变原记录。识别候选、原模型名称/估重、弹窗筛选等临时数据单独留在内存。
 
-### 一张照片怎样匹配多种食物和各自重量
+- ref用于items、phase、saveBusy等可变化状态。
+- computed用于总营养、忙碌状态、当前弹窗条目，避免另存第二套推导结果。
+- watch用于跟随父层数据更新表单，或在日期改变时清理失效草稿。
 
-`lib/recognition.ts` 的 `prepareRecognition()` 遍历响应的 `foods`：每个视觉条目只创建一条记录，将同一项的 `estimatedWeightG` 原样传给匹配函数，不平均分配整盘重量，也不按数组位置另找重量。米饭 165.5 g、番茄炒蛋 240.25 g、香蕉 90 g 会分别进入三条记录。`visibleIngredients` 只用于配料说明和推荐，不把番茄炒蛋中的番茄、鸡蛋另存成两条饮食。
+先读processFile、runRecognition、selectFood、submit，再读它们调用的lib函数。模板中的事件可帮助反查按钮究竟调用哪个入口。
 
-`recognitionMatchName()` 先用名称和明确别名查库；如“一小碗白米饭”未命中，只去掉数量与容器描述，再尝试已有食物／配方／个人条目。不删除糖、油、生熟与酱料词，不因相似就把不同菜强行合并。“一杯半糖拿铁”不会自动改成无糖拿铁。库内匹配后显示规范名称，原始视觉名称保留在编辑器内存里供核对。
+## 3. 图片压缩与网络调用
 
-菜名确定、重量未知时也可以匹配配方：用配方参考份量建立每 100 g 数据，再将记录重量保留为 `null`。参考份量不作为默认摄入量，整份热量继续待补充，油档暂时禁用，直到用户填写正重量。明确的 0 g 与未知重量分开处理。
+[compressImage()](../packages/web/src/lib/image.ts)检查格式、空文件、20MB原图和解码像素上限，用Canvas将最长边缩到1280px、重编码JPEG，再调质量/尺寸达到1MB目标。ImageBitmap与预览Object URL需要释放；照片不进数据库和备份。
 
-识别结束会滚动到总览，显示食物数量、已匹配数量、带入估重数量，以及每项名称和当前重量。点击某项跳到其编辑卡片；卡片说明食物库／配方／AI 状态和原估重。修改一项只影响该项，原估重旁显示已调整；模型没提供重量时提示填写，填好后显示用户输入。删除用条目 ID 移除一项，保留其他项及其重量，避免删掉相邻食物。
+[recognizeImage()](../packages/web/src/lib/api.ts)是统一入口：网页FormData请求/api/recognitions；安卓直连模式交 [personal-vision.ts](../packages/web/src/lib/personal-vision.ts) 的Java插件。两条路返回同一RecognitionResponse，组件不用理解供应商协议。
 
-照片识别名称与原估重提示只在本次编辑器内存中；数据库保存最终名称、重量与营养快照。历史记录沿用已保存的最终数值，不在重新打开时再次估重或自动匹配。本次流程不额外请求模型。
+multipart不能手设Content-Type，否则可能丢失boundary。AbortController限制客户端等待70秒；网络失败、超时和非法JSON分别报错，响应再次通过共享Zod校验。真实失败不伪装成模拟成功。开发时Vite代理/api到3001，生产由Node同源提供网页和API。
 
-升级时有一个例外：旧个人条目没有三档，或其普通档热量缺失，而本次模型提供了有效的普通档热量范围，就先采用本次三档。只有用户确认保存后才按原 ID 升级个人库，不改变之前的餐食快照；本次也缺少热量范围时，不用不完整数据覆盖旧已知值。已经有有效三档的个人条目仍优先复用。
+服务端仍独立验证文件签名、MIME、2MB上传上限和像素，清洗后才交模型。详细路径见 [开发指南](development-guide.md#4-一张照片的完整调用链)。
 
-新模型结果优先提供三档区间，例如杂粮粥的无糖较稀、普通甜度、糖多浓稠；油量不确定的菜提供少油、普通、多油。每档分别包含每 100 g 热量和三大营养素范围、假设与说明。默认选中档，使用每个范围的中值记账，切档只进行本地计算，不会额外调用模型。
+## 4. 响应怎样变成编辑条目
 
-例如 300 g 杂粮粥的中档是每 100 g 60–90 kcal，整份区间是 180–270 kcal，中值记录 225 kcal。高档若为 90–120 kcal / 100 g，整份区间变为 270–360 kcal，中值记录 315 kcal。改变重量只缩放整份区间，每 100 g 区间不变。区间是基于配料假设的粗略估算，不能理解为经过统计校准的置信区间。
+[prepareRecognition()](../packages/web/src/lib/recognition.ts)每遍历一项模型食品，创建一条草稿，重量随同一条目传递，不平均盘子重量，也不将混合菜配料重复记账。
 
-兼容旧模型单值响应：若只有每 100 g 50 kcal、份量 200 g，仍显示约 100 kcal，不凭空补出三档范围。模型无法估计时保留 `null`，不会为了显示数字编造零值。
+有包装标签先建立包装快照；普通条目交 [matchedEntry()](../packages/web/src/lib/entries.ts)，依次考虑配方、基础库、同名个人估算和本次AI粗估。旧个人单值没有有效热量三档时，本次有效三档可优先，最终保存才升级库条目，历史餐食不变。
 
-`recognitionEstimate()` 把候选封装成独立来源快照，候选只在编辑器内存中。`matchedEntry()` 决定默认计算数据；可靠库匹配存在时，本次 AI 候选仍保留在“选择食物”弹窗的“本次识别”分类，可主动切换。AI 条目持续标为“AI 估算”或“个人估算库 · AI 粗估”，并可展开查看假设、模型提供商和模型名称。
+recognitionMatchName可去“一小碗”等数量/容器词，但保留生熟、糖、油、酱料差异。规范名称用于条目，原视觉名称留context供核对。
 
-### 食物弹窗如何搜索和推荐
+当前入口再用 [applyTypicalPortion()](../packages/web/src/lib/typical-portions.ts) 为首次未知量补带标记的常见份量。已有量、明确0不覆盖，历史加载/备份恢复不补值。底层保留未知、上层可补假设，是两个阶段。
 
-`lib/food-picker.ts` 为 5,675 条食物参考（472 条 USDA SR Legacy + 5,203 条 FNDDS）与 60 个可调配方建立本地浏览索引；再加入个人库、本次 AI 候选和已从库中移除的历史快照。索引保留原营养数据，不生成新的营养值。食物按主食、熟食菜肴、汤羹、肉类等 13 类浏览，另有家常菜、轻食早餐、我的食物、本次识别和当前记录分类，有数据时才显示。配方可通过可选 `category` 指定分类，未填写时归家常菜。FNDDS 候选标为“膳食参考”，未明确烹调状态的候选显示“请核对做法”；选择后保存原始数据集、版本、FDC ID、原文与提示，避免把美国调查配方当作该份餐食的实测营养。
+recognitionEstimate把模型营养封装为候选，可靠库已匹配时仍允许从“本次识别”主动选择它。候选不等于默认采用数据。改成另一种食品时rematchRenamedEntry清除旧依据；仅空白/括号差异保留，明确手填营养允许保留。
 
-`isEverydayFood()` 控制默认浏览范围：生肉、生蛋、需烹调的蔬菜和干米干面等原料默认隐藏；黄瓜、生菜、水果等即食食物保留。开启“包含生重／干重食材”后显示全部，当前历史已选项始终可见。过滤只影响弹窗列表与推荐，不修改基础库、配方引用或历史记录。
+## 5. 食品库、搜索、收藏与手动填写
 
-`searchFoodChoices()` 同时筛选分类和关键词，搜索中文名称、别名、食物原始英文描述和配方配料。例如“西红柿 鸡蛋”会匹配含这两种配料的参考菜；“西红柿／番茄”“马铃薯／土豆”等同义写法只在搜索层归一，不放宽自动识别的精确匹配规则。无结果时可切回全部分类、清空搜索或手动填写。列表先展示 60 项，点击继续查看后追加，搜索或切分类时重置数量。搜索文本和推荐所需的字对、配料标签通过 WeakMap 缓存，避免输入一个字就重复生成五千条索引；共享计算层也用名称与 ID 的 Map 查询食物，保留常用条目的优先级。
+[buildFoodChoices()](../packages/web/src/lib/food-picker.ts)合并公共精简库、配方、个人估算、包装、个人食品、AI候选与当前历史快照。
 
-`recommendFoodChoices()` 读取本次识别的名称与可见配料，按精确名称／别名、名称包含、中文相邻字对、配料标签和同类菜排序，最多展示 6 项。熟食会降低生重／干重候选的排名，避免把一碗粥直接当干燕麦。排序是启发式相关性，不是视觉概率或营养准确率；没有足够线索时返回空列表。推荐不调用 AI、不额外消耗额度，也不会自动修改条目。识别配料只留在编辑器内存，编辑历史时按记录名称推荐。
+searchFoodChoices允许别名、原文、配料和同义词检索，不放宽自动匹配规则。recommendFoodChoices按名称和可见配料本地排序，最多6项；没有线索可不推荐。它不请求模型、不自动替换食品，也不是识别概率。
 
-`FoodPicker.vue` 用 Teleport 打开独立弹窗。手机为全屏、分类横向滚动；桌面为左侧分类与右侧列表。内部拦截 Escape 和 Tab，打开时将编辑器设为 inert，防止键盘落到后面的表单；返回后恢复入口按钮焦点。关闭或取消只销毁弹窗的筛选状态，保留原草稿。
+Map/WeakMap缓存ID查询和搜索文本，避免每次输入重建全库索引；[FoodPicker.vue](../packages/web/src/components/FoodPicker.vue)按60项追加渲染。生肉、生蛋和待烹调干料默认隐藏，可主动开启；当前历史项仍能展示。
 
-点击候选才触发 `FoodEditor.vue` 的 `selectFood()`：调用已有食物／配方／个人库工厂创建新营养快照，保留记录 ID 与可食重量；再次选择当前项只返回，不重置自定义油量或选档。重量为空时也不替用户编一个重量。点击“手动填写”打开营养输入，转为手动数据后清除旧估值；找不到食物时仍允许保留缺失值。
+点食品才选择，星标只收藏。toggleFoodFavorite按稳定选择ID切换，公共库取消收藏删副本，个人食品只关收藏标记。公共库项将来移除，收藏时快照仍可用。
 
-修改名称后，`rematchRenamedEntry()` 比较规范化名称并重新匹配。旧名称的 AI 候选及营养假设会被移除，避免把杂粮粥的估算按燕麦片的名字存入个人库；找不到新依据时恢复为待补充。空白或括号等写法变化保留数据，用户明确手填的营养值也保留。重新选择依据后会更新名称比较基准，避免连续纠正名称时遗漏匹配。
+FoodEditor.storeFood调 [saveLibraryFood()](../packages/web/src/lib/db.ts) 显式存完整快照，与保存一餐独立。忽略ID后完整内容相同才去重，同名不同配方/档位/份量可并存，模拟来源不可存。entryForFoodChoice再添加时深拷贝并生新ID，不改库和旧餐食。
 
-用户可以更换食物、修改可食重量、配方配料克数或每 100 g 营养表。“知道确定热量？”会展开确定数值输入，例如每 100 g 输入 80 kcal，300 g 就记录 240 kcal。手动输入时撤销该条目的区间、选档、AI 营养快照与旧引用，来源改为手动数据；其他未修改的营养字段保留当时显示值，可能仍含估算，中值不会再自动覆盖确定输入。
+[ManualFoodSheet.vue](../packages/web/src/components/ManualFoodSheet.vue)当前先开食品库，再允许手填。确认后发add给父编辑器，取消不留空条目，最终保存一餐才进历史。手填营养时未填字段保持未知，不从其他来源补齐。
 
-本地参考配方也提供用油三档，仍由 USDA 配料数据计算。切换油档会同步配方快照中的油克数，只累计油一次。手动编辑配料或油量代表采用用户自己的具体配比，撤销该条目的范围；整体改变重量只缩放同一配比，保留选档和每 100 g 区间。先清空总重再填写仍以快照基准正确缩放。
+## 6. 份量、容量、三档和精度
 
-纠正名称为另一种食物时会重新匹配，清除原模型的候选、假设与区间，防止把粥的估算存成燕麦片。仅空白或括号差异视作同名；用户已手动填写的营养值允许随名称修正保留。
+[PortionAmountInput.vue](../packages/web/src/components/PortionAmountInput.vue)是受控组件：props接收amount/basis/portion，change事件交父层更新。[portions.ts](../packages/shared/src/portions.ts)计算数量×单份大小，例如2个×80g=160g；大小是假设而非标准实测。
 
-记账总量由共享 `calculateNutrients()` 和 `aggregateNutrients()` 计算。`aggregateEnergyRanges()` 另外把已选档的整份上下限相加；确定单值在汇总内部按相同上下限加入，不为旧单值记录伪造单独的区间。缺失项目不当作零，每日显示可计算部分区间与缺失数量。Mock 识别结果以 `mode: 'mock'` 保存，历史卡片和每日总览持续显示模拟标识。
+已有重量切“个/碗”先保留总量，再核对数量和大小；g切mL清空旧数值，不能默认密度1。包装由 [PackageLabelEditor.vue](../packages/web/src/components/PackageLabelEditor.vue) 按标签g/mL/份/包换算，缺失量仍未知。
 
-### 数字为什么只显示最多两位小数
+普通条目换重与配方缩放交entries.resizeEntry，避免一道菜和配料双计。三档用共享applyEstimateLevel，取选中档每100g范围中值；换重缩放整份范围，切档不请求模型。油档替换原油；手改确定营养或具体配料撤销不再适用的范围。
 
-`lib/dates.ts` 的 `numberLabel()` 和 `rangeLabel()` 统一把热量、范围、营养和体重格式化为最多两位，不补尾零，例如 12、12.3、12.35。`inputNumberLabel()` 对输入框执行相同显示规则，但不加千分位，避免 number 输入出现非法格式。
+[calculateNutrients()](../packages/shared/src/nutrition.ts)算单条，aggregateNutrients汇总known/missing，entries.aggregateEnergyRanges另汇总区间。旧单值可在汇总中作相同上下限，但不为它伪造三档。dates.ts只控制显示最多两位，内部保留完整精度。
 
-格式化不改写原值。配方缩放、中值和历史快照仍保留完整精度，反复打开编辑器不会将油量从 10.75258 g 截成 10.75 g 后再累计误差。用户主动修改的数字通过 `inputNumber()` 四舍五入至两位；修改营养或具体配料时撤销旧范围，修改总重量仍保留所选档位并缩放。表单步长统一为 0.01。
+## 7. 事务保存与备份
 
-## 5. 本地保存与备份为何可靠
+[saveMeal()](../packages/web/src/lib/db.ts)校验后，将餐食、符合条件的个人AI估算及当日计划放同一事务，全部成功才提示已保存。未保存候选、Mock、手填营养、已用可靠库的条目不进入自动估算表。
 
-`lib/db.ts` 的 `ShikeDatabase` 使用 Dexie 封装 IndexedDB。饮食以 ID 为主键，体重以日期为主键，目标体重保存在 preferences 中。同一天的体重使用 put 更新，不增加第二条。数据库版本 2 新增独立的 `estimatedFoods` 表；升级保留版本 1 的饮食、体重和设置。
+JSON转换用于剥离Vue Proxy；只因这些领域数据仅含JSON值才适用，不能当成处理任意Date/Map/循环引用的通用复制。数据库结构5包含9张表，备份10可读1～10，两种版本独立演进。
 
-保存先用共享 Zod schema 验证，再把 Vue 代理转换为普通 JSON 数据，防止 IndexedDB 的结构化克隆错误。界面等事务完成之后才关闭编辑器和提示成功。磁盘不足、存储权限或验证错误发生时，保留编辑草稿。
+恢复先校验结构、日期、重复主键/名称和跨字段算术，预览后确认整体替换；清空与回填在同一事务，失败回滚。恢复不重新执行saveMeal生成估算库，也不重算营养。照片、模型Key和访问凭证不进备份。
 
-用户点击“保存记录”后，真实识别记录中实际采用非 Mock 的 AI 估算才写入个人估算库。不再要求“我已核对”复选框，相关勾选状态与保存门槛已删除；保存不表示数值经过测量。未保存、关闭面板、模拟结果、手工营养和已经采用 USDA／配方的条目都不会写入。个人估算写入与饮食保存在同一事务中，任一失败会一起回滚。
+origin决定本地数据空间，协议、主机和端口变化都可能换库；手机/电脑、localhost/127.0.0.1不自动共享记录。
 
-同规范化精确名称更新一条个人估算，保留 ID 与最初创建时间。规范化只处理空白、括号与大小写，不删除“生”“熟”“糖”“酱”等重要词。完整三档资料、最近确认档位和当时中值一起存入库；新的同名餐默认重新选择中档，不能把上次少糖自动套给下一碗。编辑已保存的历史记录则保留原来的档位和范围。同名复用始终带有未经测量的 AI 标签；导入的 Mock 估算也不参与真实匹配。设置页面可查看和删除个人估算。
+## 8. 日期、同步、弹窗与返回入口
 
-记录存的是当时的营养数值、完整范围资料、选档、配方及 AI 假设快照；更新内置数据库、更新或删除个人估算库都不会重算历史。旧记录没有区间资料时保持原单值。
+- [DateField.vue](../packages/web/src/components/DateField.vue)：modelValue与临时selected分开，确定才提交，取消不清空；AppSheet恢复焦点；保存本地YYYY-MM-DD，不用UTC截断代替。
+- [synced-draft.ts](../packages/web/src/lib/synced-draft.ts) 和 [GoalsView.vue](../packages/web/src/views/GoalsView.vue)：未改字段接收新值，已改字段留草稿，保存只交变化字段，事务合并最新设置。目标/体重/预算共用weightOnDate。
+- [AppSheet.vue](../packages/web/src/components/AppSheet.vue)：Teleport、dialog、焦点循环、背景滚动锁、visualViewport与busy关闭保护；安全区和短视口样式在style.css。
+- [back-navigation.ts](../packages/web/src/lib/back-navigation.ts)：最上层有效层优先，异步关闭防重复；KeepAlive失活暂停层。App处理页面历史及首页二次返回退后台。
+- [DailyWellness.vue](../packages/web/src/components/DailyWellness.vue) 与 [PushupQuickEntry.vue](../packages/web/src/components/PushupQuickEntry.vue)：独立内存草稿、预览、事务保存与撤销；手环差额/运动公式委托shared，不在组件复制公式。
 
-导出版本 2 包含 `schemaVersion: 2`、导出时间、饮食、体重、目标设置和 `estimatedFoods`。旧版本 1 备份可直接导入，自动转换为版本 2 的空个人估算库。导入先验证完整结构、实际日期、数值范围、重复主键及重复估算名称，再显示饮食、体重与个人估算数量让用户确认。最终清空和恢复四张表在同一事务内完成；中途失败会回滚，保留原数据。
+这些文件头和关键函数旁已保留局部文档中的理由、约束和回归入口。公式来源见 [wellness.md](wellness.md)，设备实测步骤见 [android-app.md](android-app.md)。
 
-本地数据绑定浏览器与站点 origin。开发端口、生产地址、http／https、无痕窗口和另一台设备的存储相互独立；地址改变后可以用备份迁移。浏览器清理数据会删除记录，应定期导出。
+## 9. 用测试验证是否读懂
 
-## 6. 如何继续开发与验证
+用Mock走一遍添加、取消、确认、保存、刷新，观察哪一步才写数据库，再读对应测试：
 
-从项目根目录执行 `npm run dev`。前端类型检查使用 `npm run typecheck -w @shike/web`；根目录 `npm test` 包含前端纯函数测试，以及使用 fake-indexeddb 模拟 IndexedDB 事务的单元测试。真实浏览器中的存储流程由端到端测试验证。
+- 条目与估算：web/tests/entries.test.ts、recognition.test.ts、FoodEditor.test.ts。
+- 食品库：food-picker.test.ts、food-library.test.ts、ManualFoodSheet.test.ts。
+- 事务兼容：storage.test.ts、backup-file.test.ts、wellness-storage.test.ts。
+- 日期同步返回：DateField.test.ts、profile-sync.test.ts、back-navigation.test.ts。
+- 实际页面：tests/e2e/mobile-editor.spec.ts、food-library.spec.ts、interaction.spec.ts。
 
-前端测试覆盖独立快照、同日体重更新、无名食物拒绝、模拟标识备份、重复主键拒绝和恢复失败回滚，以及配方缩放、零油量、缺失传播、图片格式／大小边界和日历跨月。新增测试验证可靠数据优先、库外 AI 热量、模型不可估、确认后入库、Mock 不入库、同名更新、事务回滚、旧备份转换和 IndexedDB 升级。范围组件测试验证默认中档、切档、重量、确定值覆盖、历史选档、同名新餐回到中档、油配料同步及手动改油撤销范围。食物弹窗测试验证分类加关键词、配料推荐、生熟排除、没有线索时不推荐、分批加载、手动填写、保留重量和再次选择不重置油量。端到端测试验证实际页面上的识别编辑保存、刷新恢复、历史切换、体重目标与备份，以及弹窗键盘焦点、取消返回、分类搜索与选中保存。
+```powershell
+npm run typecheck
+npm test
+npm run build
+node scripts/test-e2e.mjs food-library.spec.ts profile-sync.spec.ts calendar.spec.ts
+```
 
-重要按钮和字段有 `data-testid`，例如 `manual-add`、`gallery-input`、`food-name-0`、`food-source-0`、`food-picker`、`food-picker-search`、`food-category-蔬菜`、`food-option-食物ID`、`food-recommendation-食物ID`、`food-picker-manual`、`food-basis-0`、`food-calories-0`、`food-range-0`、`estimate-low-0`、`estimate-medium-0`、`estimate-high-0`、`use-known-energy-0`、`daily-range`、`ai-assumptions-0`、`save-meal`、`weight-input`、`save-weight`、`backup-input`、`confirm-restore`、`estimated-food-count`，便于自动化验证而不依赖视觉排版。`food-source-0` 现在是打开弹窗的按钮，当前选中 ID 放在 `data-source-id`，不再用 `selectOption()` 操作。
+data-testid是稳定测试入口，例如save-meal、food-picker-search、confirm-restore，避免依赖排版。模拟DOM、手机视口、原生桥模拟和APK资源检查验证不同层次；真实对焦、软键盘、系统手势与分享仍需真机。
