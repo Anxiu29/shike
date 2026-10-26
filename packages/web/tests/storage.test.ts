@@ -17,7 +17,7 @@ describe('本地记录与备份', () => {
     entry.packageSnapshot!.consumedUnit = 'package'; entry.packageSnapshot!.consumedAmount = 0.5; syncPackageEntry(entry)
     await saveMeal({ ...sample(), mode: 'live', items: [entry] }, database)
     const data = await loadData(database); expect(data.meals[0]!.mode).toBe('mock'); expect(data.estimatedFoods).toEqual([])
-    const backup = await exportBackup(database); expect(backup.schemaVersion).toBe(10)
+    const backup = await exportBackup(database); expect(backup.schemaVersion).toBe(11)
     await database.meals.clear(); await restoreBackup(backup, database)
     const restored = (await loadData(database)).meals[0]!.items[0]!
     expect(restored.weightG).toBeNull(); expect(restored.packageSnapshot!.label.energy!.unit).toBe('kJ'); expect(calculateNutrients(restored).energyKcal).toBeCloseTo(312.5 / 4.184)
@@ -63,7 +63,7 @@ describe('本地记录与备份', () => {
   })
   it('完整恢复写入失败时，事务回滚保留之前的数据', async () => {
     await saveMeal(sample(), database)
-    const restore: Backup = { schemaVersion: 10, libraryFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [], estimatedFoods: [], exportedAt: '2026-10-14T04:00:00.000Z', meals: [], weights: [{ date: '2026-10-13', weightKg: 75, updatedAt: '2026-10-14T04:00:00.000Z' }], settings: { targetWeightKg: 65 } }
+    const restore: Backup = { schemaVersion: 11, mealPhotos: [], libraryFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [], estimatedFoods: [], exportedAt: '2026-10-14T04:00:00.000Z', meals: [], weights: [{ date: '2026-10-13', weightKg: 75, updatedAt: '2026-10-14T04:00:00.000Z' }], settings: { targetWeightKg: 65 } }
     database.weights.hook('creating', () => { throw new Error('模拟存储已满') })
     await expect(restoreBackup(restore, database)).rejects.toThrow('模拟存储已满')
     expect(await database.meals.count()).toBe(1)
@@ -96,7 +96,7 @@ describe('个人 AI 估算库与确认保存', () => {
   it.each(['ai', 'manual'] as const)('恢复 %s 条目不一致的 live 标记时依据 Mock 快照纠正，且不额外生成个人估算', async (kind) => {
     const meal = aiMeal('mock'); meal.mode = 'live'
     meal.items[0]!.kind = kind
-    const backup: Backup = { schemaVersion: 10, libraryFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [], exportedAt: '2026-10-14T04:00:00.000Z', meals: [meal], weights: [], settings: { targetWeightKg: null }, estimatedFoods: [] }
+    const backup: Backup = { schemaVersion: 11, mealPhotos: [], libraryFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [], exportedAt: '2026-10-14T04:00:00.000Z', meals: [meal], weights: [], settings: { targetWeightKg: null }, estimatedFoods: [] }
     await restoreBackup(backup, database)
     const restored = (await loadData(database)).meals[0]!
     expect(restored.mode).toBe('mock')
@@ -132,7 +132,7 @@ describe('个人 AI 估算库与确认保存', () => {
   it('v2 导出恢复包含个人估算，恢复失败保留原估算', async () => {
     await saveMeal(aiMeal(), database)
     const backup = await exportBackup(database)
-    expect(backup.schemaVersion).toBe(10)
+    expect(backup.schemaVersion).toBe(11)
     expect(backup.estimatedFoods).toHaveLength(1)
     await database.estimatedFoods.clear()
     await restoreBackup(backup, database)
@@ -144,7 +144,7 @@ describe('个人 AI 估算库与确认保存', () => {
   it('旧 v1 JSON 自动转换成 v2，个人估算库为空', async () => {
     const old = { schemaVersion: 1, exportedAt: '2026-10-14T04:00:00.000Z', meals: [sample()], weights: [], settings: { targetWeightKg: null } }
     const converted = parseBackup(JSON.stringify(old))
-    expect(converted.schemaVersion).toBe(10)
+    expect(converted.schemaVersion).toBe(11)
     expect(converted.estimatedFoods).toEqual([])
     await restoreBackup(converted, database)
     expect(await database.meals.count()).toBe(1)

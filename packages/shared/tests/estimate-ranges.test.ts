@@ -109,12 +109,12 @@ describe('AI 三档范围与记账中值', () => {
     const entry = applyEstimateLevel(createEstimatedFoodEntry(food, 200), 'high');
     const current = backup(entry, { ...food, estimateLevel: 'high', nutrientsPer100g: { ...entry.nutrientsPer100g } });
     const parsed = backupSchema.parse(JSON.parse(JSON.stringify(current)));
-    expect(parsed.schemaVersion).toBe(10);
+    expect(parsed.schemaVersion).toBe(11);
     expect(parsed.meals[0]!.items[0]!.estimateLevel).toBe('high');
     expect(parsed.estimatedFoods[0]!.estimateProfile!.options).toHaveLength(3);
     const rice = createFoodEntry(findFood('米饭')!, 150);
     const oldV2 = backup(rice);
-    expect(backupSchema.parse(oldV2)).toEqual({ ...oldV2, schemaVersion: 10, libraryFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [] });
+    expect(backupSchema.parse(oldV2)).toEqual({ ...oldV2, schemaVersion: 11, mealPhotos: [], libraryFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [] });
     const { estimatedFoods: _foods, ...oldV1 } = oldV2;
     expect(backupSchema.parse({ ...oldV1, schemaVersion: 1 })).toEqual(backupSchema.parse(oldV2));
   });

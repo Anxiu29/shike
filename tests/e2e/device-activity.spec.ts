@@ -45,7 +45,7 @@ test('手环保留完整读数，无个人资料时不增加预算，更新和�
   await tab(page, 'settings'); const pending = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click();
   const stream = await (await pending).createReadStream(); if (!stream) throw new Error('没有备份流');
   const parts: Buffer[] = []; for await (const part of stream) parts.push(Buffer.from(part)); const buffer = Buffer.concat(parts), backup = JSON.parse(buffer.toString());
-  expect(backup.schemaVersion).toBe(10); expect(backup.exercises).toHaveLength(1);
+  expect(backup.schemaVersion).toBe(11); expect(backup.exercises).toHaveLength(1);
   expect(backup.exercises[0]).toMatchObject({ manualScope: 'day', deviceReading: 'active', minutes: null, activeKcal: 650, dayBudgetKcal: 650 });
   await tab(page, 'diary'); await page.getByTestId('open-exercise-history').click(); await page.getByTestId('delete-exercise').click();
   await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 0');

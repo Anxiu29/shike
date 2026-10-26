@@ -33,7 +33,7 @@ test('免费条码查询、显式入库、摄入量重填、离线复用与删�
   await page.getByRole('button', { name: '关闭记录面板', exact: true }).click();
   await tab(page, 'settings'); const downloadPending = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); const stream = await (await downloadPending).createReadStream(); if (!stream) throw new Error('没有备份');
   const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk)); const buffer = Buffer.concat(chunks), backup = JSON.parse(buffer.toString());
-  expect(backup.schemaVersion).toBe(10); expect(backup.packagedFoods[0].source.license).toBe('ODbL-1.0'); expect(backup.meals[0].items[0].packageSnapshot.consumedAmount).toBe(0.5);
+  expect(backup.schemaVersion).toBe(11); expect(backup.packagedFoods[0].source.license).toBe('ODbL-1.0'); expect(backup.meals[0].items[0].packageSnapshot.consumedAmount).toBe(0.5);
   await page.getByTestId('manage-packaged-foods').click(); page.once('dialog', dialog => dialog.accept()); await page.getByTestId('delete-packaged-food').click(); await expect(page.getByTestId('packaged-library-row')).toHaveCount(0); await page.getByTestId('close-sheet').click();
   await tab(page, 'diary'); await expect(page.getByTestId('daily-calories')).toContainText('50');
   await tab(page, 'settings'); await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'catalog.json', mimeType: 'application/json', buffer }); await expect(page.getByTestId('backup-preview')).toContainText('1 项包装食品'); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');

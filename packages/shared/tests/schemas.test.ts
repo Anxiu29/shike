@@ -7,7 +7,7 @@ import {
 
 const timestamp = '2026-10-14T02:00:00.000Z';
 const backup = (): Backup => ({
-  schemaVersion: 10, libraryFoods: [], packagedFoods: [], exportedAt: timestamp, water: [], exercises: [], dailyPlans: [],
+  schemaVersion: 11, mealPhotos: [], libraryFoods: [], packagedFoods: [], exportedAt: timestamp, water: [], exercises: [], dailyPlans: [],
   meals: [{ id: 'meal-1', date: '2026-10-14', mealType: 'lunch',
     items: [createFoodEntry(findFood('米饭')!, 150)], mode: 'manual', createdAt: timestamp, updatedAt: timestamp }],
   weights: [{ date: '2026-10-14', weightKg: 65.5, updatedAt: timestamp }],
@@ -73,7 +73,7 @@ describe('共享结构校验', () => {
   });
   it('旧 v1 备份自动升级为 v2，旧 FoodEntry 保持原营养快照', () => {
     const data = backup();
-    const { libraryFoods: _libraryFoods, packagedFoods: _packagedFoods, estimatedFoods: _estimatedFoods, water: _water, exercises: _exercises, dailyPlans: _plans, ...old } = data;
+    const { mealPhotos: _photos, libraryFoods: _libraryFoods, packagedFoods: _packagedFoods, estimatedFoods: _estimatedFoods, water: _water, exercises: _exercises, dailyPlans: _plans, ...old } = data;
     const parsed = backupSchema.parse({ ...old, schemaVersion: 1 });
     expect(parsed).toEqual(data);
     expect(parsed.estimatedFoods).toEqual([]);

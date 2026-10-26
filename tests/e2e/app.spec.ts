@@ -111,7 +111,7 @@ test('体重、目标和JSON备份能导出并完整恢复', async ({ page }, te
   const content = await readFile(path, 'utf8');
   const backup = JSON.parse(content);
   expect(Object.keys(backup).sort()).toEqual(['dailyPlans', 'estimatedFoods', 'exercises', 'exportedAt', 'meals', 'packagedFoods', 'schemaVersion', 'settings', 'water', 'weights']);
-  expect(backup.schemaVersion).toBe(10);
+  expect(backup.schemaVersion).toBe(11);
   expect(backup.meals).toHaveLength(1);
   expect(backup.weights[0].weightKg).toBe(65.5);
   expect(backup.settings.targetWeightKg).toBe(60);

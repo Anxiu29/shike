@@ -2,11 +2,13 @@ import { Capacitor } from '@capacitor/core'
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
 import type { Backup } from '@shike/shared'
+import { MAX_BACKUP_BYTES } from './db'
 
 /** Web 下载 JSON；安卓通过系统分享菜单保存备份，不申请整个手机的存储权限。 */
 export async function saveBackupFile(backup: Backup): Promise<void> {
   const filename = `食刻备份-${backup.exportedAt.slice(0, 10)}.json`
   const json = JSON.stringify(backup, null, 2)
+  if (new TextEncoder().encode(json).length > MAX_BACKUP_BYTES) throw new Error('备份超过100 MB，请减少餐次照片后重试。')
   if (Capacitor.isNativePlatform()) {
     const file = await Filesystem.writeFile({ path: `backups/${filename}`, data: json, directory: Directory.Cache, encoding: Encoding.UTF8, recursive: true })
     await Share.share({ title: '食刻饮食备份', files: [file.uri], dialogTitle: '保存或分享 JSON 备份' })

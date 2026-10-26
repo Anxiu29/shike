@@ -46,7 +46,7 @@ test('个人资料生成预算，饮水杯子与自定义量可增删改并刷�
   const downloaded = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); const download = await downloaded;
   const stream = await download.createReadStream(); if (!stream) throw new Error('没有备份内容');
   const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk)); const backup = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-  expect(backup.schemaVersion).toBe(10); expect(backup.water).toHaveLength(1); expect(backup.settings.personalInfo.heightCm).toBe(175);
+  expect(backup.schemaVersion).toBe(11); expect(backup.water).toHaveLength(1); expect(backup.settings.personalInfo.heightCm).toBe(175);
   await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'wellness.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
   await expect(page.getByTestId('backup-preview')).toContainText('1 条饮水'); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');
   await tab(page, 'diary'); await expect(page.getByTestId('water-total')).toHaveText('350');

@@ -16,6 +16,6 @@ describe('普通饮品体积快照', () => {
     const backup = { schemaVersion: 8, exportedAt: now, meals: [{ id: 'meal', date: '2026-10-16', mealType: 'lunch', items: [entry], mode: 'manual', createdAt: now, updatedAt: now }], weights: [], settings: { targetWeightKg: null }, estimatedFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [] };
     const saved = backupSchema.parse(JSON.parse(JSON.stringify(backup))); entry.volumeSnapshot!.nutrientsPer100ml.energyKcal = 1;
     expect(calculateNutrients(saved.meals[0]!.items[0]!).energyKcal).toBe(100);
-    expect(backupSchema.parse({ ...backup, schemaVersion: 5, meals: [] }).schemaVersion).toBe(10);
+    expect(backupSchema.parse({ ...backup, schemaVersion: 5, meals: [] }).schemaVersion).toBe(11);
   });
 });

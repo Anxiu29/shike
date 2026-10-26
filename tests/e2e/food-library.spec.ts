@@ -59,7 +59,7 @@ test('AI识别可单独存库、搜索收藏和再次使用，三档范围保留
   await page.getByTestId('confirm-manual-food').click(); await page.getByTestId('save-meal').click(); await tab(page, 'settings')
   await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); await expect(page.getByTestId('toast')).toContainText('备份已导出')
   const bytes = Buffer.from(await page.evaluate(() => (window as any).__libraryBackup) as string), backup = JSON.parse(bytes.toString())
-  expect(backup.schemaVersion).toBe(10); expect(backup.libraryFoods).toHaveLength(1); expect(backup.libraryFoods[0]).toMatchObject({ favorite: true, entry: { weightG: 200, estimateProfile: { factor: 'sweetness' } } })
+  expect(backup.schemaVersion).toBe(11); expect(backup.libraryFoods).toHaveLength(1); expect(backup.libraryFoods[0]).toMatchObject({ favorite: true, entry: { weightG: 200, estimateProfile: { factor: 'sweetness' } } })
   await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'library.json', mimeType: 'application/json', buffer: bytes }); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复')
   await tab(page, 'diary'); await page.reload(); await page.getByTestId('manual-add').click(); await page.getByTestId('food-category-收藏').click(); await expect(page.getByTestId(`food-option-${id}`)).toBeVisible()
 })

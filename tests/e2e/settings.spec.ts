@@ -142,7 +142,7 @@ test('重新分区后的备份可导出、预览和恢复，设置中的食物�
   const downloadPromise = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click();
   const download = await downloadPromise;
   const backup = JSON.parse(await readFile((await download.path())!, 'utf8'));
-  expect(backup.schemaVersion).toBe(10); expect(backup.meals).toHaveLength(1); expect(backup.meals[0].items[0].name).toBe('设置页备份餐食');
+  expect(backup.schemaVersion).toBe(11); expect(backup.meals).toHaveLength(1); expect(backup.meals[0].items[0].name).toBe('设置页备份餐食');
   backup.meals[0].items[0].name = '设置页恢复成功';
   await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'settings-backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
   await expect(page.getByTestId('backup-preview')).toContainText('备份检查通过');

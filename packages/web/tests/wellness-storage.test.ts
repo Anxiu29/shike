@@ -42,9 +42,9 @@ describe('个人目标、饮水与运动持久化', () => {
   it('俯卧撑保留次数和节奏快照，v8往返及v6迁移可用，改体重不重算旧运动', async () => {
     const record = createExercise({ date: '2026-10-14', activityCode: '02022', count: 30, weightKg: 70, includeInBudget: true }); await saveExercise(record, database);
     await saveWeight({ date: record.date, weightKg: 90, updatedAt: now }, database); expect((await database.exercises.get(record.id))!.activeKcal).toBeCloseTo(4.9);
-    const backup = parseBackup(JSON.stringify(await exportBackup(database))); expect(backup.schemaVersion).toBe(10); expect(backup.exercises[0]!.repetitionSnapshot!.count).toBe(30);
+    const backup = parseBackup(JSON.stringify(await exportBackup(database))); expect(backup.schemaVersion).toBe(11); expect(backup.exercises[0]!.repetitionSnapshot!.count).toBe(30);
     await database.exercises.clear(); await restoreBackup(backup, database); expect((await database.exercises.get(record.id))!.repetitionSnapshot!.secondsPerRep).toBe(3);
-    expect(parseBackup(JSON.stringify({ ...backup, libraryFoods: undefined, schemaVersion: 6, exercises: [] })).schemaVersion).toBe(10);
+    expect(parseBackup(JSON.stringify({ ...backup, mealPhotos: undefined, libraryFoods: undefined, schemaVersion: 6, exercises: [] })).schemaVersion).toBe(11);
     expect(() => parseBackup(JSON.stringify({ ...backup, exercises: [{ ...record, minutes: 300 }] }))).toThrow();
   })
   it('升级旧 IndexedDB v2 保留全部旧表，新增记录表为空', async () => {
@@ -86,7 +86,7 @@ describe('个人目标、饮水与运动持久化', () => {
     await saveSettings(preferences, database, '2026-10-14'); await saveWater(water(), database)
     await saveExercise(createExercise({ date: '2026-10-14', minutes: 30, manualName: '游泳', manualActiveKcal: 150, includeInBudget: false }), database)
     const backup = parseBackup(JSON.stringify(await exportBackup(database)))
-    expect(backup.schemaVersion).toBe(10); expect(backup.water).toHaveLength(1); expect(backup.exercises).toHaveLength(1); expect(backup.dailyPlans).toHaveLength(1)
+    expect(backup.schemaVersion).toBe(11); expect(backup.water).toHaveLength(1); expect(backup.exercises).toHaveLength(1); expect(backup.dailyPlans).toHaveLength(1)
     expect(() => parseBackup(JSON.stringify({ ...backup, water: [backup.water[0], backup.water[0]] }))).toThrow()
     expect(() => parseBackup(JSON.stringify({ ...backup, dailyPlans: [backup.dailyPlans[0], backup.dailyPlans[0]] }))).toThrow()
     await database.water.clear(); await database.exercises.clear(); await restoreBackup(backup, database)

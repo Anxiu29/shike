@@ -46,6 +46,6 @@ describe('手环全天活动汇总', () => {
     const backup = { schemaVersion: 8, exportedAt: new Date().toISOString(), settings: { targetWeightKg: null }, meals: [], weights: [], estimatedFoods: [], packagedFoods: [], water: [], exercises: [day(), walk()], dailyPlans: [] };
     const parsed = backupSchema.parse(JSON.parse(JSON.stringify(backup))); expect(parsed.exercises[0]!.dayBudgetKcal).toBe(120);
     expect(backupSchema.safeParse({ ...backup, exercises: [day(), { ...day(), id: 'another' }] }).success).toBe(false);
-    expect(backupSchema.parse({ ...backup, schemaVersion: 7, exercises: [walk()] }).schemaVersion).toBe(10);
+    expect(backupSchema.parse({ ...backup, schemaVersion: 7, exercises: [walk()] }).schemaVersion).toBe(11);
   });
 });

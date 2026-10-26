@@ -22,8 +22,8 @@ describe('包装库与历史快照', () => {
   })
   it('v8备份带来源、旧版本升级为空库，恢复失败时包装库一起回滚', async () => {
     await savePackagedFood(food(), database)
-    const backup = parseBackup(JSON.stringify(await exportBackup(database))); expect(backup.schemaVersion).toBe(10); expect(backup.packagedFoods[0]!.source!.license).toBe('ODbL-1.0')
-    const { libraryFoods: _library, packagedFoods: _, ...legacy } = backup; const old = parseBackup(JSON.stringify({ ...legacy, schemaVersion: 4 })); expect(old.packagedFoods).toEqual([])
+    const backup = parseBackup(JSON.stringify(await exportBackup(database))); expect(backup.schemaVersion).toBe(11); expect(backup.packagedFoods[0]!.source!.license).toBe('ODbL-1.0')
+    const { mealPhotos: _photos, libraryFoods: _library, packagedFoods: _, ...legacy } = backup; const old = parseBackup(JSON.stringify({ ...legacy, schemaVersion: 4 })); expect(old.packagedFoods).toEqual([])
     await database.packagedFoods.clear(); await restoreBackup(backup, database); expect(await database.packagedFoods.count()).toBe(1)
     database.packagedFoods.hook('creating', () => { throw new Error('storage-full') })
     await expect(restoreBackup({ ...backup, packagedFoods: [{ ...food(), id: 'another' }] }, database)).rejects.toThrow('storage-full')

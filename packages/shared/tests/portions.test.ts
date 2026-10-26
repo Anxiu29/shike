@@ -41,6 +41,6 @@ describe('日常计量单位估算', () => {
     const now = '2026-10-19T04:00:00.000Z';
     const backup = { schemaVersion: 9, exportedAt: now, settings: { targetWeightKg: null }, meals: [{ id: 'portion-meal', date: '2026-10-19', mealType: 'lunch', items: [entry()], mode: 'manual', createdAt: now, updatedAt: now }], weights: [], water: [], exercises: [], dailyPlans: [], estimatedFoods: [], packagedFoods: [] };
     const restored = backupSchema.parse(JSON.parse(JSON.stringify(backup))); expect(restored.meals[0]!.items[0]!.portionSnapshot!.amountPerUnit).toBe(80);
-    expect(backupSchema.parse({ ...backup, schemaVersion: 8, meals: [] }).schemaVersion).toBe(10);
+    expect(backupSchema.parse({ ...backup, schemaVersion: 8, meals: [] }).schemaVersion).toBe(11);
   });
 });

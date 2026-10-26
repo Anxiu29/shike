@@ -1,14 +1,14 @@
 /**
  * 持久化入口：Dexie 封装浏览器 IndexedDB；Vue ref/组件草稿不等于数据库记录。
- * 数据库结构版本5与JSON备份版本10独立：前者建表/索引，后者定义可交换文件的业务格式。
+ * 数据库结构版本6与JSON备份版本11独立：前者建表/索引，后者定义可交换文件的业务格式。
  * meals/weights/preferences 保存餐食/称重/设置；estimatedFoods 是同名复用的AI粗估库；
  * water/exercises/dailyPlans 保存饮水/运动/当日预算快照；packagedFoods 保存个人包装标签；
- * libraryFoods 保存显式存库的完整食品快照及收藏。不会保存图片、模型Key或访问凭证。
+ * libraryFoods 保存显式存库的完整食品快照及收藏。mealPhotos 单独保存餐次压缩照片；不保存模型Key或访问凭证。
  * 写前用Zod验证并转普通JSON，避免Vue Proxy的结构化克隆错误；await事务后才提示成功。
- * 恢复v1～v10备份先统一升级为v10，再在同一事务中替换，失败整体回滚；旧备份缺表补空。
+ * 恢复v1～v11备份先统一升级为v11，再在同一事务中替换，失败整体回滚；旧备份缺表补空。
  */
 import Dexie, { type Table } from 'dexie'
-import { packagedFoodSchema, libraryFoodSchema, foodEntrySchema, type LibraryFood, type FoodEntry, type PackagedFood } from '@shike/shared'
+import { packagedFoodSchema, libraryFoodSchema, foodEntrySchema, mealPhotoDataSchema, type MealPhoto, type LibraryFood, type FoodEntry, type PackagedFood } from '@shike/shared'
 import { createId, backupSchema, mealRecordSchema, weightRecordSchema, settingsSchema, estimatedFoodSchema, normalizeFoodName, waterRecordSchema, exerciseRecordSchema, makeDailyPlan, type DailyPlan, type WaterRecord, type ExerciseRecord, type Backup, type MealRecord, type WeightRecord, type Settings, type EstimatedFood } from '@shike/shared'
 import { localDate } from './dates'
 import { defaultDailyGoals, type PersonalInfo, type DailyGoals } from '@shike/shared'
@@ -30,6 +30,7 @@ export class ShikeDatabase extends Dexie {
   dailyPlans!: Table<DailyPlan, string>
   packagedFoods!: Table<PackagedFood, string>
   libraryFoods!: Table<LibraryFood, string>
+  mealPhotos!: Table<MealPhoto, string>
 
   constructor(name = 'shike-local-v1') {
     super(name)
@@ -39,6 +40,7 @@ export class ShikeDatabase extends Dexie {
     this.version(3).stores({ meals: 'id,date,mealType', weights: 'date', preferences: 'id', estimatedFoods: 'id,name', water: 'id,date', exercises: 'id,date', dailyPlans: 'date' })
     this.version(4).stores({ meals: 'id,date,mealType', weights: 'date', preferences: 'id', estimatedFoods: 'id,name', water: 'id,date', exercises: 'id,date', dailyPlans: 'date', packagedFoods: 'id,name,barcode' })
     this.version(5).stores({ libraryFoods: 'id,&choiceId,origin' })
+    this.version(6).stores({ mealPhotos: 'id,mealId' })
   }
 }
 
@@ -67,10 +69,12 @@ async function capturePlan(date: string, database: ShikeDatabase) {
   await database.dailyPlans.put(makeDailyPlan(date, preferences?.value ?? { targetWeightKg: null }, await database.weights.toArray()))
 }
 
-export async function saveMeal(record: MealRecord, database = db): Promise<void> {
+export async function saveMeal(record: MealRecord, database = db, photos?: string[]): Promise<void> {
   const validated = normalizeMockMode(mealRecordSchema.parse(plain(record)))
+  const images = photos?.map(photo => mealPhotoDataSchema.parse(photo))
+  if (images && images.length > 3) throw new Error('每餐最多保存3张照片。')
   // await 事务完成后 UI 才提示成功，QuotaExceededError 等错误不会产生虚假的保存提示。
-  await database.transaction('rw', [database.meals, database.estimatedFoods, database.preferences, database.weights, database.dailyPlans], async () => {
+  await database.transaction('rw', [database.meals, database.mealPhotos, database.estimatedFoods, database.preferences, database.weights, database.dailyPlans], async () => {
     const knownEstimates = await database.estimatedFoods.toArray()
     for (const entry of validated.items) {
       // 模拟结果可练习保存，但绝不能成为未来真实识别的估算依据。
@@ -93,7 +97,19 @@ export async function saveMeal(record: MealRecord, database = db): Promise<void>
     }
     // 估算库与餐食要同时成功；失败时两张表一起回滚，未确认的草稿从不写库。
     await database.meals.put(validated)
+    // undefined 表示只改餐食，保留原照片；显式传数组才替换。保存失败时餐食和照片一起回滚。
+    if (images !== undefined) {
+      await database.mealPhotos.where('mealId').equals(validated.id).delete()
+      await database.mealPhotos.bulkPut(images.map((dataUrl, position) => ({ id: createId(), mealId: validated.id, position, dataUrl, createdAt: new Date().toISOString() })))
+    }
     await capturePlan(validated.date, database)
+  })
+}
+
+export async function deleteMeal(id: string, database = db): Promise<void> {
+  await database.transaction('rw', [database.meals, database.mealPhotos], async () => {
+    await database.mealPhotos.where('mealId').equals(id).delete()
+    await database.meals.delete(id)
   })
 }
 
@@ -152,20 +168,21 @@ export async function saveExercise(record: ExerciseRecord, database = db): Promi
 }
 
 export async function exportBackup(database = db): Promise<Backup> {
-  const data = await database.transaction('r', [database.meals, database.weights, database.preferences, database.estimatedFoods, database.water, database.exercises, database.dailyPlans, database.packagedFoods, database.libraryFoods], () => loadData(database))
-  return backupSchema.parse({ schemaVersion: 10, exportedAt: new Date().toISOString(), ...data })
+  const data = await database.transaction('r', [database.meals, database.weights, database.preferences, database.estimatedFoods, database.water, database.exercises, database.dailyPlans, database.packagedFoods, database.libraryFoods, database.mealPhotos], async () => ({ ...await loadData(database), mealPhotos: await database.mealPhotos.toArray() }))
+  return backupSchema.parse({ schemaVersion: 11, exportedAt: new Date().toISOString(), ...data })
 }
 
+export const MAX_BACKUP_BYTES = 100 * 1024 * 1024
 export function parseBackup(text: string): Backup {
-  if (text.length > 20 * 1024 * 1024) throw new Error('备份文件不能超过 20 MB。')
+  if (text.length > MAX_BACKUP_BYTES || new TextEncoder().encode(text).length > MAX_BACKUP_BYTES) throw new Error('备份文件不能超过 100 MB。')
   try { return backupSchema.parse(JSON.parse(text)) }
-  catch { throw new Error('备份内容无效：请使用食刻导出的版本1～10 JSON 文件，检查数据格式与重复记录。') }
+  catch { throw new Error('备份内容无效：请使用食刻导出的版本1～11 JSON 文件，检查数据格式、照片与重复记录。') }
 }
 
 export async function restoreBackup(backup: Backup, database = db): Promise<void> {
   const validated = backupSchema.parse(plain(backup))
   // 清空与恢复放在同一事务中；任一步失败都会回滚，保留原来的本地数据。
-  await database.transaction('rw', [database.meals, database.weights, database.preferences, database.estimatedFoods, database.water, database.exercises, database.dailyPlans, database.packagedFoods, database.libraryFoods], async () => {
+  await database.transaction('rw', [database.meals, database.weights, database.preferences, database.estimatedFoods, database.water, database.exercises, database.dailyPlans, database.packagedFoods, database.libraryFoods, database.mealPhotos], async () => {
     await database.meals.clear()
     await database.weights.clear()
     await database.preferences.clear()
@@ -173,6 +190,7 @@ export async function restoreBackup(backup: Backup, database = db): Promise<void
     await database.water.clear(); await database.exercises.clear(); await database.dailyPlans.clear()
     await database.packagedFoods.clear()
     await database.libraryFoods.clear()
+    await database.mealPhotos.clear()
     // 恢复只归一化模拟标识，不执行 saveMeal，也不会根据餐食生成新的个人估算。
     await database.meals.bulkPut(validated.meals.map(normalizeMockMode))
     await database.weights.bulkPut(validated.weights)
@@ -180,6 +198,7 @@ export async function restoreBackup(backup: Backup, database = db): Promise<void
     await database.water.bulkPut(validated.water); await database.exercises.bulkPut(validated.exercises); await database.dailyPlans.bulkPut(validated.dailyPlans)
     await database.packagedFoods.bulkPut(validated.packagedFoods)
     await database.libraryFoods.bulkPut(validated.libraryFoods)
+    await database.mealPhotos.bulkPut(validated.mealPhotos)
     await database.preferences.put({ id: 'preferences', value: validated.settings })
   })
 }

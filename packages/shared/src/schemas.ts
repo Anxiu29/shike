@@ -3,7 +3,7 @@
  * TypeScript只在开发/构建时检查，不能保证模型、备份或本地存储的实际内容正确。
  * 顺着FoodEntry → MealRecord → Backup阅读；来源与数值快照一起保存，null表示未知。
  * superRefine检查跨字段关系，如份量乘积、区间中值、运动能量及同日累计唯一性。
- * backupSchema兼容v1～v10并转换到v10；它的版本号与Dexie建表版本5没有一一对应关系。
+ * backupSchema兼容v1～v11并转换到v11；它的版本号与Dexie建表版本6没有一一对应关系。
  * 修改约束时同时检查模型解析、前端保存和备份迁移；不要编辑generated.ts来绕过校验。
  */
 import { z } from 'zod';
@@ -260,6 +260,17 @@ export const mealRecordSchema = z.object({
   updatedAt: timestampSchema,
 }).strict();
 export type MealRecord = z.infer<typeof mealRecordSchema>;
+// 仅保留经客户端重编码的 JPEG，拒绝远程 URL、SVG 和超过 1 MB 的单张图片。
+export const mealPhotoDataSchema = z.string().max(23 + Math.ceil(1024 * 1024 / 3) * 4)
+  .regex(/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/)
+  .refine(value => {
+    const body = value.slice(23), padding = body.endsWith('==') ? 2 : body.endsWith('=') ? 1 : 0;
+    return body.length % 4 === 0 && body.length * 3 / 4 - padding <= 1024 * 1024;
+  }, '照片必须是不超过1 MB的JPEG');
+export const mealPhotoSchema = z.object({
+  id: shortText, mealId: shortText, position: z.number().int().min(0).max(2), dataUrl: mealPhotoDataSchema, createdAt: timestampSchema,
+}).strict();
+export type MealPhoto = z.infer<typeof mealPhotoSchema>;
 export const weightRecordSchema = z.object({
   date: dateSchema,
   weightKg: z.number().finite().min(1).max(600),
@@ -429,16 +440,32 @@ const backupV7Schema = backupV6Schema.extend({ schemaVersion: z.literal(7) }).st
 const backupV8Schema = backupV7Schema.extend({ schemaVersion: z.literal(8) }).strict();
 const backupV9Schema = backupV8Schema.extend({ schemaVersion: z.literal(9) }).strict();
 const backupV10Schema = backupV9Schema.extend({ schemaVersion: z.literal(10), libraryFoods: z.array(libraryFoodSchema).max(100000) }).strict();
+const backupV11Schema = backupV10Schema.extend({ schemaVersion: z.literal(11), mealPhotos: z.array(mealPhotoSchema).max(300000) }).strict();
 
-// v4包装标签；v5包装库；v6饮品mL；v7次数运动；v8全天活动；v9日常单位；v10个人食品与收藏。
+// v4包装标签；v5包装库；v6饮品mL；v7次数运动；v8全天活动；v9日常单位；v10个人食品与收藏；v11餐次照片。
 // 导入是一次完整恢复，重复主键或规范化名称不能通过 put 静默覆盖。
-export const backupSchema = z.discriminatedUnion('schemaVersion', [backupV1Schema, backupV2Schema, backupV3Schema, backupV4Schema, backupV5Schema, backupV6Schema, backupV7Schema, backupV8Schema, backupV9Schema, backupV10Schema])
-  .transform((backup) => backup.schemaVersion === 10 ? backup : backup.schemaVersion === 5 || backup.schemaVersion === 6 || backup.schemaVersion === 7 || backup.schemaVersion === 8 || backup.schemaVersion === 9 ? { ...backup, schemaVersion: 10 as const, libraryFoods: [] as LibraryFood[] } : backup.schemaVersion === 3 || backup.schemaVersion === 4 ? { ...backup, schemaVersion: 10 as const, libraryFoods: [] as LibraryFood[], packagedFoods: [] as PackagedFood[] } : {
-    ...backup, schemaVersion: 10 as const, libraryFoods: [] as LibraryFood[], packagedFoods: [] as PackagedFood[],
-    estimatedFoods: backup.schemaVersion === 1 ? [] as EstimatedFood[] : backup.estimatedFoods,
-    water: [] as WaterRecord[], exercises: [] as ExerciseRecord[], dailyPlans: [] as DailyPlan[],
-  })
+export const backupSchema = z.discriminatedUnion('schemaVersion', [backupV1Schema, backupV2Schema, backupV3Schema, backupV4Schema, backupV5Schema, backupV6Schema, backupV7Schema, backupV8Schema, backupV9Schema, backupV10Schema, backupV11Schema])
+  .transform(backup => ({
+    ...backup, schemaVersion: 11 as const,
+    mealPhotos: 'mealPhotos' in backup ? backup.mealPhotos : [] as MealPhoto[],
+    libraryFoods: 'libraryFoods' in backup ? backup.libraryFoods : [] as LibraryFood[],
+    packagedFoods: 'packagedFoods' in backup ? backup.packagedFoods : [] as PackagedFood[],
+    estimatedFoods: 'estimatedFoods' in backup ? backup.estimatedFoods : [] as EstimatedFood[],
+    water: 'water' in backup ? backup.water : [] as WaterRecord[],
+    exercises: 'exercises' in backup ? backup.exercises : [] as ExerciseRecord[],
+    dailyPlans: 'dailyPlans' in backup ? backup.dailyPlans : [] as DailyPlan[],
+  }))
   .superRefine((backup, context) => {
+  const mealIds = new Set(backup.meals.map(meal => meal.id)), photoCounts = new Map<string, number>();
+  if (new Set(backup.mealPhotos.map(photo => photo.id)).size !== backup.mealPhotos.length)
+    context.addIssue({ code: 'custom', message: '照片包含重复ID', path: ['mealPhotos'] });
+  if (new Set(backup.mealPhotos.map(photo => JSON.stringify([photo.mealId, photo.position]))).size !== backup.mealPhotos.length)
+    context.addIssue({ code: 'custom', message: '同一餐次的照片序号不能重复', path: ['mealPhotos'] });
+  for (const photo of backup.mealPhotos) {
+    const count = (photoCounts.get(photo.mealId) ?? 0) + 1; photoCounts.set(photo.mealId, count);
+    if (!mealIds.has(photo.mealId) || count > 3)
+      context.addIssue({ code: 'custom', message: '照片需对应已有餐次，每餐最多3张', path: ['mealPhotos'] });
+  }
   if (new Set(backup.libraryFoods.map(food => food.id)).size !== backup.libraryFoods.length || new Set(backup.libraryFoods.map(food => food.choiceId)).size !== backup.libraryFoods.length)
     context.addIssue({ code: 'custom', message: '食品库包含重复ID或选择标识', path: ['libraryFoods'] });
   const dailyActivityDates = backup.exercises.filter(record => record.method === 'manual' && record.manualScope === 'day').map(record => record.date);

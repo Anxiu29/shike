@@ -56,7 +56,7 @@ describe('包装标签的原值与实际摄入换算', () => {
     const backup = { schemaVersion: 8, packagedFoods: [], exportedAt: time, meals: [{ id: 'meal', date: '2026-10-16', items: [item], mealType: 'snack', mode: 'live', createdAt: time, updatedAt: time }], weights: [], estimatedFoods: [], water: [], exercises: [], dailyPlans: [], settings: { targetWeightKg: null } };
     const restored = backupSchema.parse(JSON.parse(JSON.stringify(backup))); expect(restored.meals[0]!.items[0]!.packageSnapshot!.label.energy!.unit).toBe('kJ');
     expect(aggregateNutrients(restored.meals[0]!.items).energyKcal.known).toBe(125);
-    const { packagedFoods: _packages, libraryFoods: _library, ...legacy } = backup; expect(backupSchema.parse({ ...legacy, schemaVersion: 3, meals: [] }).schemaVersion).toBe(10);
+    const { packagedFoods: _packages, libraryFoods: _library, ...legacy } = backup; expect(backupSchema.parse({ ...legacy, schemaVersion: 3, meals: [] }).schemaVersion).toBe(11);
     item.packageSnapshot!.label.energy!.value = 0; syncPackageEntry(item); expect(calculateNutrients(restored.meals[0]!.items[0]!).energyKcal).toBe(125);
   });
 });

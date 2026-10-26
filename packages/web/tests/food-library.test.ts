@@ -80,11 +80,11 @@ describe('食品收藏和个人食品快照', () => {
   })
   it('v10备份往返保存收藏和AI食品，拒绝重复ID，v9恢复为空新库并保留旧数据', async () => {
     const food = await saveLibraryFood(ai(), 'ai', database); await toggleFoodFavorite(food.choiceId, food.entry, database)
-    const backup = await exportBackup(database); expect(backup.schemaVersion).toBe(10)
+    const backup = await exportBackup(database); expect(backup.schemaVersion).toBe(11)
     await database.libraryFoods.clear(); await restoreBackup(backup, database)
     expect((await database.libraryFoods.toArray())[0]!.favorite).toBe(true)
     expect(backupSchema.safeParse({ ...backup, libraryFoods: [...backup.libraryFoods, ...backup.libraryFoods] }).success).toBe(false)
-    const { libraryFoods: _new, ...legacy } = backup
+    const { mealPhotos: _photos, libraryFoods: _new, ...legacy } = backup
     const parsed = backupSchema.parse({ ...legacy, schemaVersion: 9 }); expect(parsed.libraryFoods).toEqual([])
     await restoreBackup(parsed, database); expect(await database.libraryFoods.count()).toBe(0)
   })
