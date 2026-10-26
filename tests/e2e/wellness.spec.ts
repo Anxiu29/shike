@@ -1,7 +1,9 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { openManualMeal } from './helpers/manual-food';
 import { test, expect, type Page } from '@playwright/test';
 
 async function tab(page: Page, name: 'diary' | 'goals' | 'weight' | 'settings') {
+  await closeSettingsPanel(page);
   const mobile = page.getByTestId(`tab-${name}`); await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click();
 }
 async function openWater(page: Page) { if (!await page.getByTestId('water-sheet').isVisible()) await page.getByTestId('open-water').click(); await expect(page.getByTestId('water-sheet')).toBeVisible(); }
@@ -41,11 +43,11 @@ test('个人资料生成预算，饮水杯子与自定义量可增删改并刷�
   await page.getByTestId('target-weight').fill('64'); await page.getByTestId('save-target').click();
   await tab(page, 'goals'); await expect(page.getByTestId('profile-height')).toHaveValue('175'); await expect(page.getByTestId('water-goal')).toHaveValue('1800');
   await tab(page, 'settings');
-  const downloaded = page.waitForEvent('download'); await page.getByTestId('export-backup').click(); const download = await downloaded;
+  const downloaded = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); const download = await downloaded;
   const stream = await download.createReadStream(); if (!stream) throw new Error('没有备份内容');
   const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk)); const backup = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   expect(backup.schemaVersion).toBe(10); expect(backup.water).toHaveLength(1); expect(backup.settings.personalInfo.heightCm).toBe(175);
-  await page.getByTestId('backup-input').setInputFiles({ name: 'wellness.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
+  await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'wellness.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
   await expect(page.getByTestId('backup-preview')).toContainText('1 条饮水'); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');
   await tab(page, 'diary'); await expect(page.getByTestId('water-total')).toHaveText('350');
 });

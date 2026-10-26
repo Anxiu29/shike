@@ -1,7 +1,9 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { openManualMeal } from './helpers/manual-food';
 import { test, expect, type Page } from '@playwright/test';
 
 async function tab(page: Page, name: 'settings' | 'diary') {
+  await closeSettingsPanel(page);
   const mobile = page.getByTestId(`tab-${name}`); await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click();
 }
 test('AI 后端不可达时仍立即打开、离线手动记录并刷新恢复', async ({ page }) => {
@@ -14,7 +16,7 @@ test('AI 后端不可达时仍立即打开、离线手动记录并刷新恢复',
   await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('meal-record')).toHaveCount(1);
   await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1);
-  await tab(page, 'settings'); await expect(page.getByTestId('local-ai-service')).toBeVisible();
+  await tab(page, 'settings'); await openSettingsPanel(page, 'ai'); await expect(page.getByTestId('local-ai-service')).toBeVisible();
   await expect(page.getByTestId('service-connection')).toHaveCount(0);
 });
 
@@ -25,7 +27,7 @@ test('默认停用自建云端，旧地址与令牌不会触发外部请求或�
   await page.goto('/'); await openManualMeal(page);
   await page.getByTestId('food-name-0').fill('米饭'); await page.getByTestId('food-weight-0').fill('100'); await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('meal-record')).toHaveCount(1); await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1);
-  await tab(page, 'settings'); await expect(page.getByTestId('local-ai-service')).toContainText('自建云端连接暂未启用'); await expect(page.getByTestId('service-connection')).toHaveCount(0);
+  await tab(page, 'settings'); await openSettingsPanel(page, 'ai'); await expect(page.getByTestId('local-ai-service')).toContainText('自建云端连接暂未启用'); await expect(page.getByTestId('service-connection')).toHaveCount(0);
   expect(external).toBe(0);
 });
 
@@ -34,7 +36,7 @@ test('网页版缺Key且AI服务不可达时可查看各平台教程，正确展
   const origin = new URL(test.info().project.use.baseURL!).origin;
   page.on('request', request => { if (request.method() === 'POST' || new URL(request.url()).origin !== origin) modelRequests.push(request.url()); });
   await page.route('**/api/health', route => route.abort('internetdisconnected'));
-  await page.goto('/'); await tab(page, 'settings');
+  await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await expect(page.getByTestId('personal-models')).toHaveCount(0);
   const opener = page.getByTestId('open-web-model-key-guides'); await opener.click();
   const sheet = page.getByTestId('web-model-key-help-sheet'); await expect(sheet).toBeVisible();
@@ -50,7 +52,7 @@ test('网页版缺Key且AI服务不可达时可查看各平台教程，正确展
   for (const platform of platforms) {
     await sheet.getByTestId('key-guide-provider').selectOption(platform.id);
     await expect(sheet.getByTestId('key-guide-title')).toContainText(platform.name);
-    await expect(sheet.getByTestId('key-guide-env')).toHaveText(`AI_PROVIDER=${platform.id}\nAI_MODE=auto\n${platform.env}=替换为你申请的Key`);
+    await expect(sheet.getByTestId('key-guide-env')).toHaveText(`AI_PROVIDER=${platform.id}\nAI_MODE=auto\n${platform.env}=替换为你申请的Key${platform.id === 'glm' ? '\nGLM_MODEL=glm-5.3-flash' : ''}`);
     await expect(sheet.locator('.key-guide-steps > li')).toHaveCount(4);
     await expect(sheet.locator('.key-guide-steps')).toContainText('重启食刻的 Node 服务');
     await expect(sheet).toContainText('一把 Key 可以配多个模型');

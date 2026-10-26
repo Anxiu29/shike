@@ -1,9 +1,11 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { test, expect, type Page } from '@playwright/test'
 import sharp from 'sharp'
 import { routeApkAssets } from './helpers/apk-assets'
 import { openPhotoEditor } from './helpers/photo-editor'
 
-async function tab(page: Page, name: 'diary' | 'settings') { const mobile = page.getByTestId(`tab-${name}`); await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click() }
+async function tab(page: Page, name: 'diary' | 'settings') {
+  await closeSettingsPanel(page); const mobile = page.getByTestId(`tab-${name}`); await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click() }
 test.beforeEach(async ({ page }) => { await routeApkAssets(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible() })
 
 test('添加直接进入可搜索食品库；收藏不误添加，刷新后可从收藏加入并取消收藏', async ({ page }, info) => {
@@ -55,9 +57,9 @@ test('AI识别可单独存库、搜索收藏和再次使用，三档范围保留
   const id = (await own.getAttribute('data-testid'))!.slice('food-option-'.length)
   await page.getByTestId(`food-favorite-${id}`).click(); await own.click(); await expect(page.getByTestId('manual-food-weight')).toHaveValue('200'); await expect(page.getByTestId('manual-food-preview')).toContainText('150 kcal')
   await page.getByTestId('confirm-manual-food').click(); await page.getByTestId('save-meal').click(); await tab(page, 'settings')
-  await page.getByTestId('export-backup').click(); await expect(page.getByTestId('toast')).toContainText('备份已导出')
+  await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); await expect(page.getByTestId('toast')).toContainText('备份已导出')
   const bytes = Buffer.from(await page.evaluate(() => (window as any).__libraryBackup) as string), backup = JSON.parse(bytes.toString())
   expect(backup.schemaVersion).toBe(10); expect(backup.libraryFoods).toHaveLength(1); expect(backup.libraryFoods[0]).toMatchObject({ favorite: true, entry: { weightG: 200, estimateProfile: { factor: 'sweetness' } } })
-  await page.getByTestId('backup-input').setInputFiles({ name: 'library.json', mimeType: 'application/json', buffer: bytes }); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复')
+  await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'library.json', mimeType: 'application/json', buffer: bytes }); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复')
   await tab(page, 'diary'); await page.reload(); await page.getByTestId('manual-add').click(); await page.getByTestId('food-category-收藏').click(); await expect(page.getByTestId(`food-option-${id}`)).toBeVisible()
 })

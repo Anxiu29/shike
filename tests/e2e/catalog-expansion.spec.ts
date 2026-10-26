@@ -1,11 +1,13 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { test, expect, type Page } from '@playwright/test';
 import { builtinPackagedFoods } from '@shike/shared';
 
 async function tab(page: Page, name: 'diary' | 'settings') {
+  await closeSettingsPanel(page);
   const button = page.getByTestId(`tab-${name}`); await (await button.isVisible() ? button : page.getByTestId(`desktop-tab-${name}`)).click();
 }
 async function backup(page: Page) {
-  await tab(page, 'settings'); const pending = page.waitForEvent('download'); await page.getByTestId('export-backup').click();
+  await tab(page, 'settings'); const pending = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click();
   const stream = await (await pending).createReadStream(); if (!stream) throw new Error('备份下载失败');
   const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk)); return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }

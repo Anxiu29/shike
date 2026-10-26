@@ -1,3 +1,4 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { openPhotoEditor } from './helpers/photo-editor';
 import { openManualMeal } from './helpers/manual-food';
 import { test, expect, type Page } from '@playwright/test';
@@ -5,7 +6,8 @@ import sharp from 'sharp';
 import { parseOffProduct } from '@shike/shared';
 const code = '3274080005003';
 const product = () => parseOffProduct({ status: 1, product: { code, product_name_zh: '测试免费饮料', brands: '测试品牌', quantity: '250 ml', nutriments: { 'energy-kcal_100g': 40, proteins_100g: 1, fat_100g: 0, carbohydrates_100g: 9 } } }, code)!;
-async function tab(page: Page, name: 'diary' | 'settings') { const button = page.getByTestId(`tab-${name}`); await (await button.isVisible() ? button : page.getByTestId(`desktop-tab-${name}`)).click(); }
+async function tab(page: Page, name: 'diary' | 'settings') {
+  await closeSettingsPanel(page); const button = page.getByTestId(`tab-${name}`); await (await button.isVisible() ? button : page.getByTestId(`desktop-tab-${name}`)).click(); }
 async function library(page: Page) { await openPhotoEditor(page); await page.getByTestId('open-package-library').click(); await expect(page.getByTestId('packaged-library')).toBeVisible(); }
 
 test('UPC补零查询后用原条码离线命中同一商品，不重复请求或收录', async ({ page }) => {
@@ -29,12 +31,12 @@ test('免费条码查询、显式入库、摄入量重填、离线复用与删�
   await page.getByTestId('catalog-barcode').fill(code); await page.getByTestId('catalog-query').click(); await expect(page.getByTestId('catalog-message')).toContainText('本地找到'); expect(queries).toBe(1);
   await page.getByTestId('use-packaged-food').click(); await expect(page.getByTestId('package-amount-0')).toHaveValue('');
   await page.getByRole('button', { name: '关闭记录面板', exact: true }).click();
-  await tab(page, 'settings'); const downloadPending = page.waitForEvent('download'); await page.getByTestId('export-backup').click(); const stream = await (await downloadPending).createReadStream(); if (!stream) throw new Error('没有备份');
+  await tab(page, 'settings'); const downloadPending = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); const stream = await (await downloadPending).createReadStream(); if (!stream) throw new Error('没有备份');
   const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk)); const buffer = Buffer.concat(chunks), backup = JSON.parse(buffer.toString());
   expect(backup.schemaVersion).toBe(10); expect(backup.packagedFoods[0].source.license).toBe('ODbL-1.0'); expect(backup.meals[0].items[0].packageSnapshot.consumedAmount).toBe(0.5);
   await page.getByTestId('manage-packaged-foods').click(); page.once('dialog', dialog => dialog.accept()); await page.getByTestId('delete-packaged-food').click(); await expect(page.getByTestId('packaged-library-row')).toHaveCount(0); await page.getByTestId('close-sheet').click();
   await tab(page, 'diary'); await expect(page.getByTestId('daily-calories')).toContainText('50');
-  await tab(page, 'settings'); await page.getByTestId('backup-input').setInputFiles({ name: 'catalog.json', mimeType: 'application/json', buffer }); await expect(page.getByTestId('backup-preview')).toContainText('1 项包装食品'); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');
+  await tab(page, 'settings'); await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'catalog.json', mimeType: 'application/json', buffer }); await expect(page.getByTestId('backup-preview')).toContainText('1 项包装食品'); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');
   await page.getByTestId('manage-packaged-foods').click(); await expect(page.getByTestId('packaged-library-row')).toHaveCount(1);
 });
 

@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Cloud, LoaderCircle } from '@lucide/vue'
 import { connectService } from '../lib/api'
 import { normalizeApiBase, readConnection, writeConnection } from '../lib/connection'
-const emit = defineEmits<{ changed: [] }>()
+const emit = defineEmits<{ changed: []; busy: [value: boolean] }>()
 const initial = readConnection()
 const address = ref(initial.baseUrl)
 const accessCode = ref('')
 const connected = ref(initial.baseUrl)
 const hasToken = ref(Boolean(initial.token))
 const busy = ref(false)
+watch(busy, value => emit('busy', value), { flush: 'sync' })
 const error = ref('')
 const message = ref('')
 async function connect() {

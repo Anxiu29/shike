@@ -207,3 +207,63 @@
 .estimate-library-item > p { margin: 6px 0; font-size: 13px; color: #367b62; }
 .estimate-library-item > small { font-size: 11px; }
 .estimate-load-more { width: 100%; margin-top: 16px; }
+
+/* 设置首页仅保留入口；详细操作由独立弹窗承载。 */
+.settings-hub { max-width: 880px; }
+.settings-hub-heading { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 22px; gap: 16px; }
+.settings-hub-heading h1 { margin: 0; color: #2f493a; font-size: 28px; font-weight: 600; letter-spacing: -.6px; }
+.settings-hub-heading p { margin-top: 6px; font-size: 12px; color: #7b8b7c; }
+.settings-hub-symbol { display: grid; place-items: center; width: 43px; height: 43px; color: #708d77; border: 1px solid #e0e8db; border-radius: 14px; background: #eef3e9; }
+.settings-ai-entry { display: flex; align-items: center; gap: 15px; width: 100%; padding: 21px; border: 1px solid #d6e3d3; border-radius: 20px; background: linear-gradient(120deg, #edf4e8, #f7faf3); color: #355b43; text-align: left; box-shadow: 0 3px 12px #355b4305; }
+.settings-ai-entry:hover { border-color: #a5c2aa; background: #eff6ea; }
+.settings-ai-entry > svg { flex-shrink: 0; color: #74957c; }
+.settings-ai-symbol { display: grid; place-items: center; width: 49px; height: 49px; flex-shrink: 0; border: 1px solid #cfdfc8; border-radius: 16px; background: #e1ecd9; }
+.settings-ai-content { flex: 1; min-width: 0; }
+.settings-ai-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.settings-ai-heading strong { font-size: 16px; font-weight: 600; }
+.settings-ai-badge { display: inline-flex; align-items: center; padding: 3px 7px; font-size: 10px; color: #4c7b57; border-radius: 6px; background: #dcebd7; }
+.settings-ai-badge.warning { color: #a67b43; background: #f4e8d4; }
+.settings-ai-model { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 8px; color: #4d6a51; font-size: 12px; }
+.settings-ai-content small { display: block; margin-top: 5px; font-size: 11px; color: #8a9b83; }
+.settings-hub-grid { display: grid; grid-template-columns: 1.1fr 1fr; align-items: start; gap: 24px; margin-top: 26px; }
+.settings-hub-group > h2 { margin: 0 0 10px 4px; color: #83917e; font-size: 12px; font-weight: 500; }
+.settings-list-card { border: 1px solid #e1e7dc; border-radius: 18px; background: white; overflow: hidden; padding: 0 17px; }
+.settings-list-row, .settings-hub .settings-estimate-inline .settings-tool-row { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; min-height: 76px; padding: 14px 0; border: 0; background: transparent; text-align: left; color: #3b5743; }
+.settings-list-row + .settings-list-row, .settings-hub .settings-estimate-inline, .settings-hub .settings-estimate-inline + .settings-list-row { border-top: 1px solid #edf0e8; }
+.settings-list-row:hover { background: #fafcf7; }
+.settings-list-row > span:nth-child(2) { flex: 1; min-width: 0; }
+.settings-list-row strong, .settings-hub .settings-estimate-inline strong { display: block; font-size: 13px; font-weight: 550; }
+.settings-list-row small, .settings-hub .settings-estimate-inline small { display: block; margin-top: 5px; font-size: 10px; line-height: 1.5; color: #8b9983; }
+.settings-list-row > svg { color: #a3b09a; flex-shrink: 0; }
+.settings-row-icon, .settings-hub .settings-estimate-inline .settings-tool-icon { display: grid; place-items: center; flex-shrink: 0; width: 35px; height: 35px; border-radius: 11px; background: #f1f5eb; color: #79916e; }
+.settings-row-version { max-width: 100px; color: #84917d; font-size: 10px; overflow-wrap: anywhere; text-align: right; }
+.settings-hub .settings-estimate-inline { padding: 0; margin: 0; border-radius: 0; border-right: 0; border-bottom: 0; border-left: 0; box-shadow: none; background: transparent; }
+.settings-hub .settings-estimate-inline .soft-tag { padding: 2px 5px; font-size: 9px; font-weight: 400; vertical-align: middle; }
+.settings-local-note { display: flex; gap: 6px; align-items: center; color: #92a08a; font-size: 10px; margin: 13px 3px 0; line-height: 1.6; }
+.settings-hub-footer { text-align: center; color: #9ba690; font-size: 11px; margin: 29px 0 12px; }
+.settings-hub-footer span { padding: 0 6px; }
+.settings-detail-content .settings-card, .settings-detail-content .local-ai-card { border: 0; border-radius: 0; box-shadow: none; padding: 0; background: transparent; }
+.settings-detail-content .settings-card-title { margin-bottom: 16px; }
+.settings-detail-content .settings-card-title > .settings-feature-icon { display: none; }
+.settings-detail-content .settings-card-title h2 { font-size: 15px; }
+.settings-detail-content .app-update-overview { margin-top: 15px; }
+.settings-native-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: #87977f; padding-bottom: 14px; }
+.settings-detail-content .app-update-source input { min-width: 0; }
+.settings-detail-content .local-ai-overview { padding: 0 0 16px; }
+.settings-detail-content .local-ai-title { flex-wrap: wrap; }
+.settings-detail-content .local-ai-title .settings-feature-icon { display: none; }
+.settings-detail-content .local-ai-description { margin-top: 12px; }
+.settings-detail-content .local-ai-preference, .settings-detail-content .local-ai-platforms { padding-right: 0; padding-left: 0; }
+.settings-detail-sheet .sheet-body { overscroll-behavior: contain; }
+@media (max-width: 700px) {
+  .settings-hub { max-width: 500px; }
+  .settings-hub-heading { padding: 0 0 18px; }
+  .settings-hub-heading h1 { font-size: 26px; }
+  .settings-ai-entry { padding: 17px 16px; gap: 12px; border-radius: 18px; }
+  .settings-ai-symbol { width: 43px; height: 43px; border-radius: 14px; }
+  .settings-ai-heading strong { font-size: 15px; }
+  .settings-hub-grid { grid-template-columns: minmax(0, 1fr); gap: 22px; margin-top: 22px; }
+  .settings-list-row, .settings-hub .settings-estimate-inline .settings-tool-row { min-height: 69px; gap: 11px; padding: 12px 0; }
+  .settings-list-card { padding: 0 15px; border-radius: 16px; }
+  .settings-detail-content .local-ai-service-row { align-items: start; }
+}

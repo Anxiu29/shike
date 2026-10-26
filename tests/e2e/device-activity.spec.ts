@@ -1,6 +1,8 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { test, expect, type Page } from '@playwright/test';
 
 async function tab(page: Page, name: 'diary' | 'goals' | 'settings') {
+  await closeSettingsPanel(page);
   const mobile = page.getByTestId(`tab-${name}`);
   await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click();
 }
@@ -40,14 +42,14 @@ test('手环保留完整读数，无个人资料时不增加预算，更新和�
   await page.reload(); await expect(page.getByTestId('exercise-calories-total')).toContainText('650'); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 0');
   await page.getByTestId('open-exercise-history').click(); await expect(page.getByTestId('exercise-record')).toHaveCount(1);
   await expect(page.getByTestId('exercise-record')).toContainText('当天累计 · 未记时'); await page.getByTestId('close-sheet').click();
-  await tab(page, 'settings'); const pending = page.waitForEvent('download'); await page.getByTestId('export-backup').click();
+  await tab(page, 'settings'); const pending = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click();
   const stream = await (await pending).createReadStream(); if (!stream) throw new Error('没有备份流');
   const parts: Buffer[] = []; for await (const part of stream) parts.push(Buffer.from(part)); const buffer = Buffer.concat(parts), backup = JSON.parse(buffer.toString());
   expect(backup.schemaVersion).toBe(10); expect(backup.exercises).toHaveLength(1);
   expect(backup.exercises[0]).toMatchObject({ manualScope: 'day', deviceReading: 'active', minutes: null, activeKcal: 650, dayBudgetKcal: 650 });
   await tab(page, 'diary'); await page.getByTestId('open-exercise-history').click(); await page.getByTestId('delete-exercise').click();
   await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 0');
-  await tab(page, 'settings'); await page.getByTestId('backup-input').setInputFiles({ name: 'activity.json', mimeType: 'application/json', buffer });
+  await tab(page, 'settings'); await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'activity.json', mimeType: 'application/json', buffer });
   await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');
   await tab(page, 'diary'); await expect(page.getByTestId('exercise-calories-total')).toContainText('650'); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 0');
 });

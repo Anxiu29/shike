@@ -1,3 +1,4 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { openPhotoEditor } from './helpers/photo-editor';
 import { test, expect, type Page } from '@playwright/test';
 import sharp from 'sharp';
@@ -7,6 +8,7 @@ import { personalProviders } from '@shike/shared';
 test.beforeEach(async ({ page }) => { await routeApkAssets(page); });
 
 async function tab(page: Page, name: 'settings' | 'diary') {
+  await closeSettingsPanel(page);
   const mobile = page.getByTestId(`tab-${name}`); await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click();
 }
 async function nativeBridge(page: Page) {
@@ -69,7 +71,7 @@ async function add(page: Page, label: string, provider: string, key = 'example-p
 }
 
 test('修改立即打开独立弹窗并回填所选组，保存操作可见，取消后焦点回到原组', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await add(page, '百炼第一组', 'qwen'); await expect(page.getByTestId('model-form')).toHaveCount(0);
   await add(page, '智谱第二组', 'glm', 'example-second-key', 'glm-4.6v-flashx'); await expect(page.getByTestId('model-form')).toHaveCount(0);
   await add(page, '百炼第三组', 'qwen'); await expect(page.getByTestId('model-form')).toHaveCount(0);
@@ -88,16 +90,17 @@ test('修改立即打开独立弹窗并回填所选组，保存操作可见，�
   await expect(sheet).not.toBeVisible(); await expect(edit).toBeFocused(); await expect(profile).toContainText('智谱第二组');
   await edit.click(); await expect(page.getByTestId('model-label')).toHaveValue('智谱第二组'); await expect(page.getByTestId('model-api-key')).toHaveValue('');
   if (test.info().project.name === 'Chrome 手机') { await page.setViewportSize({ width: 390, height: 844 }); await sheet.screenshot({ path: 'docs/screenshots/model-edit-mobile.png' }); }
-  await page.getByTestId('cancel-model').click(); await expect(edit).toBeFocused(); expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
+  await page.getByTestId('cancel-model').click(); await expect(edit).toBeFocused(); expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
   await edit.click(); await page.getByTestId('model-label').fill('智谱修改完成');
   await page.evaluate(() => { (window as any).__holdProfileSave = true; }); await page.getByTestId('save-model').click();
   await expect(page.getByTestId('save-model')).toHaveText('正在测试连接…'); await expect(page.getByTestId('cancel-model')).toBeDisabled(); await expect(sheet.getByTestId('close-sheet')).toBeDisabled();
+  await expect(page.getByTestId('settings-detail').getByTestId('close-sheet')).toBeDisabled();
   await page.keyboard.press('Escape'); await expect(sheet).toBeVisible(); await expect(page.getByTestId('model-form')).toHaveAttribute('aria-busy', 'true');
   await page.evaluate(() => { (window as any).__continueProfileSave(); }); await expect(sheet).not.toBeVisible(); await expect(page.locator('.model-profile').filter({ hasText: '智谱修改完成' })).toHaveCount(1);
 });
 
 test('所有平台都有申请教程和共用Key说明，缺Key也能离线查看且不会测试模型', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await page.getByTestId('open-model-key-guides').click();
   const sheet = page.getByTestId('model-key-help-sheet'); await expect(sheet).toBeVisible();
   await expect(page.getByTestId('key-guide-provider').locator('option')).toHaveCount(personalProviders.length);
@@ -128,8 +131,20 @@ test('所有平台都有申请教程和共用Key说明，缺Key也能离线查�
   expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => ['saveProfile', 'testProfile', 'recognize'].includes(call.method)))).toEqual([]);
 });
 
+test('设置内直接切换模型无需修改Key或测试，首页显示实际选用的型号', async ({ page }) => {
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
+  await add(page, '日常千问', 'qwen'); await add(page, '备用智谱', 'glm', 'example-glm-test-key', 'glm-4.6v-flashx');
+  const before = await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => ['saveProfile', 'testProfile'].includes(call.method)).length);
+  await page.getByTestId('recognition-model').selectOption('790650e2-3696-43d1-927a-000000000002');
+  await expect(page.getByTestId('model-profile-790650e2-3696-43d1-927a-000000000002').getByTestId('active-model')).toBeVisible();
+  expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => ['saveProfile', 'testProfile'].includes(call.method)).length)).toBe(before);
+  await closeSettingsPanel(page); await expect(page.getByTestId('settings-current-model')).toHaveText('glm-4.6v-flashx');
+  if (test.info().project.name === 'Chrome 手机') { await page.getByRole('heading', { name: '设置', exact: true }).click(); await page.screenshot({ path: 'docs/screenshots/settings-hub-android-mobile.png', fullPage: true }); }
+  await openSettingsPanel(page, 'ai'); await expect(page.getByTestId('recognition-model')).toHaveValue('790650e2-3696-43d1-927a-000000000002');
+});
+
 test('每个模型的教程匹配平台，查看和切换教程保留未提交表单且不泄露输入Key', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await page.getByTestId('add-model').click();
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai'); await page.getByTestId('add-model').click();
   await page.getByTestId('model-label').fill('尚未提交');
   for (const platform of personalProviders) for (const model of platform.models) {
     await page.getByTestId('model-provider').selectOption(platform.id); await page.getByTestId('model-name').selectOption(model);
@@ -148,7 +163,7 @@ test('每个模型的教程匹配平台，查看和切换教程保留未提交�
 });
 
 test('一把Key直接管理多个模型，切换和更换Key共用同一组，旧单模型配置可原位扩展', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await add(page, '一把百炼Key', 'qwen'); await expect(page.getByTestId('model-form')).toHaveCount(0);
   const cards = page.locator('.model-profile'); await expect(cards).toHaveCount(1);
   await cards.getByTestId('manage-key-models').click(); await expect(page.getByTestId('model-api-key')).toHaveValue('');
@@ -170,7 +185,7 @@ test('一把Key直接管理多个模型，切换和更换Key共用同一组，�
   const buffer = await sharp({ create: { width: 64, height: 64, channels: 3, background: 'white' } }).png().toBuffer();
   await page.getByTestId('gallery-input').setInputFiles({ name: 'group-test.png', mimeType: 'image/png', buffer });
   await expect(page.getByTestId('food-weight-0')).toHaveValue('150'); await page.getByTestId('save-meal').click();
-  await expect(page.getByTestId('meal-record')).toHaveCount(1); await page.reload(); await tab(page, 'settings');
+  await expect(page.getByTestId('meal-record')).toHaveCount(1); await page.reload(); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await expect(cards).toHaveCount(1); await expect(cards).toContainText('当前 qwen3.7-plus');
   await cards.getByTestId('edit-model').click(); await page.getByTestId('model-api-key').fill('example-rotated-group-key');
   await page.getByTestId('save-model').click(); await expect(page.getByTestId('model-form')).toHaveCount(0);
@@ -186,7 +201,7 @@ test('一把Key直接管理多个模型，切换和更换Key共用同一组，�
 });
 
 test('新增OpenRouter视觉模型共用一把Key，提示隐私及预览到期，受限不自动换模型', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   const nvidia = 'nvidia/nemotron-3.5-super-vl:free', dots = 'dots-studio/dots-3-note-preview:free';
   await page.getByTestId('add-model').click(); await page.getByTestId('model-provider').selectOption('openrouter');
   await expect(page.getByTestId('model-name')).toHaveValue(nvidia);
@@ -217,14 +232,14 @@ test('新增OpenRouter视觉模型共用一把Key，提示隐私及预览到期�
   await page.getByRole('button', { name: '重试识别' }).click();
   await expect(page.getByTestId('food-name-0')).toHaveValue('白米饭（熟）'); await expect(page.getByTestId('food-weight-0')).toHaveValue('150');
   await page.getByTestId('save-meal').click(); await expect(page.getByTestId('meal-record')).toHaveCount(1);
-  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings');
+  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await expect(page.locator('.model-profile')).toHaveCount(1); await expect(page.locator('.model-profile')).toContainText('当前 ' + nvidia);
   await expect(page.locator('.profile-models .soft-tag')).toHaveCount(2);
   expect(await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))).not.toContain('new-openrouter-group-test-key');
 });
 
 test('GLM营养格式异常仍可确认食物并保存，错误重量继续拒绝且不自动重试', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await add(page, '智谱识别', 'glm');
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai'); await add(page, '智谱识别', 'glm');
   const content = { isFood: true, foods: [{ name: '米饭', estimatedWeightG: 150, visibleIngredients: [], uncertainties: ['重量为照片估算'], estimatedNutrientsPer100g: { energyKcal: 99999 }, nutritionEstimateProfile: { factor: 'general', options: [] } }], uncertainties: [] };
   await page.evaluate(value => sessionStorage.setItem('test-native-recognition-content', value), JSON.stringify(content));
   await tab(page, 'diary'); await openPhotoEditor(page);
@@ -246,7 +261,7 @@ test('GLM营养格式异常仍可确认食物并保存，错误重量继续拒�
 });
 
 test('GLM两款免费视觉共用Key，4.6V繁忙可手动换4.1V并保存记录', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await page.getByTestId('add-model').click(); await page.getByTestId('model-provider').selectOption('glm');
   await expect(page.getByTestId('model-name')).toHaveValue('glm-4.1v-thinking-flash');
   await expect(page.getByTestId('model-name').locator('option')).toHaveCount(5);
@@ -267,13 +282,13 @@ test('GLM两款免费视觉共用Key，4.6V繁忙可手动换4.1V并保存记录
   await page.evaluate(() => sessionStorage.removeItem('test-native-recognition-error'));
   await page.getByRole('button', { name: '重试识别' }).click(); await expect(page.getByTestId('food-weight-0')).toHaveValue('150');
   await page.getByTestId('save-meal').click(); await expect(page.getByTestId('meal-record')).toHaveCount(1);
-  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings');
+  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await expect(page.locator('.model-profile')).toContainText('当前 glm-4.1v-thinking-flash'); await expect(page.locator('.profile-models .soft-tag')).toHaveCount(2);
   expect(await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))).not.toContain('glm-group-test-key');
 });
 
 test('FlashX复用旧Key且明确计费，充值教程不发模型请求，欠费时不自动换型号', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await add(page, '智谱标准Key', 'glm', 'flashx-example-test-key'); await expect(page.getByTestId('model-form')).toHaveCount(0);
   await page.getByTestId('manage-key-models').click(); await expect(page.getByTestId('model-name')).toHaveValue('glm-4.1v-thinking-flash');
   await expect(page.getByTestId('enable-model-glm-4.6v-flashx')).not.toBeChecked();
@@ -301,13 +316,13 @@ test('FlashX复用旧Key且明确计费，充值教程不发模型请求，欠�
   expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => call.method === 'recognize').length)).toBe(1);
   await page.evaluate(() => sessionStorage.removeItem('test-native-recognition-error')); await page.getByRole('button', { name: '重试识别' }).click();
   await expect(page.getByTestId('food-weight-0')).toHaveValue('150'); await page.getByTestId('save-meal').click(); await expect(page.getByTestId('meal-record')).toHaveCount(1);
-  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings');
+  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await expect(page.locator('.model-profile')).toHaveCount(1); await expect(page.locator('.model-profile')).toContainText('当前 glm-4.6v-flashx');
   expect(await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))).not.toContain('flashx-example-test-key');
 });
 
 test('5.3资源包型号共用标准Key，额度提示与轻度思考结果可保存，用量错误不自动换模型', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await add(page, '智谱资源包Key', 'glm', 'glm53-resource-example-key'); await expect(page.getByTestId('model-form')).toHaveCount(0);
   await page.getByTestId('manage-key-models').click(); await expect(page.getByTestId('model-api-key')).toHaveValue('');
   await expect(page.getByTestId('model-name').locator('option')).toHaveCount(5);
@@ -329,14 +344,14 @@ test('5.3资源包型号共用标准Key，额度提示与轻度思考结果可�
   expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => call.method === 'recognize').length)).toBe(1);
   await page.evaluate(() => sessionStorage.removeItem('test-native-recognition-error')); await page.getByRole('button', { name: '重试识别' }).click();
   await expect(page.getByTestId('food-weight-0')).toHaveValue('150'); await page.getByTestId('save-meal').click(); await expect(page.getByTestId('meal-record')).toHaveCount(1);
-  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings');
+  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await expect(page.locator('.model-profile')).toContainText('当前 glm-5.3-flashx');
   expect(await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))).not.toContain('glm53-resource-example-key');
 });
 
 test('手机多 Key 多模型：添加、切换、识别保存、刷新和删除不自动改选', async ({ page }) => {
   await nativeBridge(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible();
-  await tab(page, 'settings'); await expect(page.getByTestId('personal-models')).toBeVisible();
+  await tab(page, 'settings'); await openSettingsPanel(page, 'ai'); await expect(page.getByTestId('personal-models')).toBeVisible();
   await add(page, '我的百炼', 'qwen'); await expect(page.getByTestId('active-model')).toHaveCount(1);
   await add(page, 'Gemini 备用', 'gemini'); await expect(page.getByTestId('model-form')).toHaveCount(0);
   const cards = page.locator('.model-profile'); await expect(cards).toHaveCount(2);
@@ -353,7 +368,7 @@ test('手机多 Key 多模型：添加、切换、识别保存、刷新和删除
   await expect(page.getByTestId('food-weight-0')).toHaveValue('150'); await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('meal-record')).toHaveCount(1);
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
-  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings');
+  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await expect(cards.filter({ hasText: 'Gemini 备用' }).getByTestId('active-model')).toBeVisible();
   page.on('dialog', dialog => dialog.accept());
   await cards.filter({ hasText: 'Gemini 备用' }).getByTestId('delete-model').click();
@@ -362,7 +377,7 @@ test('手机多 Key 多模型：添加、切换、识别保存、刷新和删除
 });
 
 test('免费视觉模型标注额度、手动切换，新来源识别保存后可恢复', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible(); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible(); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await page.getByTestId('add-model').click();
   await page.getByTestId('model-provider').selectOption('siliconflow');
   await expect(page.getByTestId('model-name')).toHaveValue('Qwen/Qwen3.5-4B');
@@ -387,7 +402,7 @@ test('免费视觉模型标注额度、手动切换，新来源识别保存后�
   await page.getByTestId('gallery-input').setInputFiles({ name: 'free-model.png', mimeType: 'image/png', buffer });
   await expect(page.getByTestId('food-weight-0')).toHaveValue('150'); await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0); await expect(page.getByTestId('meal-record')).toHaveCount(1);
-  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings');
+  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await expect(gemma.getByTestId('active-model')).toBeVisible(); await expect(gemma).toContainText('dots-studio/dots-3-note-preview:free');
   const stores = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
   expect(stores).not.toContain('new-free-test-key'); expect(stores).not.toContain('qwen-visual-test-key'); expect(stores).not.toContain('example-personal-test-key');
@@ -395,7 +410,7 @@ test('免费视觉模型标注额度、手动切换，新来源识别保存后�
 });
 
 test('测试失败保留配置、输入框清 Key，可改模型且默认隐藏自建服务', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible(); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible(); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await add(page, '百炼日常', 'qwen'); await expect(page.getByTestId('model-form')).toHaveCount(0);
   await page.getByTestId('edit-model').click();
   await expect(page.getByTestId('model-api-key')).toHaveValue('');
@@ -409,7 +424,7 @@ test('测试失败保留配置、输入框清 Key，可改模型且默认隐藏�
 });
 
 test('DeepSeek视觉配置明确计费，余额错误保留模型，手动重试后可编辑保存', async ({ page }) => {
-  await nativeBridge(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible(); await tab(page, 'settings');
+  await nativeBridge(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible(); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   await page.getByTestId('add-model').click(); await page.getByTestId('model-provider').selectOption('deepseek');
   await expect(page.getByTestId('model-name')).toHaveValue('deepseek-flash');
   await expect(page.getByTestId('model-name').locator('option')).toHaveCount(1);
@@ -432,7 +447,7 @@ test('DeepSeek视觉配置明确计费，余额错误保留模型，手动重试
   await expect(page.getByTestId('food-editor')).toHaveCount(0); await expect(page.getByTestId('meal-record')).toHaveCount(1);
   const calls = await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => call.method === 'recognize'));
   expect(calls).toEqual([{ method: 'recognize', id: selectedId }, { method: 'recognize', id: selectedId }]);
-  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings');
+  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await openSettingsPanel(page, 'ai');
   const deepseek = page.locator('.model-profile').filter({ hasText: '我的DeepSeek' });
   await expect(deepseek.getByTestId('active-model')).toBeVisible(); await expect(deepseek).toContainText('按量计费');
   expect(await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))).not.toContain('deepseek-example-test-key');

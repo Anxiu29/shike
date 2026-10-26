@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useId } from 'vue'
+import { computed, onMounted, ref, useId, watch } from 'vue'
 import { KeyRound, Plus, LoaderCircle, Check, Pencil, Trash2, BookOpen } from '@lucide/vue'
 import { personalProviders, personalModelInfo, personalModelUsageNotice, personalProfileModels, type PersonalProfile, type PersonalProvider, type PersonalState } from '@shike/shared'
 import { activatePersonalProfile, clearPersonalProfiles, deletePersonalProfile, getPersonalState, savePersonalProfile, testPersonalProfile } from '../lib/personal-vision'
 import AppSheet from './AppSheet.vue'
 import ModelKeyGuide from './ModelKeyGuide.vue'
+import ModelPicker from './ModelPicker.vue'
 
-const emit = defineEmits<{ changed: [] }>()
+const emit = defineEmits<{ changed: []; busy: [value: boolean] }>()
 const state = ref<PersonalState>({ profiles: [], activeId: null })
-const busy = ref(false), ready = ref(false), formOpen = ref(false)
+const working = ref(false), switching = ref(false), ready = ref(false), formOpen = ref(false)
+const busy = computed(() => working.value || switching.value)
+watch(busy, value => emit('busy', value), { flush: 'sync' })
 const error = ref(''), message = ref('')
 const editingId = ref<string | undefined>(), label = ref(''), provider = ref<PersonalProvider>('qwen'), model = ref('qwen3.7-flash'), apiKey = ref('')
 const helpOpen = ref(false), helpProvider = ref<PersonalProvider>('qwen'), enabledModels = ref<string[]>(['qwen3.7-flash'])
@@ -19,11 +22,13 @@ const selectedInfo = computed(() => personalModelInfo(provider.value, model.valu
 function providerName(id: string) { return personalProviders.find(value => value.id === id)?.name ?? id }
 async function operation(action: () => Promise<PersonalState>, success: string) {
   if (busy.value) return
-  busy.value = true; error.value = ''; message.value = ''
+  working.value = true; error.value = ''; message.value = ''
   try { state.value = await action(); ready.value = true; message.value = success; emit('changed'); return true }
   catch (cause) { error.value = cause instanceof Error ? cause.message : '模型配置操作失败，请重试。'; return false }
-  finally { busy.value = false }
+  finally { working.value = false }
 }
+const pickerKey = computed(() => JSON.stringify([state.value.activeId, state.value.profiles.map(profile => [profile.id, profile.model, profile.models])]))
+function modelSwitching(value: boolean) { switching.value = value; if (!value) void operation(getPersonalState, '') }
 onMounted(() => { void operation(getPersonalState, '') })
 function openForm(profile?: PersonalProfile) {
   if (busy.value || formOpen.value) return
@@ -56,6 +61,7 @@ async function clear() {
   <article class="card settings-card personal-models" data-testid="personal-models">
     <span class="settings-icon"><KeyRound :size="24" stroke-width="1.5" /></span>
     <h2>我的 AI 模型</h2><p>一组保存一把 Key，可勾选同平台多个模型。拍照时直接切换，更换 Key 只需修改这一组。</p>
+    <ModelPicker v-if="ready && state.profiles.length" :key="pickerKey" compact :busy="busy" label="拍照与聊天使用的模型" @switching="modelSwitching"/>
     <p v-if="state.profiles.some(profile => profile.provider === 'openrouter')" class="small-text muted" data-testid="openrouter-removed-note">OpenRouter的Google／Gemma型号已移除，已有Key仍保留；若原来正在使用该型号，请重新选用本组可用模型。</p>
     <button type="button" class="button secondary model-key-help-button" data-testid="open-model-key-guides" @click="openHelp()"><BookOpen :size="16" />API Key 申请与多模型教程</button>
     <p class="notice warning small-text">照片会发送至所选提供商。保存和测试连接会发送一张内置测试图，可能消耗少量额度；识别失败不会自动切换模型或 Key。</p>

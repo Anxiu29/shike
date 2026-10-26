@@ -1,3 +1,4 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { openPhotoEditor } from './helpers/photo-editor';
 import { test, expect, type Page } from '@playwright/test';
 import sharp from 'sharp';
@@ -12,7 +13,8 @@ async function recognize(page: Page, labels: Array<{ name: string; label: Packag
   await page.getByTestId('gallery-input').setInputFiles({ name: '合成包装测试.png', mimeType: 'image/png', buffer: image });
   await expect(page.getByTestId('package-label-0')).toBeVisible();
 }
-async function tab(page: Page, name: 'diary' | 'settings') { const button = page.getByTestId(`tab-${name}`); await (await button.isVisible() ? button : page.getByTestId(`desktop-tab-${name}`)).click() }
+async function tab(page: Page, name: 'diary' | 'settings') {
+  await closeSettingsPanel(page); const button = page.getByTestId(`tab-${name}`); await (await button.isVisible() ? button : page.getByTestId(`desktop-tab-${name}`)).click() }
 
 test('包装kJ识别后填半包，修正标签、保存刷新和改克数，模拟来源保留', async ({ page }) => {
   await recognize(page, [{ name: '测试饼干', label: cookie }]);
@@ -50,10 +52,10 @@ test('手填每份包装按份计算，v8备份恢复原标签和摄入快照，
   await page.getByTestId('package-unit-0').selectOption('serving'); await page.getByTestId('package-amount-0').fill('2');
   await expect(page.getByTestId('food-calories-0')).toContainText('240 kcal'); await page.getByTestId('save-meal').click(); await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await tab(page, 'settings'); await expect(page.getByTestId('estimated-food-count')).toHaveText('0 项');
-  const pending = page.waitForEvent('download'); await page.getByTestId('export-backup').click(); const download = await pending; const stream = await download.createReadStream();
+  const pending = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); const download = await pending; const stream = await download.createReadStream();
   if (!stream) throw new Error('没有备份'); const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk)); const buffer = Buffer.concat(chunks), backup = JSON.parse(buffer.toString());
   expect(backup.schemaVersion).toBe(10); expect(backup.meals[0].items[0].packageSnapshot.label.basis).toBe('serving'); expect(backup.meals[0].items[0].packageSnapshot.consumedAmount).toBe(2);
   await tab(page, 'diary'); await page.getByTestId('edit-meal').click(); await page.getByTestId('package-amount-0').fill('1'); await page.getByTestId('save-meal').click(); await expect(page.getByTestId('food-editor')).toHaveCount(0);
-  await tab(page, 'settings'); await page.getByTestId('backup-input').setInputFiles({ name: '包装备份.json', mimeType: 'application/json', buffer }); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');
+  await tab(page, 'settings'); await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: '包装备份.json', mimeType: 'application/json', buffer }); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');
   await tab(page, 'diary'); await expect(page.getByTestId('meal-record')).toContainText('2 份'); await expect(page.getByTestId('daily-calories')).toContainText('240');
 });

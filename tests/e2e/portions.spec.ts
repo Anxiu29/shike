@@ -1,3 +1,4 @@
+import { openSettingsPanel } from './helpers/settings';
 import { test, expect } from '@playwright/test'
 import { routeApkAssets } from './helpers/apk-assets'
 
@@ -15,11 +16,11 @@ test('一个包子估重，多次编辑数量和单个大小，刷新与v9备份
   if (info.project.name === 'Chrome 手机') await page.screenshot({ path: 'docs/screenshots/portion-mobile.png' })
   await page.getByTestId('save-meal').click(); await expect(page.getByTestId('meal-record')).toContainText('47.5 g')
   const settings = page.getByTestId('tab-settings'); await (await settings.isVisible() ? settings : page.getByTestId('desktop-tab-settings')).click()
-  const pending = page.waitForEvent('download'); await page.getByTestId('export-backup').click(); const stream = await (await pending).createReadStream()
+  const pending = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); const stream = await (await pending).createReadStream()
   if (!stream) throw Error('没有备份流'); const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk))
   const bytes = Buffer.concat(chunks), backup = JSON.parse(bytes.toString())
   expect(backup.schemaVersion).toBe(10); expect(backup.meals[0].items[0]).toMatchObject({ weightG: 47.5, portionSnapshot: { quantity: .5, unit: '个', amountPerUnit: 95 } })
-  await page.getByTestId('backup-input').setInputFiles({ name: 'portion.json', mimeType: 'application/json', buffer: bytes }); await page.getByTestId('confirm-restore').click()
+  await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'portion.json', mimeType: 'application/json', buffer: bytes }); await page.getByTestId('confirm-restore').click()
   await expect(page.getByTestId('toast')).toContainText('备份已完整恢复')
   const diary = page.getByTestId('tab-diary'); await (await diary.isVisible() ? diary : page.getByTestId('desktop-tab-diary')).click()
   await page.getByTestId('edit-meal').click(); await expect(page.getByTestId('food-portion-0-quantity')).toHaveValue('0.5'); await expect(page.getByTestId('food-portion-0-per-unit')).toHaveValue('95')

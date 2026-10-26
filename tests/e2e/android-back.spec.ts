@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { androidBack, androidTab, mockAndroidBack } from './helpers/android-back'
 import { routeApkAssets } from './helpers/apk-assets'
+import { openSettingsPanel } from './helpers/settings'
 
 test.beforeEach(async ({ page }) => { await routeApkAssets(page); await mockAndroidBack(page); await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible() })
 
@@ -42,11 +43,12 @@ test('初次手动添加和设置子窗可逐层返回，初次取消不留空�
   await androidTab(page, 'settings'); await page.getByTestId('manage-packaged-foods').click()
   await expect(page.getByTestId('packaged-library')).toBeVisible(); await androidBack(page)
   await expect(page.getByTestId('packaged-library')).toHaveCount(0); await expect(page.getByTestId('manage-packaged-foods')).toBeVisible()
-  await page.getByTestId('add-model').click(); await expect(page.getByTestId('model-form')).toBeVisible()
+  await openSettingsPanel(page, 'ai'); await page.getByTestId('add-model').click(); await expect(page.getByTestId('model-form')).toBeVisible()
   await page.getByTestId('model-label').fill('取消的配置'); await page.getByTestId('model-api-key').fill('example-unsaved-key')
   await page.getByTestId('model-key-help').click(); await expect(page.getByTestId('model-key-help-sheet')).toBeVisible()
   await androidBack(page); await expect(page.getByTestId('model-key-help-sheet')).not.toBeVisible(); await expect(page.getByTestId('model-label')).toHaveValue('取消的配置')
   await androidBack(page); await expect(page.getByTestId('model-form')).toHaveCount(0)
+  await expect(page.getByTestId('settings-detail')).toBeVisible(); await androidBack(page); await expect(page.getByTestId('settings-detail')).not.toBeVisible()
   await androidBack(page); await expect(page.getByTestId('daily-summary')).toBeVisible()
   expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden')
 })

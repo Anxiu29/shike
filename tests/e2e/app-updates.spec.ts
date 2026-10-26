@@ -1,10 +1,12 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { test, expect, type Page } from '@playwright/test';
 import { routeApkAssets } from './helpers/apk-assets';
 import { openManualMeal } from './helpers/manual-food';
 import appRelease from '../../config/app-release.json' with { type: 'json' };
 
 test.beforeEach(async ({ page }) => { await routeApkAssets(page); });
-async function tab(page: Page, name: 'settings' | 'diary') { const button = page.getByTestId(`tab-${name}`); await (await button.isVisible() ? button : page.getByTestId(`desktop-tab-${name}`)).click(); }
+async function tab(page: Page, name: 'settings' | 'diary') {
+  await closeSettingsPanel(page); const button = page.getByTestId(`tab-${name}`); await (await button.isVisible() ? button : page.getByTestId(`desktop-tab-${name}`)).click(); }
 async function nativeUpdater(page: Page) {
   await page.addInitScript(({ code, name }) => {
     const w = window as any, listeners = new Map<string, { event: string; callback: (data: unknown) => void }>(); let listenerId = 0;
@@ -36,7 +38,7 @@ async function nativeUpdater(page: Page) {
 }
 
 test('安卓检查更新、下载进度、安装授权和系统确认，不把打开安装器标为安装完成', async ({ page }, info) => {
-  await nativeUpdater(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeUpdater(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'updates');
   await expect(page.getByTestId('app-current-version')).toHaveText(appRelease.versionName);
   await expect(page.getByTestId('app-update-priority')).toContainText('Gitee 国内源优先');
   expect(await page.evaluate(() => (window as any).__updateCalls.filter((call: any) => call.method !== 'getInfo'))).toEqual([]);
@@ -56,7 +58,7 @@ test('安卓检查更新、下载进度、安装授权和系统确认，不把�
 });
 
 test('备用源未完成检查时明确提示，提供Gitee入口且不误报最新', async ({ page }) => {
-  await nativeUpdater(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeUpdater(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'updates');
   await page.evaluate(() => { (window as any).__updateMode = 'partial'; });
   await page.getByTestId('check-app-update').click();
   await expect(page.getByTestId('app-update-status')).toContainText('部分更新源检查未完成'); await expect(page.getByTestId('app-update-status')).not.toContainText('当前已是');
@@ -67,7 +69,7 @@ test('备用源未完成检查时明确提示，提供Gitee入口且不误报最
 
 test('取消下载与签名失败均不可进入安装，原有饮食记录仍能恢复', async ({ page }) => {
   await nativeUpdater(page); await page.goto('/'); await openManualMeal(page, '更新前餐食'); await page.getByTestId('food-weight-0').fill('150'); await page.getByTestId('save-meal').click();
-  await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await page.getByTestId('check-app-update').click(); await page.getByTestId('download-app-update').click();
+  await expect(page.getByTestId('meal-record')).toHaveCount(1); await tab(page, 'settings'); await openSettingsPanel(page, 'updates'); await page.getByTestId('check-app-update').click(); await page.getByTestId('download-app-update').click();
   await expect.poll(() => page.evaluate(() => typeof (window as any).__cancelDownload)).toBe('function'); await page.getByTestId('cancel-app-update').click();
   await expect(page.getByTestId('app-update-message')).toContainText('下载已取消'); await expect(page.getByTestId('install-app-update')).toHaveCount(0);
   await page.evaluate(() => { (window as any).__downloadError = '安装包签名与当前食刻不一致，已停止安装。'; }); await page.getByTestId('download-app-update').click();
@@ -77,7 +79,7 @@ test('取消下载与签名失败均不可进入安装，原有饮食记录仍�
 });
 
 test('更新仓库可保存，404、未发布更新文件和当前版本分别显示，切换仓库不主动下载', async ({ page }) => {
-  await nativeUpdater(page); await page.goto('/'); await tab(page, 'settings');
+  await nativeUpdater(page); await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'updates');
   await page.getByTestId('app-update-source').locator('summary').click(); await page.getByTestId('update-repository').fill('https://github.com/team/public-app'); await page.getByTestId('save-update-repository').click();
   await page.getByTestId('update-gitee-repository').fill('https://gitee.com/team_cn/public-app'); await page.getByTestId('save-update-repository').click();
   await expect(page.getByTestId('update-gitee-repository')).toHaveValue('team_cn/public-app');
@@ -94,7 +96,7 @@ test('网页版仅在点击时读取公开更新，显示说明及APK链接且�
   const prefix = 'https://github.com/Anxiu29/shike/releases/download/v-next/', requests: string[] = [];
   await page.route('https://api.github.com/repos/Anxiu29/shike/releases?per_page=10', route => { requests.push(route.request().url()); return route.fulfill({ json: [{ draft: false, prerelease: true, published_at: '2026-10-24T05:00:00.000Z', assets: [{ name: 'shike.apk', size: 2048, browser_download_url: prefix + 'shike.apk' }, { name: 'shike-update.json', browser_download_url: prefix + 'shike-update.json' }] }] }); });
   await page.route(prefix + 'shike-update.json', route => { requests.push(route.request().url()); return route.fulfill({ json: { schemaVersion: 1, appId: 'cn.anxiu29.shike', versionCode: appRelease.versionCode + 1, versionName: '0.12.0-test', releasedAt: '2026-10-24T05:00:00.000Z', minSdk: 24, bytes: 2048, sha256: 'a'.repeat(64), notes: ['公开发行版说明'] } }); });
-  await page.goto('/'); await tab(page, 'settings'); expect(requests).toEqual([]);
+  await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'updates'); expect(requests).toEqual([]);
   await page.getByTestId('check-app-update').click(); await expect(page.getByTestId('app-update-release')).toContainText('公开发行版说明'); await expect(page.getByTestId('download-apk-link')).toHaveAttribute('href', prefix + 'shike.apk'); await expect(page.getByTestId('install-app-update')).toHaveCount(0); expect(requests).toHaveLength(2);
 });
 
@@ -111,7 +113,7 @@ test('网页版Gitee优先且失败回退GitHub，显示实际来源，进入设
   });
   await page.route('https://api.github.com/repos/Anxiu29/shike/releases?per_page=10', route => { calls.push(route.request().url()); return route.fulfill({ json: [{ draft: false, published_at: manifest.releasedAt, assets: [{ name: 'shike.apk', size: 2048, browser_download_url: githubPrefix + 'shike.apk' }, { name: 'shike-update.json', browser_download_url: githubPrefix + 'shike-update.json' }] }] }); });
   await page.route(githubPrefix + 'shike-update.json', route => { calls.push(route.request().url()); return route.fulfill({ json: manifest }); });
-  await page.goto('/'); await tab(page, 'settings'); expect(calls).toEqual([]);
+  await page.goto('/'); await tab(page, 'settings'); await openSettingsPanel(page, 'updates'); expect(calls).toEqual([]);
   await page.getByTestId('check-app-update').click(); await expect(page.getByTestId('app-update-selected-source')).toHaveText('Gitee 国内源'); await expect(page.getByTestId('download-apk-link')).toHaveAttribute('href', giteePrefix + 'shike.apk'); expect(calls).toHaveLength(2);
   unavailable = true; await page.getByTestId('check-app-update').click(); await expect(page.getByTestId('app-update-selected-source')).toHaveText('GitHub 备用源'); await expect(page.getByTestId('download-apk-link')).toHaveAttribute('href', githubPrefix + 'shike.apk'); await expect(page.getByTestId('app-update-message')).toContainText('备用源'); expect(calls).toHaveLength(5);
 });

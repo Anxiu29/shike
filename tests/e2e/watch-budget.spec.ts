@@ -1,7 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
 import { routeApkAssets } from './helpers/apk-assets'
 
-async function tab(page: Page, name: 'goals' | 'diary') { const mobile = page.getByTestId(`tab-${name}`); await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click() }
+async function tab(page: Page, name: 'goals' | 'diary') {
+  await closeSettingsPanel(page); const mobile = page.getByTestId(`tab-${name}`); await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click() }
 async function daily(page: Page, value: string) {
   await page.getByTestId('add-exercise').click(); await page.getByTestId('exercise-method').selectOption('manual'); await expect(page.getByTestId('exercise-scope')).toHaveValue('day')
   await page.getByTestId('exercise-manual-kcal').fill(value)

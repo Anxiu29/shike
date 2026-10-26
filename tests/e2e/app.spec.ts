@@ -1,3 +1,4 @@
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { openPhotoEditor } from './helpers/photo-editor';
 import { openManualMeal } from './helpers/manual-food';
 import { test, expect, type Page } from '@playwright/test';
@@ -19,6 +20,7 @@ function testEstimateProfile(factor: 'sweetness' | 'oil', shift = 0) {
 }
 
 async function openTab(page: Page, tab: 'diary' | 'weight' | 'settings') {
+  await closeSettingsPanel(page);
   const mobile = page.getByTestId(`tab-${tab}`);
   await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${tab}`)).click();
 }
@@ -102,7 +104,7 @@ test('体重、目标和JSON备份能导出并完整恢复', async ({ page }, te
   await expect(page.getByTestId('toast')).toContainText('目标');
   await openTab(page, 'settings');
   const downloadPromise = page.waitForEvent('download');
-  await page.getByTestId('export-backup').click();
+  await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click();
   const download = await downloadPromise;
   const path = testInfo.outputPath('backup.json');
   await download.saveAs(path);
@@ -118,7 +120,7 @@ test('体重、目标和JSON备份能导出并完整恢复', async ({ page }, te
   await page.getByTestId('delete-meal').click();
   await expect(page.getByTestId('meal-record')).toHaveCount(0);
   await openTab(page, 'settings');
-  await page.getByTestId('backup-input').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(content) });
+  await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(content) });
   await expect(page.getByTestId('backup-preview')).toContainText('1');
   await page.getByTestId('confirm-restore').click();
   await expect(page.getByTestId('backup-preview')).toHaveCount(0);
@@ -149,7 +151,7 @@ test('百炼估算兼容旧 Gemini 缓存，中值切档保存、历史保留及
     id: 'legacy-porridge-estimate', name: '杂粮粥', nutrientsPer100g: { energyKcal: 45, proteinG: 1.2, fatG: 0.5, carbsG: 8.5 }, provenance: '测试中的旧 AI 单值粗估，非实测数据', assumptions: ['测试旧条目，尚无三档资料'], provider: 'gemini', model: 'legacy-test-model', createdAt: legacyTime, updatedAt: legacyTime,
   }] };
   await openTab(page, 'settings');
-  await page.getByTestId('backup-input').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacyBackup)) });
+  await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacyBackup)) });
   await page.getByTestId('confirm-restore').click();
   await expect(page.getByTestId('backup-preview')).toHaveCount(0);
   await openTab(page, 'diary');
@@ -215,7 +217,7 @@ test('百炼估算兼容旧 Gemini 缓存，中值切档保存、历史保留及
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await openTab(page, 'settings');
   const downloadPromise = page.waitForEvent('download');
-  await page.getByTestId('export-backup').click();
+  await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click();
   const download = await downloadPromise;
   const path = await download.path();
   const backup = JSON.parse(await readFile(path!, 'utf8'));

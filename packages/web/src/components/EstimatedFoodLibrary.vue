@@ -4,7 +4,7 @@ import { BookOpen, Search, ChevronRight, Trash2 } from '@lucide/vue'
 import type { EstimatedFood } from '@shike/shared'
 import AppSheet from './AppSheet.vue'
 import { numberLabel } from '../lib/dates'
-const props = defineProps<{ foods: EstimatedFood[] }>()
+const props = defineProps<{ foods: EstimatedFood[]; compact?: boolean }>()
 const emit = defineEmits<{ remove: [food: EstimatedFood] }>()
 const open = ref(false), query = ref(''), limit = ref(10)
 const filtered = computed(() => {
@@ -15,12 +15,12 @@ watch(query, () => { limit.value = 10 })
 function show() { query.value = ''; limit.value = 10; open.value = true }
 </script>
 <template>
-  <article class="card settings-card settings-estimate-card" data-testid="settings-estimate-card">
+  <article class="card settings-card settings-estimate-card" :class="{ 'settings-estimate-inline': compact }" data-testid="settings-estimate-card">
     <button type="button" class="settings-tool-row estimate-library-entry" data-testid="manage-estimates" @click="show">
       <span class="settings-tool-icon"><BookOpen :size="21"/></span>
       <span><strong>个人估算库 <b class="soft-tag" data-testid="estimated-food-count">{{ foods.length }} 项</b></strong><small>{{ foods.length ? '搜索和管理已保存的 AI 营养估算' : '确认保存的 AI 营养估算会留在这里' }}</small></span><ChevronRight :size="18"/>
     </button>
-    <p class="tiny muted library-note">同名食物可复用；修改或删除估算不影响历史饮食快照。</p>
+    <p v-if="!compact" class="tiny muted library-note">同名食物可复用；修改或删除估算不影响历史饮食快照。</p>
   </article>
   <AppSheet :open="open" title="个人估算库" subtitle="搜索、核对与管理已确认保存的 AI 估算" test-id="estimate-library" @close="open = false">
     <label class="estimate-search"><Search :size="18"/><input v-model="query" type="search" aria-label="搜索个人估算" placeholder="搜索食物名称或模型" data-testid="estimate-search"/></label>
