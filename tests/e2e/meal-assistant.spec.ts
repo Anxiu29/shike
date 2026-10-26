@@ -1,0 +1,97 @@
+import { test, expect, type Page } from '@playwright/test';
+import { routeApkAssets } from './helpers/apk-assets';
+test.beforeEach(async ({ page }) => { await routeApkAssets(page); });
+test.use({ timezoneId: 'Asia/Shanghai' });
+async function native(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as any, id = '790650e2-3696-43d1-927a-596f3e69de84';
+    w.androidBridge = {}; w.__assistantCalls = [];
+    w.Capacitor = { PluginHeaders: [{ name: 'PersonalVision', methods: ['getState', 'activate', 'describeMeal'].map(name => ({ name, rtype: 'promise' })) }], nativePromise: async (_plugin: string, method: string, input: any) => {
+      if (method === 'getState' || method === 'activate') return { profiles: [{ id, label: '测试模型', provider: 'qwen', model: 'qwen3.7-flash' }], activeId: id };
+      if (method === 'describeMeal') {
+        w.__assistantCalls.push(input.request);
+        if (w.__assistantFail) throw new Error('网络暂时不可用，草稿已保留。');
+        const request = JSON.parse(input.request), amount = /三个/.test(request.text) ? 3 : 2;
+        const intent = /取消/.test(request.text) ? 'clear' : /问一下/.test(request.text) ? 'question' : 'update';
+        // 模拟模型遵守输入餐次上下文；真实语言理解不由这个测试证明。
+        const mealType = /早餐/.test(request.text) ? 'breakfast' : request.previous?.mealType ?? request.mealType;
+        const draft = { intent, date: request.date, mealType, foods: intent === 'update' ? [{ name: '肉包', amount, unit: '个' }, { name: '鸡蛋', amount: null, unit: '份' }] : [], message: '已整理这一餐草稿，请核对后保存。' };
+        return { provider: 'qwen', model: 'qwen3.7-flash', data: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft) } }] }) };
+      }
+    } };
+  });
+}
+async function open(page: Page) { await native(page); await page.goto('/'); await page.getByTestId('assistant-open').click(); await expect(page.getByTestId('meal-assistant')).toBeVisible(); }
+async function send(page: Page, text: string) { await page.getByTestId('assistant-input').fill(text); await page.getByTestId('assistant-send').click(); await expect(page.getByTestId('assistant-input')).toHaveValue(''); await expect(page.getByTestId('assistant-draft')).toBeVisible(); }
+
+test('未说餐次按发送时间预选，跨时段保留手选，下一餐重算并可明确覆盖', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-10-21T10:59:00+08:00'));
+  await open(page); await send(page, '两个肉包');
+  await expect(page.getByTestId('assistant-meal-type')).toHaveValue('breakfast');
+  expect(await page.evaluate(() => JSON.parse((window as any).__assistantCalls[0]).mealType)).toBe('breakfast');
+  await page.getByTestId('assistant-meal-type').selectOption('dinner');
+  await page.clock.setFixedTime(new Date('2026-10-21T12:00:00+08:00'));
+  await send(page, '包子改成三个');
+  await expect(page.getByTestId('assistant-meal-type')).toHaveValue('dinner');
+  expect(await page.evaluate(() => JSON.parse((window as any).__assistantCalls[1]).previous.mealType)).toBe('dinner');
+  await page.getByTestId('assistant-new').click(); await send(page, '两个肉包');
+  await expect(page.getByTestId('assistant-meal-type')).toHaveValue('lunch');
+  await page.getByTestId('assistant-new').click(); await send(page, '早餐两个肉包');
+  await expect(page.getByTestId('assistant-meal-type')).toHaveValue('breakfast');
+  expect(await page.evaluate(() => JSON.parse((window as any).__assistantCalls[3]).mealType)).toBe('lunch');
+  // 窗口一直打开到深夜，新的第一条请求也必须读取最新时间。
+  await page.getByTestId('assistant-new').click();
+  await page.clock.setFixedTime(new Date('2026-10-21T23:00:00+08:00'));
+  await send(page, '两个肉包'); await expect(page.getByTestId('assistant-meal-type')).toHaveValue('snack');
+});
+test('聊天修改数量、未知份量默认、确认保存与刷新恢复', async ({ page }) => {
+  await open(page); await send(page, '早餐吃了两个肉包和鸡蛋');
+  await expect(page.getByTestId('assistant-food-0')).toContainText('160 g'); await expect(page.getByTestId('assistant-food-1')).toContainText('50 g');
+  await expect(page.getByTestId('assistant-amount-1')).toHaveValue('1');
+  await send(page, '包子改成三个'); await expect(page.getByTestId('assistant-food-0')).toContainText('240 g');
+  await expect(page.getByTestId('assistant-save')).toBeInViewport();
+  expect(await page.evaluate(() => JSON.parse((window as any).__assistantCalls[1]).previous.foods[0].amount)).toBe(2);
+  if (test.info().project.name === 'Chrome 手机') await page.screenshot({ path: 'artifacts/android/meal-assistant-mobile.png' });
+  await page.getByTestId('assistant-save').evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
+  await expect(page.getByTestId('assistant-draft')).toHaveCount(0); await expect(page.getByTestId('assistant-messages')).toContainText('已保存');
+  await page.getByTestId('meal-assistant').getByTestId('close-sheet').click(); await expect(page.getByTestId('meal-record')).toHaveCount(1);
+  await page.reload(); await expect(page.getByTestId('meal-record')).toHaveCount(1);
+  const width = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, viewport: innerWidth })); expect(width.scroll).toBeLessThanOrEqual(width.viewport);
+});
+test('失败保留输入草稿，悬浮窗关闭重开不丢失，也不会自动写记录', async ({ page }) => {
+  await open(page); await send(page, '早餐两个肉包'); await expect(page.getByTestId('assistant-draft')).toBeVisible();
+  await page.evaluate(() => { (window as any).__assistantFail = true; });
+  await page.getByTestId('assistant-input').fill('包子改三个'); await page.getByTestId('assistant-send').click();
+  await expect(page.getByTestId('assistant-error')).toContainText('草稿已保留'); await expect(page.getByTestId('assistant-input')).toHaveValue('包子改三个'); await expect(page.getByTestId('assistant-food-0')).toContainText('160 g');
+  await page.getByTestId('meal-assistant').getByTestId('close-sheet').click(); await expect(page.getByTestId('meal-record')).toHaveCount(0); await page.getByTestId('assistant-open').click();
+  await expect(page.getByTestId('assistant-food-0')).toContainText('160 g'); await page.evaluate(() => { (window as any).__assistantFail = false; });
+  await send(page, '问一下这餐'); await expect(page.getByTestId('assistant-food-0')).toContainText('160 g');
+  await page.getByTestId('assistant-input').fill('取消这餐'); await page.getByTestId('assistant-send').click(); await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+});
+test('转到详细编辑后可修改克数保存，旧助手草稿不重复提交', async ({ page }) => {
+  await open(page); await send(page, '早餐两个肉包'); await page.getByTestId('assistant-review').click();
+  await expect(page.getByTestId('food-editor')).toBeVisible();
+  await page.getByTestId('food-portion-0-unit').selectOption('g'); await page.getByTestId('food-weight-0').fill('180'); await page.getByTestId('save-meal').click();
+  await expect(page.getByTestId('food-editor')).toHaveCount(0); await expect(page.getByTestId('meal-record')).toHaveCount(1);
+  await page.getByTestId('assistant-open').click(); await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+});
+test('网页版没有Key时也能明确演示文字助手', async ({ page }) => {
+  test.skip(Boolean(process.env.SHIKE_E2E_APK_ASSETS), '独立APK没有本机后端，此场景仅验证H5');
+  await page.goto('/'); await page.getByTestId('assistant-open').click(); await page.getByTestId('assistant-input').fill('早餐两个肉包和鸡蛋'); await page.getByTestId('assistant-send').click();
+  await expect(page.getByTestId('assistant-messages')).toContainText('模拟模式'); await expect(page.getByTestId('assistant-draft')).toBeVisible(); await expect(page.getByTestId('assistant-store-food-0')).toBeDisabled(); await page.getByTestId('assistant-save').click(); await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+});
+
+test('文字AI草稿可以单独存为常用，并从首页带原份量重新添加', async ({ page }) => {
+  await open(page); await send(page, '两个肉包')
+  await page.getByTestId('assistant-store-food-0').click()
+  await expect(page.getByTestId('assistant-store-food-0')).toContainText('已存为常用')
+  await page.getByTestId('meal-assistant').getByTestId('close-sheet').click()
+  await expect(page.getByTestId('meal-record')).toHaveCount(0)
+  await page.reload(); await page.getByTestId('open-personal-library').click()
+  await page.getByTestId('personal-filter-AI 识别').click()
+  const item = page.locator('article[data-testid^="personal-food-"]')
+  await expect(item).toHaveCount(1); await expect(item).toContainText('160 g')
+  await item.getByRole('button', { name: '加入这一餐' }).click()
+  await expect(page.getByTestId('food-name-0')).toHaveValue(/肉包/)
+  await page.getByTestId('save-meal').click(); await expect(page.getByTestId('meal-record')).toContainText('160 g')
+})

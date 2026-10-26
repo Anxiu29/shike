@@ -1,6 +1,7 @@
-import { createEstimatedFoodEntry, findEstimatedFood, findFood, findRecipe, type EstimatedFood, type FoodEntry, type RecognitionResponse } from '@shike/shared'
+import { createPackageEntry, createEstimatedFoodEntry, findEstimatedFood, findFood, findRecipe, type EstimatedFood, type FoodEntry, type RecognitionResponse } from '@shike/shared'
 import { matchedEntry, recognitionEstimate } from './entries'
 import type { FoodMatchContext } from './food-picker'
+import { applyTypicalPortion } from './typical-portions'
 
 export interface RecognizedFoodDraft {
   entry: FoodEntry
@@ -19,13 +20,25 @@ export function recognitionMatchName(name: string, personalFoods: EstimatedFood[
   return knownName(withoutPortion) ? withoutPortion : original
 }
 
-/** 一个视觉条目对应一条记录，重量按同一条目传递，不平均分餐盘总重，也不展开可见配料。 */
+/**
+ * 一个视觉条目对应一条记录，重量按同一条目传递，不平均分餐盘总重，也不展开可见配料。
+ * matchedEntry先匹配配方/基础食品，再用个人估算或本次AI候选；候选留在内存供主动切换。
+ * 当前入口会applyTypicalPortion：首次未知重量/容量可补带提示的常见份量，不覆盖已知值或0。
+ * 历史加载不走本函数；原模型名称/估重留context用于核对，最终保存的是确认后的独立快照。
+ */
 export function prepareRecognition(response: RecognitionResponse, personalFoods: EstimatedFood[] = []): RecognizedFoodDraft[] {
   return response.result.foods.map(food => {
+      // 标签优先；摄入量可补有提示的常见份量，但绝不直接把整包净含量当已吃完。
+    if (food.packageLabel) {
+      const entry = applyTypicalPortion(createPackageEntry(food.name, food.packageLabel, response.provider, response.model))
+      const warnings = [...food.uncertainties]
+      entry.warnings = [...new Set([...entry.warnings, ...warnings])].slice(0, 30)
+      return { entry, context: { name: food.name, visibleIngredients: [] }, estimatedWeightG: null, warnings }
+    }
     const estimate = recognitionEstimate(food.name, food.estimatedNutrientsPer100g, food.nutritionAssumptions, response.provider, response.model, food.nutritionEstimateProfile)
-    const entry = matchedEntry(recognitionMatchName(food.name, personalFoods), food.estimatedWeightG, personalFoods, estimate)
+    const entry = applyTypicalPortion(matchedEntry(recognitionMatchName(food.name, personalFoods), food.estimatedWeightG, personalFoods, estimate))
     // 已匹配条目用食物库的规范名称；原始视觉名称留在 context，供用户核对。
-    const candidate = estimate ? createEstimatedFoodEntry(estimate, food.estimatedWeightG) : undefined
+    const candidate = estimate ? applyTypicalPortion(createEstimatedFoodEntry(estimate, food.estimatedWeightG)) : undefined
     if (candidate) candidate.id = entry.id
     const visibleNote = food.visibleIngredients.length ? [`可见成分：${food.visibleIngredients.join('、')}。隐藏用油与调料仍需确认。`.slice(0, 500)] : []
     const warnings = [...food.uncertainties, ...visibleNote].slice(0, 30)

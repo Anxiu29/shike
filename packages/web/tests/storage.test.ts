@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import Dexie from 'dexie'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { applyEstimateLevel, createFoodEntry, createEstimatedFoodEntry, findFood, type Backup, type MealRecord } from '@shike/shared'
+import { applyEstimateLevel, createPackageEntry, emptyPackageLabel, syncPackageEntry, calculateNutrients, createFoodEntry, createEstimatedFoodEntry, findFood, type Backup, type MealRecord } from '@shike/shared'
 import { ShikeDatabase, exportBackup, loadData, parseBackup, restoreBackup, saveMeal, saveSettings, saveWeight } from '../src/lib/db'
 import { recognitionEstimate, matchedEntry } from '../src/lib/entries'
 import { porridgeProfile } from './range-fixture'
@@ -12,6 +12,16 @@ beforeEach(() => { database = new ShikeDatabase(`shike-test-${crypto.randomUUID(
 afterEach(async () => { await database.delete() })
 
 describe('本地记录与备份', () => {
+  it('包装标签快照事务保存和恢复，模拟来源不能隐藏，也不进入AI个人库', async () => {
+    const entry = createPackageEntry('测试包装', { ...emptyPackageLabel(), basis: '100ml', energy: { value: 250, unit: 'kJ' }, netContent: { amount: 250, unit: 'ml' } }, 'mock', 'label-test')
+    entry.packageSnapshot!.consumedUnit = 'package'; entry.packageSnapshot!.consumedAmount = 0.5; syncPackageEntry(entry)
+    await saveMeal({ ...sample(), mode: 'live', items: [entry] }, database)
+    const data = await loadData(database); expect(data.meals[0]!.mode).toBe('mock'); expect(data.estimatedFoods).toEqual([])
+    const backup = await exportBackup(database); expect(backup.schemaVersion).toBe(10)
+    await database.meals.clear(); await restoreBackup(backup, database)
+    const restored = (await loadData(database)).meals[0]!.items[0]!
+    expect(restored.weightG).toBeNull(); expect(restored.packageSnapshot!.label.energy!.unit).toBe('kJ'); expect(calculateNutrients(restored).energyKcal).toBeCloseTo(312.5 / 4.184)
+  })
   it('保存独立营养快照，后续修改草稿不改写历史', async () => {
     const record = sample()
     await saveMeal(record, database)
@@ -53,7 +63,7 @@ describe('本地记录与备份', () => {
   })
   it('完整恢复写入失败时，事务回滚保留之前的数据', async () => {
     await saveMeal(sample(), database)
-    const restore: Backup = { schemaVersion: 2, estimatedFoods: [], exportedAt: '2026-10-14T04:00:00.000Z', meals: [], weights: [{ date: '2026-10-13', weightKg: 75, updatedAt: '2026-10-14T04:00:00.000Z' }], settings: { targetWeightKg: 65 } }
+    const restore: Backup = { schemaVersion: 10, libraryFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [], estimatedFoods: [], exportedAt: '2026-10-14T04:00:00.000Z', meals: [], weights: [{ date: '2026-10-13', weightKg: 75, updatedAt: '2026-10-14T04:00:00.000Z' }], settings: { targetWeightKg: 65 } }
     database.weights.hook('creating', () => { throw new Error('模拟存储已满') })
     await expect(restoreBackup(restore, database)).rejects.toThrow('模拟存储已满')
     expect(await database.meals.count()).toBe(1)
@@ -86,7 +96,7 @@ describe('个人 AI 估算库与确认保存', () => {
   it.each(['ai', 'manual'] as const)('恢复 %s 条目不一致的 live 标记时依据 Mock 快照纠正，且不额外生成个人估算', async (kind) => {
     const meal = aiMeal('mock'); meal.mode = 'live'
     meal.items[0]!.kind = kind
-    const backup: Backup = { schemaVersion: 2, exportedAt: '2026-10-14T04:00:00.000Z', meals: [meal], weights: [], settings: { targetWeightKg: null }, estimatedFoods: [] }
+    const backup: Backup = { schemaVersion: 10, libraryFoods: [], packagedFoods: [], water: [], exercises: [], dailyPlans: [], exportedAt: '2026-10-14T04:00:00.000Z', meals: [meal], weights: [], settings: { targetWeightKg: null }, estimatedFoods: [] }
     await restoreBackup(backup, database)
     const restored = (await loadData(database)).meals[0]!
     expect(restored.mode).toBe('mock')
@@ -122,7 +132,7 @@ describe('个人 AI 估算库与确认保存', () => {
   it('v2 导出恢复包含个人估算，恢复失败保留原估算', async () => {
     await saveMeal(aiMeal(), database)
     const backup = await exportBackup(database)
-    expect(backup.schemaVersion).toBe(2)
+    expect(backup.schemaVersion).toBe(10)
     expect(backup.estimatedFoods).toHaveLength(1)
     await database.estimatedFoods.clear()
     await restoreBackup(backup, database)
@@ -134,7 +144,7 @@ describe('个人 AI 估算库与确认保存', () => {
   it('旧 v1 JSON 自动转换成 v2，个人估算库为空', async () => {
     const old = { schemaVersion: 1, exportedAt: '2026-10-14T04:00:00.000Z', meals: [sample()], weights: [], settings: { targetWeightKg: null } }
     const converted = parseBackup(JSON.stringify(old))
-    expect(converted.schemaVersion).toBe(2)
+    expect(converted.schemaVersion).toBe(10)
     expect(converted.estimatedFoods).toEqual([])
     await restoreBackup(converted, database)
     expect(await database.meals.count()).toBe(1)

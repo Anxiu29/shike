@@ -5,10 +5,11 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   timeout: 30_000,
-  globalTimeout: 120_000,
+  globalTimeout: 420_000,
   expect: { timeout: 7_000 },
   reporter: [['list'], ['html', { open: 'never' }]],
-  use: { baseURL: process.env.SHIKE_E2E_ORIGIN ?? 'http://127.0.0.1:3101', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
+  // 测试只使用合成摄像头，不访问开发者的真实相机。
+  use: { launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }, baseURL: process.env.SHIKE_E2E_ORIGIN ?? 'http://127.0.0.1:3101', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   projects: [
     { name: 'Chrome 手机', use: { browserName: 'chromium', channel: 'chrome', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
     { name: 'Chrome 桌面', use: { browserName: 'chromium', channel: 'chrome', viewport: { width: 1440, height: 960 } } },

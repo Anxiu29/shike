@@ -1,3 +1,5 @@
+import { openPhotoEditor } from './helpers/photo-editor';
+import { openManualMeal } from './helpers/manual-food';
 import { test, expect, type Page } from '@playwright/test';
 import sharp from 'sharp';
 import { readFile } from 'node:fs/promises';
@@ -22,7 +24,7 @@ async function openTab(page: Page, tab: 'diary' | 'weight' | 'settings') {
 }
 
 async function manualMeal(page: Page, name: string, source?: string) {
-  await page.getByTestId('manual-add').click();
+  await openManualMeal(page);
   await page.getByTestId('food-name-0').fill(name);
   await page.getByTestId('food-weight-0').fill('150');
   if (source) {
@@ -50,7 +52,7 @@ test('图片识别、修改、保存、刷新、编辑与删除形成完整闭�
   await page.screenshot({ path: fileURLToPath(new URL(`../../docs/screenshots/${imageName}.png`, import.meta.url)), fullPage: true });
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.getByTestId('hero-camera').click();
+  await openPhotoEditor(page);
   const picture = await sharp({ create: { width: 1400, height: 1000, channels: 3, background: '#e5efe8' } }).png().toBuffer();
   await page.getByTestId('gallery-input').setInputFiles({ name: '测试照片.png', mimeType: 'image/png', buffer: picture });
   await expect(page.getByTestId('food-item-2')).toBeVisible();
@@ -85,7 +87,7 @@ test('未知营养可保存并持续提示，历史日期独立查看', async ({
   const date = await page.getByTestId('diary-date').inputValue();
   await page.getByTestId('previous-date').click();
   await expect(page.getByTestId('meal-record')).toHaveCount(0);
-  await page.getByTestId('diary-date').fill(date);
+  await selectDate(page, 'diary-date', date);
   await expect(page.getByTestId('meal-record')).toHaveCount(1);
 });
 
@@ -106,8 +108,8 @@ test('体重、目标和JSON备份能导出并完整恢复', async ({ page }, te
   await download.saveAs(path);
   const content = await readFile(path, 'utf8');
   const backup = JSON.parse(content);
-  expect(Object.keys(backup).sort()).toEqual(['estimatedFoods', 'exportedAt', 'meals', 'schemaVersion', 'settings', 'weights']);
-  expect(backup.schemaVersion).toBe(2);
+  expect(Object.keys(backup).sort()).toEqual(['dailyPlans', 'estimatedFoods', 'exercises', 'exportedAt', 'meals', 'packagedFoods', 'schemaVersion', 'settings', 'water', 'weights']);
+  expect(backup.schemaVersion).toBe(10);
   expect(backup.meals).toHaveLength(1);
   expect(backup.weights[0].weightKg).toBe(65.5);
   expect(backup.settings.targetWeightKg).toBe(60);
@@ -129,7 +131,7 @@ test('体重、目标和JSON备份能导出并完整恢复', async ({ page }, te
 });
 
 test('识别失败保留已编辑的草稿并给出可理解提示', async ({ page }) => {
-  await page.getByTestId('manual-add').click();
+  await openManualMeal(page);
   await page.getByTestId('food-name-0').fill('我的待保存餐食');
   await page.route('**/api/recognitions', route => route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ error: { code: 'AI_RATE_LIMITED', message: '模型当前繁忙，请稍后重试。', retryAfterSeconds: 5 } }) }));
   page.once('dialog', dialog => dialog.accept());
@@ -140,7 +142,7 @@ test('识别失败保留已编辑的草稿并给出可理解提示', async ({ pa
   await expect(page.getByTestId('meal-record')).toHaveCount(0);
 });
 
-test('估算默认中档中值、切档保存、历史保留、复用重置中档及改名清除', async ({ page }, testInfo) => {
+test('百炼估算兼容旧 Gemini 缓存，中值切档保存、历史保留及改名清除', async ({ page }, testInfo) => {
   // 模拟用户升级前已有单值个人条目：新三档不能被旧缓存遮住。
   const legacyTime = '2026-10-13T04:00:00.000Z';
   const legacyBackup = { schemaVersion: 2, exportedAt: legacyTime, meals: [], weights: [], settings: { targetWeightKg: null }, estimatedFoods: [{
@@ -157,11 +159,11 @@ test('估算默认中档中值、切档保存、历史保留、复用重置中�
     // 此响应只在隔离的浏览器测试里模拟，不发送真实模型请求。
     const porridge = { name: '杂粮粥', estimatedWeightG: 300, visibleIngredients: ['谷物'], uncertainties: ['含水量与用糖需确认'], estimatedNutrientsPer100g: { energyKcal: inference === 1 ? 75 : 135, proteinG: null, fatG: null, carbsG: null }, nutritionAssumptions: ['参考普通甜度情景，含水量未知，并非测量值'], nutritionEstimateProfile: testEstimateProfile('sweetness', inference === 1 ? 0 : 60) };
     const rice = { name: '米饭', estimatedWeightG: 100, visibleIngredients: [], uncertainties: [], estimatedNutrientsPer100g: { energyKcal: 999, proteinG: 1, fatG: 1, carbsG: 1 }, nutritionAssumptions: ['测试中的故意偏高值，应该被数据库值替代'] };
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ result: { isFood: true, foods: inference === 1 ? [rice, porridge] : [porridge], uncertainties: [] }, mode: 'live', provider: 'gemini', model: 'gemini-3.5-flash-lite' }) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ result: { isFood: true, foods: inference === 1 ? [rice, porridge] : [porridge], uncertainties: [] }, mode: 'live', provider: 'qwen', model: 'qwen3.7-flash' }) });
   });
   const buffer = await sharp({ create: { width: 100, height: 100, channels: 3, background: '#eee8db' } }).png().toBuffer();
   const upload = async () => {
-    await page.getByTestId('hero-camera').click();
+    await openPhotoEditor(page);
     await page.getByTestId('gallery-input').setInputFiles({ name: '测试粥.png', mimeType: 'image/png', buffer });
     await expect(page.getByTestId('food-item-0')).toBeVisible();
   };
@@ -220,17 +222,19 @@ test('估算默认中档中值、切档保存、历史保留、复用重置中�
   expect(backup.estimatedFoods[0].createdAt).toBe(legacyTime);
   expect(backup.estimatedFoods[0].nutrientsPer100g.energyKcal).toBe(105);
   expect(backup.estimatedFoods[0].estimateProfile.options).toHaveLength(3);
+  expect(backup.estimatedFoods[0].provider).toBe('qwen');
   const original = backup.meals.find((meal: MealRecord) => meal.items.some(item => item.name === '杂粮粥'));
   expect(original.items[1].estimateLevel).toBe('high');
   expect(original.items[1].weightG).toBe(400);
+  expect(original.items[1].aiEstimateSnapshot.provider).toBe('qwen');
 });
 
-test('用油三档采用中值，手填确定热量覆盖区间并刷新保留', async ({ page }) => {
+test('百炼结果用油三档采用中值，手填确定热量覆盖区间并刷新保留', async ({ page }) => {
   await page.route('**/api/recognitions', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
     result: { isFood: true, foods: [{ name: '自制炒时蔬', estimatedWeightG: 300, visibleIngredients: [], uncertainties: ['用油需确认'], estimatedNutrientsPer100g: { energyKcal: 75, proteinG: null, fatG: null, carbsG: null }, nutritionAssumptions: ['测试普通用油情景，非实测数据'], nutritionEstimateProfile: testEstimateProfile('oil') }], uncertainties: [] },
-    mode: 'live', provider: 'gemini', model: 'gemini-3.5-flash-lite',
+    mode: 'live', provider: 'qwen', model: 'qwen3.7-flash',
   }) }));
-  await page.getByTestId('hero-camera').click();
+  await openPhotoEditor(page);
   const buffer = await sharp({ create: { width: 100, height: 100, channels: 3, background: '#e5efe8' } }).png().toBuffer();
   await page.getByTestId('gallery-input').setInputFiles({ name: '测试菜.png', mimeType: 'image/png', buffer });
   await expect(page.getByTestId('food-calories-0')).toContainText('225');
@@ -250,7 +254,7 @@ test('用油三档采用中值，手填确定热量覆盖区间并刷新保留',
 });
 
 test('参考配方油档替换原油量，换份量缩放，确定油克数撤销区间', async ({ page }) => {
-  await page.getByTestId('manual-add').click();
+  await openManualMeal(page);
   await page.getByTestId('food-name-0').fill('清炒西兰花');
   await page.getByTestId('food-weight-0').fill('208');
   await expect(page.getByTestId('recipe-ingredient-oil-0')).toHaveValue('8');
@@ -283,7 +287,7 @@ test('食物弹窗推荐、分类搜索、取消返回及更换后保存刷新',
     result: { isFood: true, foods: [{ name: '西红柿炒鸡蛋', estimatedWeightG: 230, visibleIngredients: ['番茄', '鸡蛋'], uncertainties: ['油量需确认'], estimatedNutrientsPer100g: { energyKcal: 75, proteinG: null, fatG: null, carbsG: null }, nutritionAssumptions: ['隔离测试情景，非实测'], nutritionEstimateProfile: testEstimateProfile('oil') }], uncertainties: [] },
     mode: 'mock', provider: 'mock', model: 'mock',
   }) }));
-  await page.getByTestId('hero-camera').click();
+  await openPhotoEditor(page);
   const buffer = await sharp({ create: { width: 100, height: 100, channels: 3, background: '#efe8db' } }).png().toBuffer();
   await page.getByTestId('gallery-input').setInputFiles({ name: '测试菜.png', mimeType: 'image/png', buffer });
   await expect(page.getByTestId('food-name-0')).toHaveValue(findRecipe('番茄炒蛋')!.name);
@@ -344,7 +348,7 @@ test('食物弹窗推荐、分类搜索、取消返回及更换后保存刷新',
 test('五千条食物分批浏览、中文搜索及膳食参考保存后保持来源与重量', async ({ page }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.getByTestId('manual-add').click();
+  await openManualMeal(page);
   await page.getByTestId('food-weight-0').fill('150.5');
   await page.getByTestId('food-source-0').click();
   const picker = page.getByTestId('food-picker');
@@ -376,7 +380,7 @@ test('五千条食物分批浏览、中文搜索及膳食参考保存后保持�
 });
 
 test('熟食默认筛选、扩充早餐与数字最多两位小数', async ({ page }) => {
-  await page.getByTestId('manual-add').click();
+  await openManualMeal(page);
   await page.getByTestId('food-weight-0').fill('333.33');
   await page.getByTestId('food-source-0').click();
   const picker = page.getByTestId('food-picker');
@@ -437,7 +441,7 @@ test('一张照片逐项匹配多个食物和对应重量，混合菜不拆重�
     result: { isFood: true, foods: detected.map(food => ({ ...food, uncertainties: ['隔离测试示例，非真实照片测量'], estimatedNutrientsPer100g: null, nutritionAssumptions: [], nutritionEstimateProfile: null })), uncertainties: [] },
     mode: 'mock', provider: 'mock', model: 'mock',
   }) }));
-  await page.getByTestId('hero-camera').click();
+  await openPhotoEditor(page);
   const buffer = await sharp({ create: { width: 100, height: 100, channels: 3, background: '#e5efe8' } }).png().toBuffer();
   await page.getByTestId('gallery-input').setInputFiles({ name: '多食物示例.png', mimeType: 'image/png', buffer });
   const summary = page.getByTestId('recognition-summary');
@@ -456,7 +460,7 @@ test('一张照片逐项匹配多个食物和对应重量，混合菜不拆重�
   await expect(page.getByTestId('recognition-weight-3')).toContainText('请填写');
   await expect(page.getByTestId('recognized-row-0')).toContainText('165.5 g');
   await expect(page.getByTestId('recognized-row-1')).toContainText('240.25 g');
-  await expect(page.getByTestId('recognized-row-3')).toContainText('待填重量');
+  await expect(page.getByTestId('recognized-row-3')).toContainText('重量待补充');
   await summary.scrollIntoViewIfNeeded();
   const imageName = testInfo.project.name === 'Chrome 手机' ? 'mobile' : testInfo.project.name === 'Chrome 桌面' ? 'desktop' : 'edge';
   await page.screenshot({ path: fileURLToPath(new URL(`../../docs/screenshots/multi-food-${imageName}.png`, import.meta.url)) });
@@ -483,3 +487,4 @@ test('一张照片逐项匹配多个食物和对应重量，混合菜不拆重�
   await expect(page.getByTestId('food-source-2')).toHaveAttribute('data-source-id', findRecipe('冬瓜豆腐汤')!.id);
   await expect(page.getByTestId('food-item-3')).toHaveCount(0);
 });
+import { selectDate } from './helpers/calendar';

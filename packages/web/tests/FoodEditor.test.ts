@@ -1,12 +1,15 @@
 // @vitest-environment happy-dom
 import 'fake-indexeddb/auto'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { calculateNutrients, applyEstimateLevel, createRecipeEntry, findRecipe, createEstimatedFoodEntry, createFoodEntry, findFood, recipes, type MealRecord, type NutritionEstimateProfile, type EstimateLevel } from '@shike/shared'
 import FoodEditor from '../src/components/FoodEditor.vue'
 import { recognitionEstimate, matchedEntry } from '../src/lib/entries'
 import { ShikeDatabase, saveMeal } from '../src/lib/db'
 import { porridgeProfile } from './range-fixture'
+
+// 这些用例只验证食物编辑；模型列表的网络与切换在独立接口／浏览器测试中验证。
+vi.mock('../src/components/ModelPicker.vue', () => ({ default: { template: '<div />' } }))
 
 let wrapper: VueWrapper | undefined
 afterEach(() => { wrapper?.unmount(); wrapper = undefined })
@@ -55,6 +58,9 @@ describe('食物选择弹窗', () => {
   it('分类和别名搜索后选中食物，保留重量，取消不改变原选择', async () => {
     wrapper = mount(FoodEditor, { attachTo: document.body, props: { date: '2026-10-14', mealType: 'lunch', start: 'manual', estimatedFoods: [], health: null }, global: { stubs: { teleport: true } } })
     await wrapper.vm.$nextTick()
+    await wrapper.get('[data-testid="food-picker-manual"]').trigger('click')
+    await wrapper.get('[data-testid="manual-food-name"]').setValue('待选择食物')
+    await wrapper.get('[data-testid="manual-food-form"]').trigger('submit')
     await wrapper.get('[data-testid="food-weight-0"]').setValue('230')
     await wrapper.get('[data-testid="food-source-0"]').trigger('click')
     expect(wrapper.get('[data-testid="food-editor"]').attributes('inert')).toBeDefined()

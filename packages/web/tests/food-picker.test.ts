@@ -1,11 +1,46 @@
 import { describe, expect, it } from 'vitest'
-import { applyEstimateLevel, createEstimatedFoodEntry, createRecipeEntry, findFood, findRecipe, foods, recipes } from '@shike/shared'
-import { buildFoodChoices, isEverydayFood, recommendFoodChoices, searchFoodChoices } from '../src/lib/food-picker'
+import { applyEstimateLevel, createEstimatedFoodEntry, createRecipeEntry, findFood, findRecipe, foods, catalogFoods, builtinPackagedFoods, recipes, parseOffProduct, calculateNutrients } from '@shike/shared'
+import { buildFoodChoices, entryForFoodChoice, isEverydayFood, recommendFoodChoices, searchFoodChoices } from '../src/lib/food-picker'
 import { recognitionEstimate } from '../src/lib/entries'
 import { porridgeProfile } from './range-fixture'
 
 const choices = buildFoodChoices([])
 describe('食物浏览与本地推荐', () => {
+  it('中式包点默认可见，精确别名优先，肉包不会误命中无肉包子', () => {
+    const everyday = choices.filter(isEverydayFood);
+    for (const name of ['菜包', '肉包', '香菇青菜包', '豆沙包']) {
+      const recipe = findRecipe(name)!;
+      expect(searchFoodChoices(everyday, name, '主食')[0]!.id).toBe(recipe.id);
+      expect(recommendFoodChoices(everyday, { name, visibleIngredients: [] })[0]!.choice.id).toBe(recipe.id);
+    }
+    expect(searchFoodChoices(everyday, '肉包').some(food => food.id === 'fdc-2708725')).toBe(false);
+    expect(searchFoodChoices(everyday, '菜包').some(food => food.category === '蔬菜' || /蔬菜包含/.test(food.name))).toBe(false);
+    expect(recommendFoodChoices(everyday, { name: '肉包', visibleIngredients: [] }).some(item => /无肉/.test(item.choice.name))).toBe(false);
+    expect(searchFoodChoices(everyday, '白饅頭').some(food => food.id === 'tfda-R2400201')).toBe(true);
+    expect(searchFoodChoices(everyday, '馒头', '主食').some(food => food.id === 'tfda-R2400201')).toBe(true);
+  })
+  it('近似米饭搜索推荐只展示代表项，旧ID和营养快照仍可编辑', () => {
+    const rice = findFood('米饭')!, removed = ['fdc-168880', 'fdc-168882'];
+    for (const query of ['中粒米饭', '短粒米饭']) {
+      const result = searchFoodChoices(choices, query);
+      expect(result.some(choice => choice.id === rice.id)).toBe(true);
+      expect(result.some(choice => removed.includes(choice.id))).toBe(false);
+      expect(recommendFoodChoices(choices, { name: query, visibleIngredients: [] })[0]!.choice.id).toBe(rice.id);
+    }
+    const original = foods.find(food => food.id === removed[1])!;
+    const entry = entryForFoodChoice(original.id, 200, [], [])!;
+    expect(entry.name).toBe(original.name); expect(entry.nutrientsPer100g).toEqual(original.nutrientsPer100g);
+    const history = buildFoodChoices([], undefined, { entry, selectedId: original.id }).find(choice => choice.id === original.id)!;
+    expect(history.origin).toBe('snapshot'); expect(history.nutrientsPer100g.proteinG).toBe(2.36);
+  })
+  it('同一选择器含包装分类，按品牌条码搜索；容量标签不展示或累计成克数', () => {
+    const food = parseOffProduct({ status: 'success', product: { code: '3274080005003', product_name: '选库牛奶', brands: '包装品牌', quantity: '250 ml', nutriments: { 'energy-kcal_100g': 60 } } }, '3274080005003')!
+    const all = buildFoodChoices([], undefined, undefined, [food]), id = `package:${food.id}`
+    for (const query of ['牛奶', '包装品牌', '3274080005003']) expect(searchFoodChoices(all, query, '包装食品').map(item => item.id)).toContain(id)
+    const choice = all.find(item => item.id === id)!; expect(choice.nutritionPerUnit).toMatchObject({ unitLabel: '每100 mL', value: { energyKcal: 60 } }); expect(choice.nutrientsPer100g.energyKcal).toBeNull()
+    const entry = entryForFoodChoice(id, 200, [], [food])!; expect(entry.weightG).toBeNull(); expect(entry.packageSnapshot!.consumedAmount).toBe(250); expect(calculateNutrients(entry).energyKcal).toBe(150); expect(entry.warnings.join(' ')).toContain('常见份量估算')
+    entry.packageSnapshot!.label.energy!.value = 1; expect(food.label.energy!.value).toBe(60)
+  })
   it('日常筛选隐藏生肉、生蛋和待烹饪干料，保留水果、生菜、黄瓜和坚果', () => {
     const visible = choices.filter(isEverydayFood)
     for (const name of ['生鸡蛋', '生米', '干燕麦', '苦瓜（生）']) expect(visible.some(choice => choice.id === findFood(name)!.id)).toBe(false)
@@ -14,8 +49,8 @@ describe('食物浏览与本地推荐', () => {
     expect(searchFoodChoices(visible, '三明治', '轻食早餐').length).toBeGreaterThanOrEqual(3)
     expect(searchFoodChoices(visible, '', '汤羹').length).toBeGreaterThan(0)
   })
-  it('索引包含完整基础库和参考配方，分类与多个关键词共同过滤', () => {
-    expect(choices).toHaveLength(foods.length + recipes.length)
+  it('索引包含精简食物库和参考配方，分类与多个关键词共同过滤', () => {
+    expect(choices).toHaveLength(catalogFoods.length + recipes.length + builtinPackagedFoods.length)
     expect(new Set(choices.map(choice => choice.id)).size).toBe(choices.length)
     const tomatoEgg = findRecipe('番茄炒蛋')!
     expect(searchFoodChoices(choices, '西红柿 鸡蛋', '家常菜').map(choice => choice.id)).toContain(tomatoEgg.id)

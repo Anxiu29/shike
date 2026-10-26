@@ -1,0 +1,208 @@
+/* 日常记录与常用食物共用一套低饱和绿色、清晰层级和触控尺寸。 */
+:root { color: #273d34; background: #f4f7f3; --green: #32765a; --green-dark: #235d45; --muted: #76877c; --border: #e3ebe2; }
+.app-header { background: #fbfdfaf2; border-color: #e1e9df; }
+.brand-icon { background: #dfeddf; color: #347252; border-radius: 15px; }
+.desktop-nav button { color: #708277; }
+.desktop-nav button.active { background: #e3eee1; }
+.card { box-shadow: 0 4px 20px #294c3604; }
+.eyebrow { color: #7c937e; }
+.page-heading h1 { color: #243f31; font-weight: 650; }
+.page-heading p, .diary-heading p { color: #7f9080; }
+.header-library { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; border: 1px solid #dce7d9; border-radius: 11px; padding: 0 12px; background: #f0f5ec; color: #476f48; font-size: 12px; white-space: nowrap; }
+.header-library:hover { background: #e5eedf; }
+.header-trailing { gap: 12px; }
+.energy-summary { background: linear-gradient(120deg, #fbfdf8, #eff6e9); border-color: #dce8d3; box-shadow: 0 8px 30px #36543505; }
+.energy-heading > span { color: #426b4f; }
+.energy-main > p { color: #72866a; }
+.energy-ring { box-shadow: 0 0 0 8px #fff7; }
+.energy-macros { border-color: #dfe8d6; }
+.energy-facts span { color: #7c8d71; }
+.diary-quick-actions .button { min-height: 50px; border-radius: 14px; }
+.diary-quick-actions .button.primary { box-shadow: 0 5px 12px #2e6b5115; }
+.diary-quick-actions .button.secondary { background: #fff; border-color: #dce7d8; }
+.habit-card { background: #fff; border-color: #e2e9df; }
+.meal-card { border-radius: 20px; }
+.meal-empty { color: #8e9c88; min-height: 46px; }
+.meal-title p { color: #87967f; }
+.record-food > div > span { color: #7f9079; }
+.daily-footnote { color: #81927c; line-height: 1.7; }
+.food-picker-header { background: #f7faf4; }
+.food-choice-item { border-radius: 13px; }
+.food-store-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 8px 12px; border: 1px solid #d9e7d3; border-radius: 10px; background: #edf5e7; color: #437342; font-size: 12px; font-weight: 550; flex-shrink: 0; }
+.food-store-button:hover { background: #dfedd6; }
+.food-store-action { gap: 10px; }
+.food-store-action > span[role=status] { color: #54804c; }
+.editor-store-all { display: flex; align-items: center; gap: 10px; padding: 13px 24px; border-top: 1px solid #e3ebdd; background: #f6f9f1; flex-shrink: 0; }
+.editor-store-all > svg { color: #6d8e59; flex-shrink: 0; }
+.editor-store-all > div { flex: 1; min-width: 0; }
+.editor-store-all strong { display: block; font-size: 12px; font-weight: 550; }
+.editor-store-all span { display: block; color: #88977c; font-size: 10px; margin-top: 3px; }
+
+.personal-food-shelf { margin: 0 0 28px; padding: 22px 24px; }
+.personal-shelf-heading { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 18px; }
+.personal-shelf-heading > div { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.personal-section-icon { display: grid; place-items: center; width: 39px; height: 39px; border-radius: 12px; background: #eef1e2; color: #7a8b46; flex-shrink: 0; }
+.personal-shelf-heading h2 { font-size: 16px; letter-spacing: -.3px; }
+.personal-shelf-heading h2 small { display: inline-block; margin-left: 4px; padding: 2px 6px; border-radius: 5px; background: #eef3e8; color: #82956c; font-size: 10px; font-weight: 500; vertical-align: 2px; }
+.personal-shelf-heading p { color: #8b9782; font-size: 11px; margin-top: 5px; }
+.personal-shelf-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.personal-quick-food { display: flex; position: relative; align-items: center; gap: 11px; padding: 14px 12px; text-align: left; min-width: 0; border: 1px solid #e6ecdf; border-radius: 14px; background: #fbfcf8; color: #344b36; }
+.personal-quick-food:hover { background: #f0f5e9; border-color: #b8d0a8; }
+.personal-food-symbol { width: 44px; height: 44px; display: grid; place-items: center; font-size: 26px; background: #f0f3e7; border-radius: 13px; flex-shrink: 0; }
+.personal-quick-copy { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
+.personal-quick-copy strong { font-size: 12px; font-weight: 550; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.personal-quick-copy small { color: #8b9783; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.personal-quick-copy > span { color: #5b7b47; font-size: 11px; }
+.personal-quick-plus { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #e7efdd; color: #6c8c50; flex-shrink: 0; }
+.personal-quick-star { position: absolute; top: 8px; right: 8px; color: #b79c52; }
+.personal-shelf-empty { display: flex; align-items: center; text-align: left; gap: 18px; width: 100%; padding: 17px 20px; border: 1px dashed #d6e2cb; border-radius: 14px; background: #f8faf3; color: #6a8053; }
+.personal-shelf-empty:hover { background: #f0f5e8; }
+.personal-empty-art { display: block; position: relative; font-size: 37px; line-height: 1; transform: rotate(-10deg); }
+.personal-empty-art > span { position: absolute; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 1px solid #dce7d1; font-size: 14px; right: -5px; bottom: -5px; }
+.personal-shelf-empty > span:nth-child(2) { flex: 1; min-width: 0; }
+.personal-shelf-empty strong { display: block; color: #5c714a; font-size: 12px; font-weight: 550; }
+.personal-shelf-empty small { display: block; margin-top: 7px; color: #8e9d7e; font-size: 10px; line-height: 1.8; }
+
+.app-sheet.personal-library-sheet { width: 780px; }
+.personal-library-sheet .sheet-header { background: #fbfcf8; }
+.personal-library-sheet .sheet-body { background: #fff; }
+.personal-library-banner { display: flex; align-items: center; gap: 15px; padding: 20px; background: linear-gradient(110deg, #edf3e4, #f8f8ea); border: 1px solid #e4ead7; border-radius: 17px; margin-bottom: 22px; }
+.personal-library-mark { display: grid; place-items: center; width: 53px; height: 53px; background: #fff9; color: #7c9459; border-radius: 16px; flex-shrink: 0; }
+.personal-library-banner > div { flex: 1; }
+.personal-library-banner strong { font-size: 15px; font-weight: 550; color: #49683b; }
+.personal-library-banner p { display: flex; align-items: center; gap: 10px; color: #8c9c78; font-size: 11px; margin-top: 9px; }
+.personal-library-banner i { width: 3px; height: 3px; border-radius: 50%; background: #b4c39b; }
+.personal-library-banner > svg { color: #b2bd83; }
+.personal-library-toolbar { display: flex; gap: 10px; align-items: center; }
+.personal-library-search { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; height: 45px; border: 1px solid #e1e7db; border-radius: 12px; padding: 0 12px; background: #f8faf6; color: #99a18d; }
+.personal-library-search:focus-within { border-color: #83a56c; box-shadow: 0 0 0 3px #6b935810; }
+.personal-library-search > svg { flex-shrink: 0; }
+.personal-library-search input { height: 100%; min-height: 0; padding: 0; margin: 0; background: none; border: 0; box-shadow: none; font-size: 13px; }
+.personal-library-filters { display: flex; align-items: center; gap: 6px; margin: 19px 0; }
+.personal-library-filters button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; padding: 7px 12px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #8c9781; font-size: 12px; white-space: nowrap; }
+.personal-library-filters button[aria-pressed=true] { background: #edf3e5; color: #597943; border-color: #e2ebd7; font-weight: 550; }
+.personal-library-filters > span { margin-left: auto; font-size: 11px; color: #99a28d; white-space: nowrap; }
+.personal-library-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.personal-library-food { position: relative; min-width: 0; padding: 17px; border: 1px solid #e5ebdf; border-radius: 16px; background: #fdfefb; }
+.personal-library-food:has(.personal-food-view:hover) { border-color: #b8d0a8; background: #f8fbf4; }
+.personal-food-view { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; border: 0; padding: 0; text-align: left; font: inherit; color: inherit; background: none; }
+.personal-food-view > span { min-width: 0; overflow-wrap: anywhere; }
+.personal-food-view > svg { flex-shrink: 0; color: #819572; }
+.personal-food-view:not(:disabled):active { transform: none; }
+.personal-food-view::after { content: ''; position: absolute; inset: 0; border-radius: 16px; }
+.personal-food-view:focus-visible { outline: none; }
+.personal-food-view:focus-visible::after { outline: 2px solid #588744; outline-offset: 3px; }
+.personal-star, .personal-food-card-actions { position: relative; z-index: 1; }
+.personal-food-detail-sheet .sheet-header h2, .personal-food-detail-sheet p, .personal-food-detail-sheet li { overflow-wrap: anywhere; }
+.personal-detail-heading { display: flex; align-items: center; gap: 13px; margin-bottom: 20px; }
+.personal-detail-heading > div { min-width: 0; }
+.personal-detail-heading h3 { font-size: 21px; line-height: 1.5; overflow-wrap: anywhere; }
+.personal-detail-heading p { color: #809277; font-size: 12px; margin-top: 5px; }
+.personal-detail-portion { padding: 15px 17px; border-radius: 14px; background: #f0f6e9; color: #4f7040; }
+.personal-detail-portion > span { display: block; font-size: 11px; margin-bottom: 7px; }
+.personal-detail-portion > strong { font-size: 18px; overflow-wrap: anywhere; }
+.personal-detail-portion p { font-size: 11px; line-height: 1.8; margin-top: 8px; }
+.personal-detail-nutrients { width: 100%; border-collapse: collapse; margin-top: 17px; font-size: 12px; table-layout: fixed; }
+.personal-detail-nutrients th, .personal-detail-nutrients td { padding: 12px 4px; text-align: right; border-bottom: 1px solid #edf0e8; overflow-wrap: anywhere; }
+.personal-detail-nutrients th:first-child { text-align: left; width: 29%; }
+.personal-detail-nutrients thead th { color: #839377; font-size: 11px; font-weight: 500; }
+.personal-detail-nutrients tbody th { font-weight: 500; }
+.personal-detail-section { margin-top: 22px; }
+.personal-detail-section h4 { font-size: 13px; margin-bottom: 9px; }
+.personal-detail-section p, .personal-detail-section li { color: #7d8e75; font-size: 12px; line-height: 1.9; }
+.personal-detail-section dl > div { display: flex; justify-content: space-between; gap: 15px; font-size: 12px; padding: 7px 0; }
+.personal-detail-section dt { min-width: 0; overflow-wrap: anywhere; }
+.personal-detail-section dd { flex-shrink: 0; }
+.personal-detail-notes ul { padding-left: 18px; }
+.personal-detail-footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; width: 100%; }
+.personal-detail-footer .button { min-width: 0; padding-inline: 8px; font-size: 12px; }
+.personal-detail-footer p { grid-column: 1 / -1; font-size: 10px; color: #87967f; text-align: center; }
+.personal-food-card-top { display: flex; align-items: center; gap: 9px; margin-bottom: 15px; }
+.personal-food-card-top .personal-food-symbol { width: 43px; height: 43px; }
+.personal-origin { font-size: 10px; color: #8c967b; background: #f1f4e9; padding: 4px 7px; border-radius: 5px; }
+.personal-origin.ai { color: #8c7d9d; background: #f0ecf5; }
+.personal-star { margin-left: auto; color: #a8b19b; }
+.personal-star.active { color: #b59649; }
+.personal-library-food h3 { font-size: 14px; overflow-wrap: anywhere; line-height: 1.6; }
+.personal-food-portion { font-size: 11px; color: #839173; margin-top: 7px; line-height: 1.8; overflow-wrap: anywhere; }
+.personal-food-portion > span { color: #65814c; }
+.personal-food-basis { font-size: 10px; color: #98a08c; margin: 5px 0 17px; min-height: 17px; line-height: 1.7; }
+.personal-food-card-actions { display: flex; gap: 9px; align-items: center; padding-top: 13px; border-top: 1px solid #edf0e7; }
+.personal-food-card-actions .button { flex: 1; height: 37px; min-width: 0; font-size: 12px; border-radius: 10px; background: #edf4e5; color: #628149; border-color: #e1ebd7; }
+.personal-remove { color: #adb3a4; }
+.personal-remove:hover { background: #faf0eb; color: #b17b61; }
+.personal-library-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding: 37px 18px 43px; }
+.personal-library-empty > span { font-size: 55px; line-height: 1.5; }
+.personal-library-empty h3 { font-size: 16px; color: #5d7151; }
+.personal-library-empty p { font-size: 12px; color: #8a977e; line-height: 1.9; max-width: 300px; margin-bottom: 7px; }
+.personal-library-note { display: flex; justify-content: center; align-items: center; gap: 7px; font-size: 11px; color: #8a987d; line-height: 1.7; }
+.personal-library-undo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 12px; margin-bottom: 14px; border-radius: 10px; background: #eef4e8; color: #728460; font-size: 11px; }
+.personal-library-undo > span { min-width: 0; overflow-wrap: anywhere; }
+.assistant-save-food { display: inline-flex; align-items: center; gap: 4px; border: 0; background: #edf4e7; color: #66864e; padding: 5px 7px; border-radius: 6px; font-size: 10px; margin-top: 6px; }
+
+@media (min-width: 768px) {
+  .app-header { gap: 16px; }
+  .desktop-nav { gap: 3px; margin-left: 15px; }
+  .desktop-nav button { padding: 10px 13px; }
+  .diary-view { max-width: 960px; }
+  .energy-summary { padding: 26px 32px 20px; border-radius: 24px; }
+  .personal-food-shelf { margin-top: 2px; }
+}
+@media (max-width: 767px) {
+  .header-library { min-height: 36px; padding: 0 10px; font-size: 11px; border-radius: 10px; }
+  .header-trailing { gap: 7px; }
+  .brand-name { font-size: 23px; }
+  .brand-name small { display: none; }
+  .personal-food-shelf { padding: 17px 16px; margin-bottom: 24px; border-radius: 19px; }
+  .personal-shelf-heading { gap: 8px; margin-bottom: 15px; }
+  .personal-shelf-heading > div { gap: 8px; }
+  .personal-section-icon { width: 34px; height: 34px; border-radius: 11px; }
+  .personal-shelf-heading h2 { font-size: 14px; }
+  .personal-shelf-heading p { font-size: 9px; line-height: 1.6; }
+  .personal-shelf-heading .text-button { font-size: 10px; min-height: 36px; }
+  .personal-shelf-list { display: flex; overflow-x: auto; gap: 9px; padding-bottom: 7px; scroll-snap-type: x proximity; }
+  .personal-quick-food { flex: 0 0 184px; padding: 12px 10px; gap: 8px; scroll-snap-align: start; }
+  .personal-quick-food .personal-food-symbol { width: 35px; height: 38px; font-size: 23px; }
+  .personal-quick-plus { width: 20px; height: 20px; }
+  .personal-quick-copy strong { font-size: 11px; }
+  .personal-quick-copy small { font-size: 9px; }
+  .personal-quick-copy > span { font-size: 10px; }
+  .personal-shelf-empty { gap: 12px; padding: 17px 12px; }
+  .personal-empty-art { font-size: 32px; }
+  .personal-shelf-empty small { font-size: 10px; }
+  .app-sheet.personal-library-sheet { width: 100%; max-height: calc(var(--sheet-viewport, 100dvh) - var(--app-safe-top, 0px) - 12px); }
+  .personal-library-sheet .sheet-header { padding: 23px 19px 18px; }
+  .personal-library-sheet .sheet-body { padding: 18px 17px 25px; }
+  .personal-library-sheet .sheet-header h2 { font-size: 21px; }
+  .personal-library-banner { padding: 17px 15px; gap: 12px; margin-bottom: 18px; }
+  .personal-library-banner strong { font-size: 14px; }
+  .personal-library-mark { width: 45px; height: 45px; }
+  .personal-library-toolbar .button { padding: 0 12px; font-size: 12px; gap: 5px; }
+  .personal-library-search { padding: 0 9px; gap: 6px; }
+  .personal-library-search input { font-size: 16px; width: 100%; }
+  .personal-library-search input::placeholder { font-size: 12px; }
+  .personal-library-filters { gap: 3px; margin: 15px 0; }
+  .personal-library-filters button { padding: 7px 10px; font-size: 11px; min-height: 40px; }
+  .personal-library-grid { gap: 10px; }
+  .personal-library-food { padding: 13px 11px; border-radius: 14px; }
+  .personal-food-card-top { gap: 5px; flex-wrap: wrap; position: relative; padding-right: 20px; }
+  .personal-food-card-top .personal-food-symbol { width: 37px; height: 37px; font-size: 24px; }
+  .personal-origin { font-size: 9px; padding: 4px 5px; }
+  .personal-star { position: absolute; top: -5px; right: -8px; }
+  .personal-library-food h3 { font-size: 12px; }
+  .personal-food-portion { font-size: 10px; }
+  .personal-food-portion > span { display: block; }
+  .personal-food-card-actions { gap: 4px; }
+  .personal-food-card-actions .button { padding: 0 5px; font-size: 10px; gap: 3px; min-height: 40px; }
+  .personal-remove { width: 28px; min-height: 40px; }
+  .personal-library-note { font-size: 10px; }
+  .editor-store-all { padding: 10px 17px; gap: 8px; }
+  .editor-store-all .button { padding: 0 10px; font-size: 11px; }
+}
+@media (max-width: 359px) {
+  .header-library span { display: none; }
+  .personal-shelf-heading p { max-width: 150px; }
+  .personal-library-filters { gap: 0; }
+  .personal-library-filters button { padding: 7px 8px; }
+  .personal-library-grid { grid-template-columns: 1fr; }
+}

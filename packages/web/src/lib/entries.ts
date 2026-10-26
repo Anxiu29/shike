@@ -44,6 +44,9 @@ export function recognitionEstimate(name: string, nutrientsPer100g: Nutrients | 
 }
 
 export function entryBasis(entry: FoodEntry): string {
+  if (entry.volumeSnapshot) return '饮品营养 · 每100 mL'
+  if (entry.packageSnapshot?.source) return entry.packageSnapshot.manuallyEdited ? 'Open Food Facts · 已手动修正' : 'Open Food Facts · 包装参考'
+  if (entry.kind === 'label') return entry.packageSnapshot?.provider === 'mock' ? '模拟包装标签' : entry.packageSnapshot?.manuallyEdited ? '包装标签 · 已手动修改' : '包装标签 · AI 读取'
   if (entry.kind === 'ai') return entry.provenance.startsWith('个人估算库') ? '个人估算库 · AI 粗估' : entry.aiEstimateSnapshot?.provider === 'mock' ? '模拟 AI 估算' : 'AI 估算'
   return entry.kind === 'recipe' ? '参考配方估算' : entry.kind === 'database' ? entry.provenance.startsWith('USDA FNDDS') ? 'USDA 膳食参考' : 'USDA 基础食物' : entry.kind === 'manual' ? '手动营养数据' : '暂无法估算'
 }
@@ -52,7 +55,7 @@ export function entryBasis(entry: FoodEntry): string {
 export function rematchRenamedEntry(entry: FoodEntry, previousName: string, personalFoods: EstimatedFood[]): { entry: FoodEntry; changed: boolean } {
   if (normalizeFoodName(entry.name) === normalizeFoodName(previousName)) return { entry, changed: false }
   // 手动营养值由用户填写，允许用改名修正标签，不替用户改写这些数值。
-  if (entry.kind === 'manual') return { entry, changed: true }
+  if (entry.kind === 'manual' || entry.kind === 'label' || entry.volumeSnapshot) return { entry, changed: true }
   const next = matchedEntry(entry.name, entry.weightG, personalFoods)
   next.id = entry.id
   return { entry: next, changed: true }
@@ -95,6 +98,8 @@ export function recalculateRecipe(entry: FoodEntry, preserveProfile = false): vo
 }
 
 export function resizeEntry(entry: FoodEntry, value: number | null): void {
+  // 直接改克数表示回到重量计量；数量计量调用者会在换算后附回完整快照。
+  delete entry.portionSnapshot
   // 用户常先清空输入再填新重量：使用配方快照基准，避免 null 丢失缩放比例。
   const previous = entry.recipeSnapshot?.referenceWeightG ?? entry.weightG
   entry.weightG = value

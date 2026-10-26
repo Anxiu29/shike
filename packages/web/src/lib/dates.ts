@@ -1,6 +1,26 @@
+import type { FoodEntry, MealType } from '@shike/shared'
+export function portionLabel(entry: FoodEntry): string {
+  if (entry.portionSnapshot) {
+    const portion = entry.portionSnapshot, amount = portion.basis === 'ml' ? entry.volumeSnapshot?.amountMl : entry.weightG;
+    return `${portion.quantity === null ? '数量待填写' : `${numberLabel(portion.quantity)} ${portion.unit}`} · ${amount == null ? '份量待补充' : `约 ${numberLabel(amount)} ${portion.basis === 'ml' ? 'mL' : 'g'}`}`
+  }
+  if (entry.volumeSnapshot) return entry.volumeSnapshot.amountMl === null ? '饮用量待补充' : `${numberLabel(entry.volumeSnapshot.amountMl)} mL`
+  const snapshot = entry.packageSnapshot
+  if (!snapshot) return entry.weightG === null ? '重量待补充' : `${numberLabel(entry.weightG)} g`
+  return snapshot.consumedAmount === null ? '摄入量待填写' : `${numberLabel(snapshot.consumedAmount)} ${ { g: 'g', ml: 'mL', serving: '份', package: '包' }[snapshot.consumedUnit] }`
+}
 /** 使用本机日历日期，避免 toISOString() 的 UTC 转换让夜间记录错一天。 */
 export function localDate(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+/** 产品默认时段，使用设备本地时间。仅在新建／首次发送时调用，不覆盖草稿或历史餐次。 */
+export function suggestedMealType(date = new Date()): MealType {
+  const hour = date.getHours()
+  if (hour >= 5 && hour < 11) return 'breakfast'
+  if (hour >= 11 && hour < 15) return 'lunch'
+  if (hour >= 17 && hour < 22) return 'dinner'
+  return 'snack'
 }
 
 export function shiftDate(value: string, amount: number): string {

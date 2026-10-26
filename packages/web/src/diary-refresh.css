@@ -1,0 +1,222 @@
+/* 日记优先：当日总览、快捷记录、可复用的历史，保持既有估算与来源提示。 */
+.diary-view { max-width: 1160px; margin: 0 auto; overflow-anchor: none; }
+.diary-view > .page-heading { margin-bottom: 18px; }
+.app-header .desktop-nav { margin-left: 0; }
+.diary-week-section { margin-bottom: 16px; scroll-margin-top: calc(var(--app-safe-top, 0px) + 12px); }
+.diary-calendar-viewport { display: grid; align-items: start; overflow: clip; overflow-clip-margin: 3px; }
+.diary-calendar-viewport > * { grid-area: 1 / 1; min-width: 0; }
+.calendar-dragging { user-select: none; }
+.diary-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.diary-week button { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 84px; padding: 9px 1px; border: 1px solid #dce7da; border-radius: 15px; background: #fcfdfb; color: #68816b; }
+.diary-week button::before { content: ''; position: absolute; z-index: -1; inset: auto 0 0; height: var(--intake-fill, 0%); background: #d4e9d7; pointer-events: none; }
+.diary-week button > span { font-size: 11px; }
+.diary-week strong { font-size: 21px; color: #3f5944; font-weight: 550; line-height: 1; font-variant-numeric: tabular-nums; }
+.diary-day-intake { font-size: 10px; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.diary-week button[data-intake-state=over] { color: #8a5a26; border-color: #e3c9a3; }
+.diary-week button[data-intake-state=over]::before { background: #f3d9b5; }
+.diary-week button[data-intake-state=over] strong { color: #815326; }
+.diary-week button[data-intake-state=incomplete] { background: repeating-linear-gradient(-45deg, #f6f2e9 0 4px, #fcfbf7 4px 8px); }
+.diary-week button[data-intake-state=empty] .diary-day-intake, .diary-week button[data-intake-state=no-budget] .diary-day-intake { color: #879484; }
+.diary-week button.today > span { color: #3d875d; font-weight: 650; }
+.diary-week button:hover { border-color: #6d9877; }
+.diary-week button.selected { border-color: #32765a; box-shadow: 0 0 0 2px #32765a; }
+.diary-week button.selected > span { font-weight: 700; }
+.diary-week button:focus-visible { outline: 2px solid #1b573d; outline-offset: 4px; }
+.diary-week-caption { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 9px; color: #82907a; font-size: 10px; line-height: 1.4; }
+.diary-week-legend { display: inline-flex; align-items: center; gap: 4px; }
+.diary-week-legend > i { width: 6px; height: 6px; border-radius: 50%; background: #81b58b; }
+.diary-week-legend > i.over { background: #cc9754; margin-left: 6px; }
+.diary-month-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.diary-month-toolbar > strong { flex: 1; font-size: 15px; color: #47674d; }
+.diary-month-toolbar > .text-button { padding: 7px; min-height: 36px; }
+.diary-month-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; text-align: center; font-size: 11px; color: #81927e; }
+.diary-week.diary-month { row-gap: 8px; }
+.diary-month button { min-height: 66px; }
+.diary-month strong { font-size: 19px; }
+.diary-month strong > sup { position: absolute; top: 4px; right: 4px; color: #32765a; font-size: 8px; line-height: 1; }
+.diary-dashboard { display: grid; grid-template-columns: minmax(0, 1fr) 290px; grid-template-areas: 'energy wellness' 'actions wellness' 'shortcuts wellness' 'meals wellness'; gap: 16px 24px; align-items: start; }
+.diary-energy { grid-area: energy; min-width: 0; }
+.diary-quick-actions { grid-area: actions; min-width: 0; margin: 0; }
+.diary-shortcuts { grid-area: shortcuts; min-width: 0; }
+.diary-meals { grid-area: meals; min-width: 0; margin-top: 7px; }
+.diary-wellness { grid-area: wellness; min-width: 0; }
+.diary-wellness .habit-cards { grid-template-columns: 1fr; gap: 16px; margin: 0; }
+.diary-wellness .habit-card { background: #f6faf9; padding: 19px 21px; border-radius: 20px; border-color: #dfeae5; }
+.diary-wellness .exercise-habit { background: #f8f9f1; border-color: #e8ebd9; }
+.diary-wellness .habit-value { margin-top: 8px; }
+.diary-wellness .habit-value strong { font-size: 34px; }
+.diary-wellness .habit-action { margin-top: 12px; min-height: 40px; }
+.diary-record-overview { padding: 21px; margin-top: 16px; }
+.diary-overview-heading { display: flex; justify-content: space-between; gap: 8px; align-items: center; color: #4e6650; font-size: 13px; font-weight: 550; }
+.diary-overview-heading small { font-size: 10px; color: #8b9a81; font-weight: 400; }
+.diary-overview-meals { display: flex; gap: 15px; justify-content: space-between; margin: 23px 0; }
+.diary-overview-meals > div { display: flex; align-items: center; flex-direction: column; gap: 8px; font-size: 11px; color: #a5af9b; }
+.diary-overview-meals span { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #e5eadd; border-radius: 50%; color: #a7b59a; background: #fafbf7; }
+.diary-overview-meals .recorded { color: #64824d; }
+.diary-overview-meals .recorded span { color: #4e7f49; background: #ebf3e2; border-color: #dce9ce; }
+.diary-record-overview p { font-size: 11px; line-height: 1.9; color: #90a083; border-top: 1px solid #edf1e8; padding-top: 14px; }
+.diary-energy.energy-summary { padding: 21px 25px 15px; border-radius: 22px; background: linear-gradient(125deg, #fcfefb, #f0f6eb); }
+.diary-energy .energy-heading { gap: 12px; }
+.diary-energy .energy-heading > span { white-space: nowrap; }
+.diary-energy .energy-view-toggle { margin: 0 0 0 auto; padding: 3px; border-radius: 10px; background: #eaf1e5; flex-shrink: 0; }
+.diary-energy .energy-view-toggle button { padding: 5px 13px; min-height: 28px; font-size: 11px; }
+.diary-energy .energy-goals { font-size: 11px; flex-shrink: 0; }
+.diary-energy .energy-hero { margin: 17px 0 18px; }
+.diary-energy .energy-main > strong { font-size: 53px; font-weight: 550; line-height: 1.05; }
+.diary-energy .energy-main > p { font-size: 11px; margin-bottom: 10px; }
+.diary-energy .energy-ring { width: 91px; height: 91px; flex-basis: 91px; box-shadow: 0 0 0 7px #fff8; }
+.diary-energy .energy-facts { padding-top: 2px; }
+.diary-energy .energy-macros { margin-top: 15px; padding-top: 13px; }
+.diary-energy .energy-macros strong { font-size: 23px; }
+.diary-energy .energy-explanation { margin-top: 10px; font-size: 10px; }
+.diary-energy .energy-alert, .diary-energy .energy-range { font-size: 11px; margin-top: 9px; }
+.diary-quick-actions .button { display: flex; justify-content: flex-start; gap: 10px; padding: 0 19px; height: 53px; border-radius: 14px; font-size: 13px; }
+.diary-quick-actions .button > span { flex: 1; text-align: left; }
+.diary-quick-actions .button > svg:last-child { opacity: .7; }
+.diary-shortcuts.personal-food-shelf { margin: 0; padding: 18px 20px 12px; border-radius: 20px; }
+.diary-shortcuts .personal-shelf-heading { margin-bottom: 12px; }
+.diary-shortcuts .personal-shelf-heading h2 { font-size: 15px; }
+.diary-shortcuts .personal-shelf-heading p { font-size: 10px; }
+.diary-shortcuts .personal-section-icon { width: 35px; height: 35px; }
+.food-shortcut-tabs { display: flex; align-items: center; gap: 5px; margin: 0 0 12px; }
+.food-shortcut-tabs button { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 8px; background: transparent; color: #85927b; font-size: 11px; min-height: 34px; padding: 6px 11px; }
+.food-shortcut-tabs button[aria-pressed=true] { background: #edf4e4; color: #517744; font-weight: 550; }
+.food-shortcut-tabs small { font-size: 9px; color: #94a585; }
+.diary-shortcuts .personal-shelf-list { display: flex; gap: 10px; overflow-x: auto; padding: 0 0 8px; scroll-snap-type: x proximity; }
+.diary-shortcuts .personal-quick-food { flex: 0 0 calc((100% - 20px) / 3); min-width: 175px; padding: 12px 10px; scroll-snap-align: start; }
+.diary-shortcuts .personal-food-symbol { width: 36px; height: 40px; font-size: 25px; }
+.diary-shortcuts .personal-quick-copy { gap: 4px; }
+.personal-quick-copy .shortcut-context { color: #9aa58e; font-size: 9px; margin-top: 2px; }
+.shortcut-history-empty { display: flex; gap: 13px; align-items: center; padding: 17px 12px 22px; min-height: 94px; color: #99ab86; }
+.shortcut-history-empty > svg { flex-shrink: 0; }
+.shortcut-history-empty strong { color: #768b62; font-size: 12px; font-weight: 500; }
+.shortcut-history-empty p { color: #97a28c; font-size: 10px; line-height: 1.8; margin-top: 5px; }
+.diary-meals .diary-heading { margin-bottom: 14px; }
+.diary-meals .diary-heading h2 { font-size: 18px; }
+.diary-meals .diary-heading p { font-size: 11px; }
+.diary-meals .meal-grid { gap: 14px; align-items: start; }
+.diary-meals .meal-card { padding: 18px; }
+.diary-meals .meal-card-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+.diary-meals .meal-title { grid-column: 1; grid-row: 1; gap: 10px; min-width: 0; }
+.diary-meals .meal-title > div { min-width: 0; }
+.diary-meals .meal-entry-actions { grid-column: 2; grid-row: 1 / span 2; display: flex; align-items: center; gap: 6px; }
+.diary-meals .meal-camera { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 38px; padding: 0 9px; border: 1px solid #d6e6d1; border-radius: 11px; background: #f0f6ec; color: #367b62; font-size: 11px; white-space: nowrap; }
+.diary-meals .meal-camera:hover { background: #e3efdf; }
+.diary-meals .meal-entry-actions .add-circle { width: 36px; height: 38px; flex-shrink: 0; }
+.diary-meals .meal-icon { width: 37px; height: 37px; border-radius: 12px; flex-shrink: 0; }
+.diary-meals .meal-title p { font-size: 10px; }
+.diary-meals .meal-total { grid-column: 1; grid-row: 2; padding-left: 47px; font-size: 10px; }
+.diary-meals .meal-empty { justify-content: space-between; margin-top: 14px; padding-top: 12px; min-height: 34px; font-size: 11px; }
+.diary-meals .meal-empty .text-button { font-size: 11px; }
+.diary-meals .record-actions { gap: 5px; }
+.diary-meals .record-actions > div { gap: 2px; align-items: center; }
+.reuse-meal { font-size: 10px; min-height: 36px; padding: 3px 6px; }
+.diary-meals .record-actions .icon-button { width: 30px; height: 36px; }
+.diary-meals .record-food > div > span { font-size: 10px; line-height: 1.8; }
+.diary-meals .record-time { font-size: 10px; gap: 4px; flex-wrap: wrap; }
+.diary-meals .record-food { gap: 10px; }
+.diary-meals .food-calories { font-size: 12px; }
+.reuse-source-note { display: flex; gap: 11px; padding: 14px; margin-bottom: 16px; border: 1px solid #dce8d2; border-radius: 13px; background: #f2f7ec; color: #6b8d50; }
+.reuse-source-note > svg { flex-shrink: 0; margin-top: 2px; }
+.reuse-source-note strong { font-size: 12px; font-weight: 550; }
+.reuse-source-note p { font-size: 11px; line-height: 1.8; color: #889d73; margin-top: 5px; }
+
+@media (min-width: 1100px) {
+  .main-container { padding-top: 30px; }
+  .diary-week-section { max-width: calc(100% - 314px); margin-top: -3px; }
+  .diary-wellness { position: sticky; top: 24px; }
+}
+@media (min-width: 768px) and (max-width: 1099px) {
+  .diary-dashboard { grid-template-columns: minmax(0, 1fr) 245px; gap: 16px; }
+  .diary-meals .meal-grid { grid-template-columns: 1fr; }
+  .diary-shortcuts .personal-quick-food { flex-basis: calc((100% - 10px) / 2); }
+  .diary-energy .energy-goals > span { display: none; }
+  .diary-energy.energy-summary { padding-left: 21px; padding-right: 21px; }
+}
+@media (max-width: 767px) {
+  .app-header { height: auto; min-height: 0; padding: var(--app-safe-top, 0px) 20px 0; background: transparent; border: 0; justify-content: flex-end; }
+  .assistant-fab { width: 48px; min-height: 52px; padding: 6px 3px; flex-direction: column; gap: 3px; border-radius: 16px; }
+  .assistant-fab > span { font-size: 9px; line-height: 1.1; white-space: nowrap; }
+  .main-container { padding-top: 12px; }
+  .diary-view > .page-heading { margin-bottom: 13px; }
+  .diary-view > .page-heading .eyebrow { font-size: 10px; letter-spacing: 1.2px; }
+  .diary-view > .page-heading h1 { font-size: 26px; }
+  .diary-week-section { margin-bottom: 15px; }
+  .diary-week { gap: 5px; }
+  .diary-week button { min-height: 70px; gap: 5px; border-radius: 12px; }
+  .diary-week button > span { font-size: 10px; }
+  .diary-week strong { font-size: 18px; }
+  .diary-day-intake { font-size: 9px; }
+  .diary-week-caption { font-size: 9px; margin-top: 8px; }
+  .diary-month-weekdays { gap: 5px; font-size: 10px; }
+  .diary-week.diary-month { row-gap: 6px; }
+  .diary-month button { min-height: 58px; gap: 5px; border-radius: 10px; padding: 7px 1px; }
+  .diary-month strong { font-size: 17px; }
+  .diary-month strong > sup { font-size: 7px; }
+  .diary-dashboard { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'energy' 'actions' 'shortcuts' 'wellness' 'meals'; gap: 13px; }
+  .diary-energy.energy-summary { padding: 16px 18px 10px; border-radius: 20px; }
+  .diary-energy .energy-heading { gap: 8px; }
+  .diary-energy .energy-heading > span { font-size: 12px; gap: 5px; }
+  .diary-energy .energy-view-toggle { padding: 2px; border-radius: 8px; }
+  .diary-energy .energy-view-toggle button { min-height: 29px; padding: 4px 10px; font-size: 10px; border-radius: 6px; }
+  .diary-energy .energy-goals > span { display: none; }
+  .diary-energy .energy-goals { min-height: 36px; min-width: 28px; justify-content: center; }
+  .diary-energy .energy-hero { margin: 14px 0 15px; }
+  .diary-energy .energy-main > strong { font-size: 48px; }
+  .diary-energy .energy-main > p { font-size: 11px; margin-bottom: 8px; }
+  .diary-energy .energy-ring { width: 78px; height: 78px; flex-basis: 78px; padding: 6px; box-shadow: 0 0 0 5px #fff8; }
+  .diary-energy .energy-ring b { font-size: 21px; }
+  .diary-energy .energy-facts { gap: 8px; }
+  .diary-energy .energy-facts strong { font-size: 14px; }
+  .diary-energy .energy-facts span { font-size: 10px; }
+  .diary-energy .energy-macros { padding-top: 10px; margin-top: 12px; gap: 8px; }
+  .diary-energy .energy-macros strong { font-size: 21px; }
+  .diary-energy .energy-macros > div > span { font-size: 10px; }
+  .diary-energy .energy-explanation { margin-top: 7px; }
+  .diary-quick-actions { gap: 10px; }
+  .diary-quick-actions .button { height: 48px; min-height: 48px; padding: 0 13px; font-size: 12px; gap: 8px; }
+  .diary-shortcuts.personal-food-shelf { padding: 15px 14px 8px; border-radius: 18px; }
+  .diary-shortcuts .personal-shelf-heading { margin-bottom: 8px; }
+  .diary-shortcuts .personal-shelf-heading h2 { font-size: 14px; }
+  .diary-shortcuts .personal-shelf-heading p { display: none; }
+  .diary-shortcuts .personal-section-icon { width: 30px; height: 30px; border-radius: 10px; }
+  .food-shortcut-tabs { margin-bottom: 10px; gap: 4px; }
+  .food-shortcut-tabs button { padding: 5px 9px; min-height: 34px; font-size: 11px; }
+  .diary-shortcuts .personal-quick-food { flex: 0 0 180px; min-width: 0; padding: 11px 9px; gap: 8px; }
+  .diary-shortcuts .personal-quick-copy strong { font-size: 12px; }
+  .diary-shortcuts .personal-food-symbol { width: 33px; font-size: 23px; }
+  .diary-wellness .habit-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .diary-wellness .habit-card { padding: 10px 13px 12px; border-radius: 17px; }
+  .diary-wellness .habit-heading { gap: 4px; }
+  .diary-wellness .habit-heading h2 { font-size: 12px; }
+  .diary-wellness .habit-heading .habit-icon svg { width: 16px; }
+  .diary-wellness .habit-value { margin-top: 2px; }
+  .diary-wellness .habit-value strong { font-size: 25px; }
+  .diary-wellness .habit-caption { font-size: 9px; min-height: 0; margin-top: 5px; }
+  .diary-wellness .habit-action { margin-top: 8px; min-height: 36px; font-size: 11px; border-radius: 9px; }
+  .diary-record-overview { display: none; }
+  .diary-meals { margin-top: 9px; }
+  .diary-meals .meal-grid { grid-template-columns: 1fr; gap: 12px; }
+  .diary-meals .meal-card { padding: 16px 17px; border-radius: 18px; }
+  .diary-meals .meal-title p { font-size: 10px; }
+  .diary-meals .meal-total { font-size: 11px; }
+  .diary-meals .record-actions .icon-button { width: 36px; min-height: 40px; }
+  .diary-meals .record-actions .reuse-meal { min-height: 40px; font-size: 11px; }
+  .diary-meals .record-food > div > span { font-size: 11px; }
+  .diary-meals .record-food strong { font-size: 13px; }
+  .diary-meals .food-calories { font-size: 13px; }
+  .diary-meals .add-circle { width: 34px; height: 34px; }
+}
+@media (max-width: 359px) {
+  .diary-energy .energy-heading { gap: 5px; }
+  .diary-energy .energy-heading > span { font-size: 11px; }
+  .diary-energy .energy-view-toggle button { padding: 4px 8px; }
+  .diary-energy .energy-goals { min-width: 22px; }
+  .diary-quick-actions .button > svg:last-child { display: none; }
+  .diary-week { gap: 4px; }
+  .diary-week button { border-radius: 10px; }
+  .diary-energy .energy-main > strong { font-size: 39px; }
+  .diary-energy .energy-ring { width: 66px; height: 66px; flex-basis: 66px; }
+  .diary-energy .energy-facts strong { font-size: 12px; }
+  .diary-energy .energy-facts strong small { font-size: 8px; }
+}

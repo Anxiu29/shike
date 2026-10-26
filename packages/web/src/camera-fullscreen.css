@@ -1,0 +1,62 @@
+/* 预览独立铺满窗口，操作层悬浮；安全区只给按钮留白，不缩小实际取景范围。 */
+.capture-camera { display: block; width: 100%; max-width: none; height: 100dvh; left: 0; transform: none; padding: 0; box-shadow: none; isolation: isolate; }
+.capture-preview { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; z-index: 0; }
+.capture-header { position: absolute; top: 0; left: 0; right: 0; z-index: 4; min-height: calc(62px + var(--app-safe-top, 0px)); padding: calc(8px + var(--app-safe-top, 0px)) 14px 12px; background: linear-gradient(#050a08b8, #050a0800); }
+.capture-header > span { font-size: 14px; white-space: nowrap; text-shadow: 0 1px 5px #000; }
+.capture-header .capture-icon { width: 40px; height: 40px; flex-shrink: 0; background: #0e191d52; backdrop-filter: blur(8px); }
+.capture-system-camera { flex-direction: column; gap: 1px; }
+.capture-system-camera > small { font-size: 8px; line-height: 1; }
+.capture-controls { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; width: 100%; max-width: none; margin: 0; padding: 34px 20px calc(10px + var(--app-safe-bottom, 0px)); background: linear-gradient(#050a0800, #050a088f 26%, #050a08d9); }
+.capture-controls > * { width: 100%; max-width: 480px; margin-left: auto; margin-right: auto; }
+.capture-controls .capture-meals { position: static; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.capture-meals button { min-height: 36px; border-radius: 20px; font-size: 12px; background: #10231d70; }
+.capture-meals button.active { background: #e8bd7c24; }
+.capture-modes { gap: 27px; margin-bottom: 3px; }
+.capture-modes button { padding: 7px 0 11px; font-size: 14px; color: #d3ddd7; text-shadow: 0 1px 5px #000; }
+.capture-camera .recognition-model-picker.compact { max-width: 480px; margin: 0 auto; }
+.capture-camera .recognition-model-picker.compact select { background: #15231fc4; border-color: #b9d4c044; }
+.capture-actions { padding-top: 10px; padding-bottom: 5px; }
+.capture-shutter { box-shadow: 0 1px 12px #0005; }
+.capture-disclosure { color: #d3ded7; }
+.capture-tip { top: calc(78px + var(--app-safe-top, 0px)); font-size: 12px; }
+.capture-guide { top: calc(124px + var(--app-safe-top, 0px)); bottom: calc(var(--capture-controls-height, 260px) + 40px); left: 12%; right: 12%; }
+.barcode-frame .capture-guide { top: calc(150px + var(--app-safe-top, 0px)); bottom: calc(var(--capture-controls-height, 260px) + 60px); left: 9%; right: 9%; }
+.capture-focus-hint { bottom: calc(var(--capture-controls-height, 260px) + 15px); font-size: 11px; }
+.capture-feedback { inset: calc(85px + var(--app-safe-top, 0px)) 20px calc(var(--capture-controls-height, 260px) + 12px); text-shadow: 0 1px 5px #000; }
+.capture-help { z-index: 4; inset: calc(70px + var(--app-safe-top, 0px)) 12px calc(var(--capture-controls-height, 260px) + 8px); max-height: none; }
+html.camera-native-active .capture-camera::before, html.camera-native-active .capture-camera::after { display: none; }
+html.camera-native-active .capture-header { background: linear-gradient(#050a08b8, #050a0800); }
+html.camera-native-active .capture-controls { background: linear-gradient(#050a0800, #050a088f 26%, #050a08d9); }
+
+@media (max-height: 600px) {
+  .capture-header { min-height: calc(46px + var(--app-safe-top, 0px)); padding-top: calc(3px + var(--app-safe-top, 0px)); padding-bottom: 3px; }
+  .capture-header .capture-icon { width: 36px; height: 36px; }
+  .capture-controls { padding-top: 16px; padding-bottom: calc(5px + var(--app-safe-bottom, 0px)); }
+  .capture-controls .capture-meals { margin-bottom: 3px; gap: 5px; }
+  .capture-meals button { min-height: 30px; font-size: 11px; }
+  .capture-modes button { padding: 5px 0 9px; font-size: 13px; }
+  .capture-actions { padding-top: 5px; padding-bottom: 0; }
+  .capture-shutter { width: 58px; height: 58px; }
+  .capture-gallery { gap: 3px; font-size: 11px; padding: 3px 0; }
+  .capture-disclosure { display: none; }
+  .capture-tip { top: calc(55px + var(--app-safe-top, 0px)); font-size: 11px; }
+  .capture-guide { top: calc(82px + var(--app-safe-top, 0px)); bottom: calc(var(--capture-controls-height, 210px) + 28px); }
+  .barcode-frame .capture-guide { top: calc(96px + var(--app-safe-top, 0px)); bottom: calc(var(--capture-controls-height, 210px) + 38px); }
+  .capture-feedback { top: calc(60px + var(--app-safe-top, 0px)); }
+  .capture-help { top: calc(50px + var(--app-safe-top, 0px)); }
+}
+@media (min-width: 600px) and (max-height: 500px) {
+  .capture-controls { left: auto; width: 280px; height: 100%; padding: calc(65px + var(--app-safe-top, 0px)) 14px calc(8px + var(--app-safe-bottom, 0px)); display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(90deg, #050a0800, #050a08bf); }
+  html.camera-native-active .capture-controls { background: linear-gradient(90deg, #050a0800, #050a08bf); }
+  .capture-controls .capture-meals { gap: 4px; }
+  .capture-meals button { font-size: 10px; }
+  .capture-meals button > span { display: none; }
+  .capture-modes { gap: 20px; }
+  .capture-actions { padding: 7px 0 0; }
+  .capture-gallery { width: 56px; }
+  .capture-tip, .capture-focus-hint { left: 14px; right: 290px; }
+  .capture-tip { top: calc(65px + var(--app-safe-top, 0px)); }
+  .capture-guide, .barcode-frame .capture-guide { top: calc(100px + var(--app-safe-top, 0px)); left: 7%; right: 310px; bottom: 55px; }
+  .capture-focus-hint { bottom: 22px; }
+  .capture-feedback, .capture-help { top: calc(62px + var(--app-safe-top, 0px)); right: 290px; bottom: 16px; }
+}

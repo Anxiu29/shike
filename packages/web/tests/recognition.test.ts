@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateNutrients, findFood, findRecipe, recognitionResponseSchema, type RecognitionResponse } from '@shike/shared'
+import { calculateNutrients, emptyPackageLabel, findFood, findRecipe, recognitionResponseSchema, type RecognitionResponse } from '@shike/shared'
 import { recognitionEstimate } from '../src/lib/entries'
 import { prepareRecognition, recognitionMatchName } from '../src/lib/recognition'
 
@@ -8,6 +8,25 @@ function response(items: Array<{ name: string; weight: number | null; ingredient
 }
 
 describe('多食物识别到逐项记录', () => {
+  it('菜包、肉包逐项匹配参考配方，保留各自识别重量且不展开馅料重复计数', () => {
+    const drafts = prepareRecognition(response([{ name: '2个菜包', weight: 150, ingredients: ['青菜'] }, { name: '肉包', weight: 110, ingredients: ['猪肉'] }, { name: '馒头', weight: null }]));
+    expect(drafts).toHaveLength(3);
+    expect(drafts[0]!.entry.referenceId).toBe(findRecipe('菜包')!.id);
+    expect(drafts[1]!.entry.referenceId).toBe(findRecipe('肉包')!.id);
+    expect(drafts.map(item => item.entry.weightG)).toEqual([150, 110, 80]);
+    expect(drafts[0]!.entry.warnings.join(' ')).toContain('参考配方');
+    expect(drafts[2]!.entry.kind).toBe('database'); expect(calculateNutrients(drafts[2]!.entry).energyKcal).toBeGreaterThan(0); expect(drafts[2]!.entry.portionSnapshot!.assumption).toContain('常见份量估算');
+  })
+  it('包装标签优先于同名基础食物，不拿净含量或视觉重量当摄入，不进入AI估算候选', () => {
+    const input = response([{ name: '米饭', weight: 100 }])
+    input.result.foods[0]!.packageLabel = { ...emptyPackageLabel(), basis: '100g', energy: { value: 837, unit: 'kJ' }, netContent: { amount: 250, unit: 'g' } }
+    const draft = prepareRecognition(input)[0]!
+    expect(draft.entry.kind).toBe('label'); expect(draft.entry.referenceId).toBeUndefined(); expect(draft.candidate).toBeUndefined()
+    expect(draft.entry.weightG).toBe(150); expect(draft.estimatedWeightG).toBeNull(); expect(calculateNutrients(draft.entry).energyKcal).toBeGreaterThan(0)
+    expect(draft.entry.warnings.join(' ')).toContain('常见份量估算')
+    expect(draft.entry.packageSnapshot!.label.netContent!.amount).toBe(250)
+    expect(input.result.foods[0]!.estimatedWeightG).toBe(100)
+  })
   it('多项分别匹配食物库或配方，各自带入对应重量，不使用统一默认值', () => {
     const result = prepareRecognition(response([{ name: '一小碗白米饭', weight: 165.5 }, { name: '西红柿炒鸡蛋', weight: 240.25, ingredients: ['番茄', '鸡蛋'] }, { name: '一根香蕉', weight: 90 }]))
     expect(result.map(item => item.entry.referenceId)).toEqual([findFood('米饭')!.id, findRecipe('番茄炒蛋')!.id, findFood('香蕉')!.id])
@@ -18,12 +37,13 @@ describe('多食物识别到逐项记录', () => {
     expect(calculateNutrients(result[0]!.entry).energyKcal).toBeCloseTo(130 * 165.5 / 100)
     expect(new Set(result.map(item => item.entry.id)).size).toBe(3)
   })
-  it('配方已匹配但无法估重时保留 null，明确的零份量与未知重量分别处理', () => {
+  it('配方已匹配但无法估重时补常见份量，明确的零份量保持零', () => {
     const result = prepareRecognition(response([{ name: '番茄炒蛋', weight: null }, { name: '米饭', weight: 0 }]))
     expect(result[0]!.entry.kind).toBe('recipe')
     expect(result[0]!.entry.referenceId).toBe(findRecipe('番茄炒蛋')!.id)
-    expect(result[0]!.entry.weightG).toBeNull()
-    expect(calculateNutrients(result[0]!.entry).energyKcal).toBeNull()
+    expect(result[0]!.entry.weightG).toBe(250)
+    expect(result[0]!.entry.portionSnapshot!.assumption).toContain('常见份量估算')
+    expect(calculateNutrients(result[0]!.entry).energyKcal).toBeGreaterThan(0)
     expect(result[1]!.entry.weightG).toBe(0)
     expect(calculateNutrients(result[1]!.entry).energyKcal).toBe(0)
   })
@@ -44,7 +64,7 @@ describe('多食物识别到逐项记录', () => {
     const result = prepareRecognition(response([{ name: '自制混合菜', weight: null, ingredients: ['米饭', '鸡胸肉', '西兰花'] }]))
     expect(result).toHaveLength(1)
     expect(result[0]!.entry.kind).toBe('unknown')
-    expect(result[0]!.entry.weightG).toBeNull()
+    expect(result[0]!.entry.weightG).toBe(200)
     expect(calculateNutrients(result[0]!.entry).energyKcal).toBeNull()
     expect(result[0]!.warnings.some(warning => warning.includes('可见成分'))).toBe(true)
   })

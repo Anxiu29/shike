@@ -9,7 +9,7 @@ import type { Backup } from '@shike/shared'
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: vi.fn() } }))
 vi.mock('@capacitor/filesystem', () => ({ Filesystem: { writeFile: vi.fn() }, Directory: { Cache: 'CACHE' }, Encoding: { UTF8: 'utf8' } }))
 vi.mock('@capacitor/share', () => ({ Share: { share: vi.fn() } }))
-const backup: Backup = { schemaVersion: 2, exportedAt: '2026-10-15T03:00:00.000Z', meals: [], weights: [], estimatedFoods: [], settings: { targetWeightKg: null } }
+const backup: Backup = { schemaVersion: 10, libraryFoods: [], packagedFoods: [], exportedAt: '2026-10-15T03:00:00.000Z', meals: [], weights: [], estimatedFoods: [], water: [], exercises: [], dailyPlans: [], settings: { targetWeightKg: null } }
 beforeEach(() => vi.clearAllMocks())
 describe('安卓备份导出', () => {
   it('把完整 JSON 写入 App 缓存并用系统分享，不依赖 WebView 的 blob 下载', async () => {
