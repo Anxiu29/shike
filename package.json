@@ -20,6 +20,7 @@
     "test:watch": "vitest",
     "test:e2e": "node scripts/test-e2e.mjs",
     "test:e2e:lan": "node scripts/test-e2e.mjs --lan",
+    "test:vision:live": "npm run build -w @shike/shared && npm run build -w @shike/server && node scripts/test-vision-live.mjs",
     "data:fndds": "node packages/shared/scripts/extract-fndds.mjs",
     "start": "node scripts/start.mjs",
     "android:apk": "node scripts/build-android.mjs"
@@ -32,6 +33,7 @@
     "concurrently": "10.0.6",
     "fake-indexeddb": "6.2.5",
     "happy-dom": "21.0.1",
+    "opencc-js": "1.4.2",
     "typescript": "5.9.3",
     "vitest": "5.0.4",
     "vue-tsc": "3.3.13"

@@ -1,4 +1,15 @@
+/**
+ * 领域契约：Zod在运行时校验外部JSON，z.infer从同一schema推导TypeScript类型。
+ * TypeScript只在开发/构建时检查，不能保证模型、备份或本地存储的实际内容正确。
+ * 顺着FoodEntry → MealRecord → Backup阅读；来源与数值快照一起保存，null表示未知。
+ * superRefine检查跨字段关系，如份量乘积、区间中值、运动能量及同日累计唯一性。
+ * backupSchema兼容v1～v10并转换到v10；它的版本号与Dexie建表版本5没有一一对应关系。
+ * 修改约束时同时检查模型解析、前端保存和备份迁移；不要编辑generated.ts来绕过校验。
+ */
 import { z } from 'zod';
+import { exerciseActivities } from './exercise-catalog.js';
+import { validBarcode, normalizeBarcode } from './barcode.js';
+import { packageNutrientsPer100g, packageWeight } from './package-label.js';
 
 // null 表示缺失数据，不能把它写成 0；0 才表示数据源明确记录为零。
 const nullableNutrient = z.number().finite().min(0).max(100).nullable();
@@ -35,7 +46,50 @@ const timestampSchema = z.iso.datetime({ offset: true });
 const shortText = z.string().trim().min(1).max(200);
 const warningsSchema = z.array(z.string().max(500)).max(30);
 const weightSchema = z.number().finite().min(0).max(20000);
-const providerSchema = z.enum(['gemini', 'glm', 'mock']);
+const providerSchema = z.enum(['gemini', 'glm', 'qwen', 'siliconflow', 'openrouter', 'deepseek', 'mock']);
+
+const packageMeasureSchema = z.object({ amount: z.number().finite().positive().max(20000), unit: z.enum(['g', 'ml']) }).strict();
+/** 模型只抄标签原数值；未知单位／基准不猜，营养百分比不进数值字段。 */
+export const packageLabelSchema = z.object({
+  basis: z.enum(['100g', '100ml', 'serving', 'package', 'unknown']),
+  energy: z.object({ value: z.number().finite().min(0).max(100000), unit: z.enum(['kJ', 'kcal']) }).strict().nullable(),
+  proteinG: z.number().finite().min(0).max(5000).nullable(),
+  fatG: z.number().finite().min(0).max(5000).nullable(),
+  carbsG: z.number().finite().min(0).max(5000).nullable(),
+  servingSize: packageMeasureSchema.nullable(), netContent: packageMeasureSchema.nullable(),
+}).strict().superRefine((label, context) => {
+  const per100 = packageNutrientsPer100g(label);
+  if (!nutrientsSchema.safeParse(per100).success) context.addIssue({ code: 'custom', message: '标签换算后超出合理范围，请核对单位与每份大小' });
+  const volume = label.basis === '100ml' ? 100 : label.basis === 'serving' && label.servingSize?.unit === 'ml' ? label.servingSize.amount : label.basis === 'package' && label.netContent?.unit === 'ml' ? label.netContent.amount : null;
+  if (volume !== null && ((label.energy && label.energy.value / (label.energy.unit === 'kJ' ? 4.184 : 1) * 100 / volume > 2000) || [label.proteinG, label.fatG, label.carbsG].some(value => value !== null && value * 100 / volume > 200)))
+    context.addIssue({ code: 'custom', message: '每100mL标签数值超出范围' });
+});
+export type PackageLabel = z.infer<typeof packageLabelSchema>;
+export const barcodeSchema = z.string().refine(validBarcode, '请输入有效的8、12、13或14位商品条码，检查末位校验码').transform(normalizeBarcode);
+export const catalogSourceSchema = z.object({ type: z.literal('openfoodfacts'), barcode: barcodeSchema,
+  url: z.string().url().refine(value => /^https:\/\/world\.openfoodfacts\.org\/product\/\d{8,14}$/.test(value)),
+  license: z.literal('ODbL-1.0'), retrievedAt: timestampSchema }).strict()
+  .refine(source => source.url === `https://world.openfoodfacts.org/product/${source.barcode}`, '来源链接须与商品条码一致');
+export const packageSnapshotSchema = z.object({
+  label: packageLabelSchema,
+  consumedAmount: z.number().finite().min(0).max(20000).nullable(),
+  consumedUnit: z.enum(['g', 'ml', 'serving', 'package']),
+  provider: z.union([providerSchema, z.literal('manual')]), model: shortText, manuallyEdited: z.boolean(),
+  source: catalogSourceSchema.optional(), brand: z.string().max(200).optional(), barcode: barcodeSchema.optional(),
+}).strict().superRefine((snapshot, context) => {
+  if (snapshot.source && snapshot.barcode !== snapshot.source.barcode) context.addIssue({ code: 'custom', message: '标签条码与公开来源不一致' });
+  const amount = snapshot.consumedAmount;
+  const measure = snapshot.consumedUnit === 'package' ? snapshot.label.netContent : snapshot.consumedUnit === 'serving' ? snapshot.label.servingSize : null;
+  if (amount !== null && (((snapshot.consumedUnit === 'package' || snapshot.consumedUnit === 'serving') && amount > 100) || (measure && measure.amount * amount > 20000)))
+    context.addIssue({ code: 'custom', message: '实际摄入不能超过100份／包或20000g／mL' });
+});
+export type PackageSnapshot = z.infer<typeof packageSnapshotSchema>;
+export const packagedFoodSchema = z.object({
+  id: shortText, name: shortText, brand: z.string().trim().max(200), barcode: barcodeSchema.nullable(), label: packageLabelSchema,
+  provider: z.enum(['gemini', 'glm', 'qwen', 'siliconflow', 'openrouter', 'deepseek', 'manual']), model: shortText, manuallyEdited: z.boolean(),
+  source: catalogSourceSchema.optional(), createdAt: timestampSchema, updatedAt: timestampSchema,
+}).strict().refine(food => !food.source || food.barcode === food.source.barcode, '包装条码与公开来源不一致');
+export type PackagedFood = z.infer<typeof packagedFoodSchema>;
 
 export const nutritionEstimateOptionSchema = z.object({
   level: estimateLevelSchema,
@@ -129,13 +183,29 @@ export const recipeSnapshotSchema = z.object({
 }).strict();
 export type RecipeSnapshot = z.infer<typeof recipeSnapshotSchema>;
 
+/** 独立的体积快照，不把mL写进weightG，也不复用每100g参考值。 */
+export const volumeSnapshotSchema = z.object({
+  amountMl: weightSchema.nullable(),
+  nutrientsPer100ml: z.object({ energyKcal: z.number().finite().min(0).max(2000).nullable(), proteinG: z.number().finite().min(0).max(200).nullable(), fatG: z.number().finite().min(0).max(200).nullable(), carbsG: z.number().finite().min(0).max(200).nullable() }).strict(),
+}).strict();
+export const portionSnapshotSchema = z.object({
+  unit: z.enum(['个', '根', '块', '碗', '片', '勺', '杯', '份']),
+  quantity: weightSchema.nullable(),
+  amountPerUnit: weightSchema.positive().nullable(),
+  basis: z.enum(['g', 'ml']),
+  assumption: z.string().min(1).max(500),
+}).strict();
+export type PortionSnapshot = z.infer<typeof portionSnapshotSchema>;
 export const foodEntrySchema = z.object({
   id: shortText,
   name: shortText,
   weightG: weightSchema.nullable(),
   nutrientsPer100g: nutrientsSchema,
   provenance: z.string().max(1000),
-  kind: z.enum(['database', 'recipe', 'manual', 'unknown', 'ai']),
+  kind: z.enum(['database', 'recipe', 'manual', 'unknown', 'ai', 'label']),
+  packageSnapshot: packageSnapshotSchema.optional(),
+  volumeSnapshot: volumeSnapshotSchema.optional(),
+  portionSnapshot: portionSnapshotSchema.optional(),
   referenceId: shortText.optional(),
   recipeSnapshot: recipeSnapshotSchema.optional(),
   aiEstimateSnapshot: aiEstimateSnapshotSchema.optional(),
@@ -143,6 +213,22 @@ export const foodEntrySchema = z.object({
   estimateLevel: estimateLevelSchema.optional(),
   warnings: warningsSchema,
 }).strict().superRefine((entry, context) => {
+  if (entry.portionSnapshot) {
+    const portion = entry.portionSnapshot;
+    const expected = portion.quantity === null || portion.amountPerUnit === null ? null : Math.round((portion.quantity * portion.amountPerUnit + Number.EPSILON) * 100) / 100;
+    const actual = portion.basis === 'ml' ? entry.volumeSnapshot?.amountMl ?? null : entry.weightG;
+    if (entry.packageSnapshot || (portion.basis === 'ml') !== Boolean(entry.volumeSnapshot) || (expected === null) !== (actual === null) || (expected !== null && (expected > 20000 || Math.abs(expected - actual!) > 1e-7)))
+      context.addIssue({ code: 'custom', message: '计量单位快照必须与实际重量或容量一致，不能混用包装份量', path: ['portionSnapshot'] });
+  }
+  if (entry.volumeSnapshot && (entry.weightG !== null || Object.values(entry.nutrientsPer100g).some(value => value !== null) || entry.packageSnapshot || entry.referenceId || entry.aiEstimateSnapshot || entry.recipeSnapshot || entry.estimateProfile || entry.estimateLevel || !['manual', 'unknown'].includes(entry.kind)))
+    context.addIssue({ code: 'custom', message: '体积记录只能使用独立的每100mL数据，不能混入质量或其他快照' });
+  if ((entry.kind === 'label') !== Boolean(entry.packageSnapshot)) context.addIssue({ code: 'custom', message: '包装记录必须对应独立的标签快照' });
+  if (entry.packageSnapshot) {
+    if (entry.estimateProfile || entry.aiEstimateSnapshot || entry.recipeSnapshot || entry.referenceId) context.addIssue({ code: 'custom', message: '包装标注不能与食物库或AI粗估重复累计' });
+    const expected = packageNutrientsPer100g(entry.packageSnapshot.label), weight = packageWeight(entry.packageSnapshot);
+    if ((weight === null) !== (entry.weightG === null) || (weight !== null && Math.abs(weight - entry.weightG!) > 1e-7)) context.addIssue({ code: 'custom', message: '包装可食重量与摄入份量不一致' });
+    for (const key of schemaNutrientKeys) if ((expected[key] === null) !== (entry.nutrientsPer100g[key] === null) || (expected[key] !== null && Math.abs(expected[key]! - entry.nutrientsPer100g[key]!) > 1e-7)) context.addIssue({ code: 'custom', message: '包装营养快照与原标签不一致' });
+  }
   if (entry.estimateLevel && !entry.estimateProfile) {
     context.addIssue({ code: 'custom', message: '估算档位必须对应完整三档资料', path: ['estimateLevel'] });
   }
@@ -180,10 +266,94 @@ export const weightRecordSchema = z.object({
   updatedAt: timestampSchema,
 }).strict();
 export type WeightRecord = z.infer<typeof weightRecordSchema>;
+export const personalInfoSchema = z.object({
+  sex: z.enum(['male', 'female']),
+  age: z.number().int().min(18).max(100),
+  heightCm: z.number().finite().min(100).max(250),
+  startingWeightKg: z.number().finite().min(20).max(400),
+  startingDate: dateSchema,
+  activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active']),
+  autoEstimateAllowed: z.boolean(),
+}).strict();
+export type PersonalInfo = z.infer<typeof personalInfoSchema>;
+export const dailyGoalsSchema = z.object({
+  calorieMode: z.enum(['auto', 'manual']),
+  manualCaloriesKcal: z.number().finite().min(1000).max(6000).nullable(),
+  purpose: z.enum(['maintain', 'lose', 'gain']),
+  adjustmentKcal: z.number().finite().min(0).max(500),
+  waterMl: z.number().finite().min(250).max(6000).nullable(),
+  exerciseMinutes: z.number().finite().min(1).max(300).nullable(),
+  cupMl: z.number().finite().min(50).max(1500),
+}).strict().refine(value => value.calorieMode !== 'manual' || value.manualCaloriesKcal !== null, '手动热量预算不能为空');
+export type DailyGoals = z.infer<typeof dailyGoalsSchema>;
 export const settingsSchema = z.object({
   targetWeightKg: z.number().finite().min(1).max(600).nullable(),
+  // 可选字段使旧设备原位升级，旧设置不会被强行补成个人资料。
+  personalInfo: personalInfoSchema.nullable().optional(),
+  dailyGoals: dailyGoalsSchema.optional(),
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
+
+const twoDecimal = (value: number) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-7;
+export const waterRecordSchema = z.object({
+  id: shortText, date: dateSchema,
+  amountMl: z.number().finite().min(1).max(3000).refine(twoDecimal, '饮水量最多两位小数'),
+  createdAt: timestampSchema, updatedAt: timestampSchema,
+}).strict();
+export type WaterRecord = z.infer<typeof waterRecordSchema>;
+export const exerciseRecordSchema = z.object({
+  id: shortText, date: dateSchema, name: z.string().trim().min(1).max(80),
+  minutes: z.number().finite().positive().max(600).nullable(),
+  method: z.enum(['met', 'manual', 'repetitions']),
+  manualScope: z.enum(['session', 'day']).optional(),
+  deviceReading: z.literal('active').optional(),
+  dayBudgetKcal: z.number().finite().min(0).max(20000).refine(twoDecimal).nullable().optional(),
+  repetitionSnapshot: z.object({ count: z.number().int().min(1).max(2000), secondsPerRep: z.number().finite().min(1).max(10).refine(twoDecimal), formulaVersion: z.literal('repetitions-met-v1') }).strict().optional(),
+  activityCode: z.string().nullable(), met: z.number().finite().min(1).max(30).nullable(),
+  weightKg: z.number().finite().min(1).max(600).nullable(),
+  activeKcal: z.number().finite().min(0).max(20000),
+  grossKcal: z.number().finite().min(0).max(20000).nullable(),
+  includeInBudget: z.boolean(),
+  createdAt: timestampSchema, updatedAt: timestampSchema,
+}).strict().superRefine((record, context) => {
+  const daily = record.method === 'manual' && record.manualScope === 'day';
+  if (daily && record.deviceReading !== 'active') context.addIssue({ code: 'custom', message: '全天汇总请确认手环标注为活动热量，不可使用含静息的总消耗' });
+  if (!daily && (record.deviceReading !== undefined || record.dayBudgetKcal !== undefined)) context.addIssue({ code: 'custom', message: '单次运动不能混入全天设备读数' });
+  if (daily && record.includeInBudget && record.dayBudgetKcal == null) context.addIssue({ code: 'custom', message: '请填写其中计入额外预算的热量，不确定可关闭计入' });
+  if (daily && record.dayBudgetKcal != null && record.dayBudgetKcal > record.activeKcal) context.addIssue({ code: 'custom', message: '额外预算部分不能超过当天活动热量' });
+  if (record.manualScope !== undefined && record.method !== 'manual') context.addIssue({ code: 'custom', message: '只有手动活动消耗可以选择全天汇总' });
+  if (daily && record.minutes !== null) context.addIssue({ code: 'custom', message: '全天活动汇总不能冒充运动分钟数' });
+  if (!daily && record.minutes === null) context.addIssue({ code: 'custom', message: '单次运动缺少时长' });
+  if (record.method !== 'repetitions' && (record.repetitionSnapshot || (!daily && record.minutes !== null && (record.minutes < 1 || !twoDecimal(record.minutes)))))
+    context.addIssue({ code: 'custom', message: '按时长运动须为1–600分钟，不能混入按次数估算资料' });
+  if (record.method === 'manual') {
+    if (record.met !== null || record.activityCode !== null || record.grossKcal !== null || record.weightKg !== null || !twoDecimal(record.activeKcal))
+      context.addIssue({ code: 'custom', message: '设备活动消耗与 MET 估算不能混用' });
+    return;
+  }
+  const activity = exerciseActivities.find(value => value.code === record.activityCode);
+  if (!activity || record.met !== activity.met || record.weightKg === null || record.grossKcal === null || record.minutes === null) {
+    context.addIssue({ code: 'custom', message: '运动估算缺少有效强度或体重快照' }); return;
+  }
+  if ((activity.unit === 'repetitions') !== (record.method === 'repetitions'))
+    context.addIssue({ code: 'custom', message: '运动项目与计量方式不一致' });
+  if (record.method === 'repetitions') {
+    const snapshot = record.repetitionSnapshot;
+    if (!snapshot || Math.abs(record.minutes - snapshot.count * snapshot.secondsPerRep / 60) > 1e-7)
+      context.addIssue({ code: 'custom', message: '俯卧撑次数、节奏和估计时长不一致' });
+  }
+  const base = record.weightKg * record.minutes / 60;
+  if (Math.abs(record.grossKcal - record.met! * base) > 1e-7 || Math.abs(record.activeKcal - Math.max(0, record.met! - 1) * base) > 1e-7)
+    context.addIssue({ code: 'custom', message: '运动热量与当时的强度、体重及时间不一致' });
+});
+export type ExerciseRecord = z.infer<typeof exerciseRecordSchema>;
+/** 保存当日目标和计算资料，未来修改个人信息不改写已经记录的历史日。 */
+export const dailyPlanSchema = z.object({
+  date: dateSchema, formulaVersion: z.literal('mifflin-1990-v1'),
+  settingsSnapshot: settingsSchema, weightKg: z.number().finite().min(1).max(600).nullable(),
+  weightDate: dateSchema.nullable(), createdAt: timestampSchema, updatedAt: timestampSchema,
+}).strict().refine(plan => (plan.weightKg === null) === (plan.weightDate === null) && (plan.weightDate === null || plan.weightDate <= plan.date), '日期目标不能引用未来体重，体重与日期须一起保存');
+export type DailyPlan = z.infer<typeof dailyPlanSchema>;
 
 export const recognitionResultSchema = z.object({
   isFood: z.boolean(),
@@ -195,6 +365,7 @@ export const recognitionResultSchema = z.object({
     estimatedNutrientsPer100g: nutrientsSchema.nullable().optional().default(null),
     nutritionAssumptions: warningsSchema.optional().default([]),
     nutritionEstimateProfile: nutritionEstimateProfileSchema.nullable().optional().default(null),
+    packageLabel: packageLabelSchema.nullable().optional(),
   }).strict()).max(30),
   uncertainties: warningsSchema,
 }).strict().refine((result) => result.isFood || result.foods.length === 0, {
@@ -213,8 +384,26 @@ export const healthResponseSchema = z.object({
   mode: z.enum(['live', 'mock']),
   provider: providerSchema,
   model: shortText,
+  authRequired: z.boolean().optional(),
 }).strict();
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
+
+/** 个人食品库保存完整快照，收藏库内食物也保留副本，避免库更新后丢失。 */
+export const libraryFoodSchema = z.object({
+  id: shortText,
+  choiceId: shortText,
+  origin: z.enum(['ai', 'manual', 'library']),
+  entry: foodEntrySchema,
+  favorite: z.boolean(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+}).strict().superRefine((food, context) => {
+  if (food.entry.aiEstimateSnapshot?.provider === 'mock' || food.entry.packageSnapshot?.provider === 'mock')
+    context.addIssue({ code: 'custom', message: '模拟数据不能保存为个人食品', path: ['entry'] });
+  if (food.origin !== 'library' && food.choiceId !== `saved:${food.id}`)
+    context.addIssue({ code: 'custom', message: '个人食品选择标识无效', path: ['choiceId'] });
+});
+export type LibraryFood = z.infer<typeof libraryFoodSchema>;
 
 const backupV1Schema = z.object({
   schemaVersion: z.literal(1),
@@ -227,14 +416,35 @@ const backupV2Schema = backupV1Schema.extend({
   schemaVersion: z.literal(2),
   estimatedFoods: z.array(estimatedFoodSchema).max(100000),
 }).strict();
+const backupV3Schema = backupV2Schema.extend({
+  schemaVersion: z.literal(3),
+  water: z.array(waterRecordSchema).max(100000),
+  exercises: z.array(exerciseRecordSchema).max(100000),
+  dailyPlans: z.array(dailyPlanSchema).max(100000),
+}).strict();
+const backupV4Schema = backupV3Schema.extend({ schemaVersion: z.literal(4) }).strict();
+const backupV5Schema = backupV4Schema.extend({ schemaVersion: z.literal(5), packagedFoods: z.array(packagedFoodSchema).max(100000) }).strict();
+const backupV6Schema = backupV5Schema.extend({ schemaVersion: z.literal(6) }).strict();
+const backupV7Schema = backupV6Schema.extend({ schemaVersion: z.literal(7) }).strict();
+const backupV8Schema = backupV7Schema.extend({ schemaVersion: z.literal(8) }).strict();
+const backupV9Schema = backupV8Schema.extend({ schemaVersion: z.literal(9) }).strict();
+const backupV10Schema = backupV9Schema.extend({ schemaVersion: z.literal(10), libraryFoods: z.array(libraryFoodSchema).max(100000) }).strict();
 
-// 旧备份升级为 v2；对外 Backup 类型统一，不要求用户先手动转换文件。
+// v4包装标签；v5包装库；v6饮品mL；v7次数运动；v8全天活动；v9日常单位；v10个人食品与收藏。
 // 导入是一次完整恢复，重复主键或规范化名称不能通过 put 静默覆盖。
-export const backupSchema = z.discriminatedUnion('schemaVersion', [backupV1Schema, backupV2Schema])
-  .transform((backup) => backup.schemaVersion === 1
-    ? { ...backup, schemaVersion: 2 as const, estimatedFoods: [] as EstimatedFood[] }
-    : backup)
+export const backupSchema = z.discriminatedUnion('schemaVersion', [backupV1Schema, backupV2Schema, backupV3Schema, backupV4Schema, backupV5Schema, backupV6Schema, backupV7Schema, backupV8Schema, backupV9Schema, backupV10Schema])
+  .transform((backup) => backup.schemaVersion === 10 ? backup : backup.schemaVersion === 5 || backup.schemaVersion === 6 || backup.schemaVersion === 7 || backup.schemaVersion === 8 || backup.schemaVersion === 9 ? { ...backup, schemaVersion: 10 as const, libraryFoods: [] as LibraryFood[] } : backup.schemaVersion === 3 || backup.schemaVersion === 4 ? { ...backup, schemaVersion: 10 as const, libraryFoods: [] as LibraryFood[], packagedFoods: [] as PackagedFood[] } : {
+    ...backup, schemaVersion: 10 as const, libraryFoods: [] as LibraryFood[], packagedFoods: [] as PackagedFood[],
+    estimatedFoods: backup.schemaVersion === 1 ? [] as EstimatedFood[] : backup.estimatedFoods,
+    water: [] as WaterRecord[], exercises: [] as ExerciseRecord[], dailyPlans: [] as DailyPlan[],
+  })
   .superRefine((backup, context) => {
+  if (new Set(backup.libraryFoods.map(food => food.id)).size !== backup.libraryFoods.length || new Set(backup.libraryFoods.map(food => food.choiceId)).size !== backup.libraryFoods.length)
+    context.addIssue({ code: 'custom', message: '食品库包含重复ID或选择标识', path: ['libraryFoods'] });
+  const dailyActivityDates = backup.exercises.filter(record => record.method === 'manual' && record.manualScope === 'day').map(record => record.date);
+  if (new Set(dailyActivityDates).size !== dailyActivityDates.length) context.addIssue({ code: 'custom', message: '同一天只能保留一条活动累计汇总', path: ['exercises'] });
+  if (new Set(backup.packagedFoods.map(food => food.id)).size !== backup.packagedFoods.length || new Set(backup.packagedFoods.flatMap(food => food.barcode ? [food.barcode] : [])).size !== backup.packagedFoods.filter(food => food.barcode).length)
+    context.addIssue({ code: 'custom', message: '包装库包含重复ID或条码', path: ['packagedFoods'] });
   if (new Set(backup.meals.map((meal) => meal.id)).size !== backup.meals.length) {
     context.addIssue({ code: 'custom', message: '备份包含重复饮食记录 ID', path: ['meals'] });
   }
@@ -247,5 +457,10 @@ export const backupSchema = z.discriminatedUnion('schemaVersion', [backupV1Schem
   if (new Set(backup.estimatedFoods.map((food) => normalizeFoodName(food.name))).size !== backup.estimatedFoods.length) {
     context.addIssue({ code: 'custom', message: '备份包含重复个人估算食物名称', path: ['estimatedFoods'] });
   }
+  for (const [key, records] of [['water', backup.water], ['exercises', backup.exercises]] as const) {
+    if (new Set(records.map(record => record.id)).size !== records.length) context.addIssue({ code: 'custom', message: '备份包含重复记录 ID', path: [key] });
+  }
+  if (new Set(backup.dailyPlans.map(plan => plan.date)).size !== backup.dailyPlans.length)
+    context.addIssue({ code: 'custom', message: '备份包含重复日期目标', path: ['dailyPlans'] });
 });
 export type Backup = z.infer<typeof backupSchema>;

@@ -1,0 +1,14 @@
+Open Food Facts — https://world.openfoodfacts.org/
+
+本应用内置OFF公开商品数据库子集（1,053款）及公开多语言分类的中文词子集。
+数据库依Open Database License v1.0（ODbL）提供：
+https://opendatacommons.org/licenses/odbl/1-0/
+单项数据库内容依Database Contents License v1.0（DbCL）提供：
+https://opendatacommons.org/licenses/dbcl/1-0/
+使用与再利用说明：https://world.openfoodfacts.org/terms-of-use
+
+商品数据取得日期2026-10-16；分类词取得日期2026-10-19。
+分类来源：https://static.openfoodfacts.org/data/taxonomies/categories.json
+食刻整理了中文展示名、别名与分类提示；保留条码、原名和营养原值，未包含商品图片。
+相同许可下的机器可读子集和变更说明随项目源码提供于packages/shared/data/。
+中文类别提示不是完整商品译名；社区数据未逐件核对实物，当前标签及用户核对值优先。

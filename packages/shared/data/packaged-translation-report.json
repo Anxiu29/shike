@@ -1,0 +1,162 @@
+{
+  "before": {
+    "chinese": 249
+  },
+  "after": {
+    "chinese": 954
+  },
+  "methods": {
+    "existing": 198,
+    "translated": 609,
+    "untranslated": 99,
+    "category": 147
+  },
+  "examples": [
+    {
+      "barcode": "4000417294005",
+      "before": "Ritter Sport Kakao-Mousse",
+      "after": "Ritter Sport可可慕斯",
+      "method": "translated"
+    },
+    {
+      "barcode": "8422174010029",
+      "before": "Gazpacho Original",
+      "after": "西班牙冷蔬菜汤原味",
+      "method": "translated"
+    },
+    {
+      "barcode": "6908946290872",
+      "before": "百事 Pepsi Raw Cola Zero",
+      "after": "百事Pepsi Raw可乐Zero",
+      "method": "translated"
+    },
+    {
+      "barcode": "6902538004045",
+      "before": "达能 Danone Mizone Vitamin Water Lime",
+      "after": "达能Danone Mizone Vitamin水青柠",
+      "method": "translated"
+    },
+    {
+      "barcode": "6922877721021",
+      "before": "頂好牌花生醬",
+      "after": "顶好牌花生酱",
+      "method": "existing"
+    },
+    {
+      "barcode": "6901845041347",
+      "before": "格力高 Glico Mousse Pocky Biscuit Sticks Mango Flavour",
+      "after": "格力高Glico Mousse Pocky饼干Sticks芒果风味",
+      "method": "translated"
+    },
+    {
+      "barcode": "6901845045161",
+      "before": "格力高 PChocolate Flavour Biscuit Stick",
+      "after": "格力高PChocolate风味饼干Stick",
+      "method": "translated"
+    },
+    {
+      "barcode": "9556174902202",
+      "before": "桂格 Quaker Quick Cooking Oatmeal",
+      "after": "桂格Quaker Quick Cooking燕麦粥",
+      "method": "translated"
+    },
+    {
+      "barcode": "6938254754766",
+      "before": "荷美尔 American Style Sliced Ham",
+      "after": "荷美尔American风格Sliced火腿",
+      "method": "translated"
+    },
+    {
+      "barcode": "6938254753639",
+      "before": "荷美尔 Sliced Chicken Breast",
+      "after": "荷美尔Sliced鸡肉Breast",
+      "method": "translated"
+    },
+    {
+      "barcode": "6921555509982",
+      "before": "今麦郎 Instant noodle artificial beef flavor and sour pickled cabbage",
+      "after": "今麦郎方便面人工调味牛肉风味与酸味pickled cabbage",
+      "method": "translated"
+    },
+    {
+      "barcode": "6920459998434",
+      "before": "康师傅 Boisson the jasmine",
+      "after": "康师傅饮料the jasmine",
+      "method": "translated"
+    },
+    {
+      "barcode": "6920459905012",
+      "before": "康师傅 Lemon Black Iced Tea",
+      "after": "康师傅柠檬Black Iced茶",
+      "method": "translated"
+    },
+    {
+      "barcode": "6920459902387",
+      "before": "康师傅 Uni-president Iced Black Tea Tetra Pak",
+      "after": "康师傅Uni-president Iced红茶Tetra Pak",
+      "method": "translated"
+    },
+    {
+      "barcode": "6901939621257",
+      "before": "可口可乐 Coca Cola",
+      "after": "可口可乐Coca可乐",
+      "method": "translated"
+    },
+    {
+      "barcode": "6954767420363",
+      "before": "可口可乐 No Sugar Coke Chinese",
+      "after": "可口可乐No糖Coke Chinese",
+      "method": "translated"
+    },
+    {
+      "barcode": "6921804700108",
+      "before": "老干妈 Spicy bean paste",
+      "after": "老干妈辣味bean酱",
+      "method": "translated"
+    },
+    {
+      "barcode": "6924743931350",
+      "before": "乐事 Lay's China Hot And Sour Lemon Braised Chicken Feet Flavor",
+      "after": "乐事Lay's China热与酸味柠檬炖制鸡肉Feet风味",
+      "method": "translated"
+    },
+    {
+      "barcode": "6924743919242",
+      "before": "乐事 Mexican Chicken Tomato Flavor",
+      "after": "乐事Mexican鸡肉番茄风味",
+      "method": "translated"
+    },
+    {
+      "barcode": "0078895743050",
+      "before": "李锦记 Lkk Chiu chow chilli oil",
+      "after": "李锦记Lkk Chiu chow辣椒油",
+      "method": "translated"
+    },
+    {
+      "barcode": "6941297429935",
+      "before": "良品铺子 Konjac Slices Spicy Hotpot",
+      "after": "良品铺子魔芋Slices辣味Hotpot",
+      "method": "translated"
+    },
+    {
+      "barcode": "6921168559084",
+      "before": "农夫山泉 Matcha",
+      "after": "农夫山泉抹茶",
+      "method": "translated"
+    },
+    {
+      "barcode": "6917878003573",
+      "before": "雀巢 Nestle Eagle - Condensed Milk Tube (original) 185G",
+      "after": "雀巢Nestle Eagle - Condensed牛奶Tube (原味) 185G",
+      "method": "translated"
+    },
+    {
+      "barcode": "6928396000364",
+      "before": "雙趣蛋",
+      "after": "双趣蛋",
+      "method": "existing"
+    }
+  ],
+  "total": 1053,
+  "retiredCount": 2
+}

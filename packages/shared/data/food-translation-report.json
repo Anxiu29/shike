@@ -1,0 +1,756 @@
+{
+  "version": 1,
+  "translatedCount": 992,
+  "total": 5982,
+  "allChineseBefore": 4899,
+  "allChineseAfter": 5833,
+  "noChineseBefore": 54,
+  "noChineseAfter": 0,
+  "remaining": [
+    {
+      "id": "fdc-172103",
+      "name": "猪肉春卷（USDA参考）",
+      "description": "Egg rolls, pork, refrigerated, heated"
+    },
+    {
+      "id": "fdc-172104",
+      "name": "鸡肉春卷（USDA参考）",
+      "description": "Egg rolls, chicken, refrigerated, heated"
+    },
+    {
+      "id": "fdc-172105",
+      "name": "蔬菜春卷（USDA参考）",
+      "description": "Egg rolls, vegetable, frozen, prepared"
+    },
+    {
+      "id": "fdc-2705477",
+      "name": "巧克力牛奶（Nesquik；未注明奶种类）",
+      "description": "Chocolate milk, Nesquik, NS as to type of milk"
+    },
+    {
+      "id": "fdc-2705478",
+      "name": "巧克力牛奶（Nesquik；使用原料植物奶）",
+      "description": "Chocolate milk, Nesquik, made with non-dairy milk"
+    },
+    {
+      "id": "fdc-2706751",
+      "name": "Stir油炸牛肉及蔬菜加入酱油",
+      "description": "Stir fried beef and vegetables in soy sauce"
+    },
+    {
+      "id": "fdc-2706787",
+      "name": "鸡肉或火鸡肉一份la king配蔬菜含胡萝卜（西兰花；及／或深绿叶菜；不含土豆；奶油；白色；或汤-基底酱汁）",
+      "description": "Chicken or turkey a la king with vegetables including carrots, broccoli, and/or dark-green leafy; no potatoes, cream, white, or soup-based sauce"
+    },
+    {
+      "id": "fdc-2706788",
+      "name": "鸡肉或火鸡肉一份la king配蔬菜不含胡萝卜（西兰花；及深绿叶菜；不含土豆；奶油；白色；或汤-基底酱汁）",
+      "description": "Chicken or turkey a la king with vegetables excluding carrorts, broccoli, and dark-green leafy; no potatoes, cream, white, or soup-based sauce"
+    },
+    {
+      "id": "fdc-2707033",
+      "name": "Sardine三明治",
+      "description": "Sardine sandwich"
+    },
+    {
+      "id": "fdc-2707128",
+      "name": "汤（sopa或拉美清汤de res）",
+      "description": "Soup, sopa or caldo de res"
+    },
+    {
+      "id": "fdc-2707135",
+      "name": "汤（sopa或拉美清汤de pollo）",
+      "description": "Soup, sopa or caldo de pollo"
+    },
+    {
+      "id": "fdc-2707464",
+      "name": "汤（mulligatawany）",
+      "description": "Soup, mulligatawany"
+    },
+    {
+      "id": "fdc-2707816",
+      "name": "玉米pone（烘烤）",
+      "description": "Corn pone, baked"
+    },
+    {
+      "id": "fdc-2707817",
+      "name": "玉米pone（油炸）",
+      "description": "Corn pone, fried"
+    },
+    {
+      "id": "fdc-2707847",
+      "name": "面包（Boston棕色）",
+      "description": "Bread, Boston Brown"
+    },
+    {
+      "id": "fdc-2707858",
+      "name": "蛋糕（Boston奶油派）",
+      "description": "Cake, Boston cream pie"
+    },
+    {
+      "id": "fdc-2707889",
+      "name": "蛋糕（tres leche）",
+      "description": "Cake, tres leche"
+    },
+    {
+      "id": "fdc-2707967",
+      "name": "饼干棒（Pocky）",
+      "description": "Pocky"
+    },
+    {
+      "id": "fdc-2708001",
+      "name": "派（key青柠）",
+      "description": "Pie, key lime"
+    },
+    {
+      "id": "fdc-2708079",
+      "name": "咖啡伴食蛋糕（碎屑或quick-面包类型）",
+      "description": "Coffee cake, crumb or quick-bread type"
+    },
+    {
+      "id": "fdc-2708080",
+      "name": "咖啡伴食蛋糕（碎屑或quick-面包类型；配水果）",
+      "description": "Coffee cake, crumb or quick-bread type, with fruit"
+    },
+    {
+      "id": "fdc-2708081",
+      "name": "咖啡伴食蛋糕（碎屑或quick-面包类型；奶酪馅）",
+      "description": "Coffee cake, crumb or quick-bread type, cheese-filled"
+    },
+    {
+      "id": "fdc-2708083",
+      "name": "谷物或格兰诺拉棒(家乐氏Nutri-Grain早餐谷物棒)",
+      "description": "Cereal or granola bar (Kellogg's Nutri-Grain Cereal Bar)"
+    },
+    {
+      "id": "fdc-2708084",
+      "name": "谷物或格兰诺拉棒(家乐氏Nutri-Grain酸奶棒)",
+      "description": "Cereal or granola bar (Kellogg's Nutri-Grain Yogurt Bar)"
+    },
+    {
+      "id": "fdc-2708085",
+      "name": "谷物或格兰诺拉棒(家乐氏Nutri-Grain水果及坚果棒)",
+      "description": "Cereal or granola bar (Kellogg's Nutri-Grain Fruit and Nut Bar)"
+    },
+    {
+      "id": "fdc-2708088",
+      "name": "谷物或格兰诺拉棒(Kashi耐嚼型)",
+      "description": "Cereal or granola bar (Kashi Chewy)"
+    },
+    {
+      "id": "fdc-2708089",
+      "name": "谷物或格兰诺拉棒(Kashi酥脆)",
+      "description": "Cereal or granola bar (Kashi Crunchy)"
+    },
+    {
+      "id": "fdc-2708098",
+      "name": "谷物或格兰诺拉棒(桂格耐嚼型Dipps格兰诺拉棒)",
+      "description": "Cereal or granola bar (Quaker Chewy Dipps Granola Bar)"
+    },
+    {
+      "id": "fdc-2708110",
+      "name": "谷物或格兰诺拉棒（燕麦；坚果；裹覆non-巧克力裹层）",
+      "description": "Cereal or granola bar, oats, nuts, coated with non-chocolate coating"
+    },
+    {
+      "id": "fdc-2708111",
+      "name": "谷物或格兰诺拉棒（裹覆non-巧克力裹层）",
+      "description": "Cereal or granola bar, coated with non-chocolate coating"
+    },
+    {
+      "id": "fdc-2708112",
+      "name": "谷物或格兰诺拉棒（高膳食纤维；裹覆non-巧克力酸奶裹层）",
+      "description": "Cereal or granola bar, high fiber, coated with non-chocolate yogurt coating"
+    },
+    {
+      "id": "fdc-2708118",
+      "name": "营养棒(Clif棒)",
+      "description": "Nutrition bar (Clif Bar)"
+    },
+    {
+      "id": "fdc-2708119",
+      "name": "营养棒(Clif儿童型有机Zbar)",
+      "description": "Nutrition bar (Clif Kids Organic Zbar)"
+    },
+    {
+      "id": "fdc-2708120",
+      "name": "营养棒(PowerBar)",
+      "description": "Nutrition bar (PowerBar)"
+    },
+    {
+      "id": "fdc-2708121",
+      "name": "营养棒(Slim Fast原味餐食棒)",
+      "description": "Nutrition bar (Slim Fast Original Meal Bar)"
+    },
+    {
+      "id": "fdc-2708123",
+      "name": "营养棒(South Beach生活餐食棒)",
+      "description": "Nutrition bar (South Beach Living Meal Bar)"
+    },
+    {
+      "id": "fdc-2708124",
+      "name": "营养棒(South Beach生活高蛋白棒)",
+      "description": "Nutrition bar (South Beach Living High Protein Bar)"
+    },
+    {
+      "id": "fdc-2708125",
+      "name": "营养棒(Tiger's牛奶)",
+      "description": "Nutrition bar (Tiger's Milk)"
+    },
+    {
+      "id": "fdc-2708126",
+      "name": "营养棒(Zone Perfect经典脆片)",
+      "description": "Nutrition bar (Zone Perfect Classic Crunch)"
+    },
+    {
+      "id": "fdc-2708134",
+      "name": "全麦甜饼干(Teddy Grahams)",
+      "description": "Graham crackers (Teddy Grahams)"
+    },
+    {
+      "id": "fdc-2708142",
+      "name": "薄脆饼干（matzo；减钠）",
+      "description": "Crackers, matzo, reduced sodium"
+    },
+    {
+      "id": "fdc-2708148",
+      "name": "薄脆饼干（黄油(Ritz)）",
+      "description": "Crackers, butter (Ritz)"
+    },
+    {
+      "id": "fdc-2708151",
+      "name": "薄脆饼干（奶酪(Cheez-It)）",
+      "description": "Crackers, cheese (Cheez-It)"
+    },
+    {
+      "id": "fdc-2708152",
+      "name": "薄脆饼干（奶酪(Goldfish)）",
+      "description": "Crackers, cheese (Goldfish)"
+    },
+    {
+      "id": "fdc-2708158",
+      "name": "薄脆饼干（matzo）",
+      "description": "Crackers, matzo"
+    },
+    {
+      "id": "fdc-2708173",
+      "name": "薄脆饼干（三明治；花生酱夹馅(Ritz)）",
+      "description": "Crackers, sandwich, peanut butter filled (Ritz)"
+    },
+    {
+      "id": "fdc-2708177",
+      "name": "薄脆饼干（三明治；奶酪夹馅(Ritz)）",
+      "description": "Crackers, sandwich, cheese filled (Ritz)"
+    },
+    {
+      "id": "fdc-2708181",
+      "name": "薄脆饼干（编织状小麦；原味(Triscuit)）",
+      "description": "Crackers, woven wheat, plain (Triscuit)"
+    },
+    {
+      "id": "fdc-2708182",
+      "name": "薄脆饼干（编织状小麦；调味(Triscuit)）",
+      "description": "Crackers, woven wheat, flavored (Triscuit)"
+    },
+    {
+      "id": "fdc-2708198",
+      "name": "玉米脆片（原味(Fritos)）",
+      "description": "Corn chips, plain (Fritos)"
+    },
+    {
+      "id": "fdc-2708199",
+      "name": "玉米脆片（调味(Fritos)）",
+      "description": "Corn chips, flavored (Fritos)"
+    },
+    {
+      "id": "fdc-2708203",
+      "name": "奶酪调味玉米零食(Cheetos)",
+      "description": "Cheese flavored corn snacks (Cheetos)"
+    },
+    {
+      "id": "fdc-2708206",
+      "name": "玉米薄饼脆片（纳乔玉米片风味奶酪口味(Doritos)）",
+      "description": "Tortilla chips, nacho cheese flavor (Doritos)"
+    },
+    {
+      "id": "fdc-2708207",
+      "name": "玉米薄饼脆片（cool牧场酱口味(Doritos)）",
+      "description": "Tortilla chips, cool ranch flavor (Doritos)"
+    },
+    {
+      "id": "fdc-2708208",
+      "name": "玉米薄饼脆片（其他口味(Doritos)）",
+      "description": "Tortilla chips, other flavors (Doritos)"
+    },
+    {
+      "id": "fdc-2708219",
+      "name": "爆米花（air-膨化；无黄油添加）",
+      "description": "Popcorn, air-popped, no butter added"
+    },
+    {
+      "id": "fdc-2708220",
+      "name": "爆米花（air-膨化；另加黄油）",
+      "description": "Popcorn, air-popped, with added butter"
+    },
+    {
+      "id": "fdc-2708290",
+      "name": "杂粮脆片(Sun脆片)",
+      "description": "Multigrain chips (Sun Chips)"
+    },
+    {
+      "id": "fdc-2708291",
+      "name": "零食混合（原味(Chex混合)）",
+      "description": "Snack mix, plain (Chex Mix)"
+    },
+    {
+      "id": "fdc-2708462",
+      "name": "早餐谷物（燕麦bunches）",
+      "description": "Cereal, oat bunches"
+    },
+    {
+      "id": "fdc-2708506",
+      "name": "Frito派",
+      "description": "Frito pie"
+    },
+    {
+      "id": "fdc-2708738",
+      "name": "馅饼或夹馅口袋饼（披萨pocket；肉）",
+      "description": "Turnover or hot pocket, pizza pocket, meat"
+    },
+    {
+      "id": "fdc-2708739",
+      "name": "馅饼或夹馅口袋饼（披萨pocket）",
+      "description": "Turnover or hot pocket, pizza pocket"
+    },
+    {
+      "id": "fdc-2708742",
+      "name": "夹馅酥饼或瘦肉pocket",
+      "description": "Turnover or lean pocket"
+    },
+    {
+      "id": "fdc-2708815",
+      "name": "芝士通心粉或面条（Easy Mac类型）",
+      "description": "Macaroni or noodles with cheese, Easy Mac type"
+    },
+    {
+      "id": "fdc-2708819",
+      "name": "芝士通心粉或面条及肉类（已制作来源于汉堡Helper混合）",
+      "description": "Macaroni or noodles with cheese and meat, prepared from Hamburger Helper mix"
+    },
+    {
+      "id": "fdc-2708931",
+      "name": "Yat Ga Mein配肉（鱼；或禽肉）",
+      "description": "Yat Ga Mein with meat, fish, or poultry"
+    },
+    {
+      "id": "fdc-2709078",
+      "name": "Dirty米饭",
+      "description": "Dirty rice"
+    },
+    {
+      "id": "fdc-2709151",
+      "name": "汤（Matzo球状）",
+      "description": "Soup, Matzo ball"
+    },
+    {
+      "id": "fdc-2709161",
+      "name": "汤（sopa de西班牙细面带汤）",
+      "description": "Soup, sopa de fideo aguada"
+    },
+    {
+      "id": "fdc-2709248",
+      "name": "Passion水果（生食／生重）",
+      "description": "Passion fruit, raw"
+    },
+    {
+      "id": "fdc-2709328",
+      "name": "Passion水果果汁（100%）",
+      "description": "Passion fruit juice, 100%"
+    },
+    {
+      "id": "fdc-2709348",
+      "name": "Passion水果果肉饮料",
+      "description": "Passion fruit nectar"
+    },
+    {
+      "id": "fdc-2709572",
+      "name": "西兰花raab（生食／生重）",
+      "description": "Broccoli raab, raw"
+    },
+    {
+      "id": "fdc-2709573",
+      "name": "西兰花raab（熟制）",
+      "description": "Broccoli raab, cooked"
+    },
+    {
+      "id": "fdc-2709612",
+      "name": "Poke绿叶菜（熟制）",
+      "description": "Poke greens, cooked"
+    },
+    {
+      "id": "fdc-2709715",
+      "name": "红薯tots",
+      "description": "Sweet potato tots"
+    },
+    {
+      "id": "fdc-2709716",
+      "name": "红薯tots（快餐或餐厅参考）",
+      "description": "Sweet potato tots, fast food / restaurant"
+    },
+    {
+      "id": "fdc-2709717",
+      "name": "红薯tots（学校餐食参考）",
+      "description": "Sweet potato tots, school"
+    },
+    {
+      "id": "fdc-2709727",
+      "name": "Sun-干制番茄",
+      "description": "Sun-dried tomatoes"
+    },
+    {
+      "id": "fdc-2709743",
+      "name": "莎莎酱verde或莎莎酱（绿色）",
+      "description": "Salsa verde or salsa, green"
+    },
+    {
+      "id": "fdc-2709790",
+      "name": "生菜（Boston；生食／生重）",
+      "description": "Lettuce, Boston, raw"
+    },
+    {
+      "id": "fdc-2709829",
+      "name": "Seven-层沙拉（生菜沙拉使用原料一份combination的洋葱；芹菜；绿色椒；豌豆；蛋黄酱；奶酪；鸡蛋；及／或培根）",
+      "description": "Seven-layer salad, lettuce salad made with a combination of onion, celery, green pepper, peas, mayonnaise, cheese, eggs, and/or bacon"
+    },
+    {
+      "id": "fdc-2710043",
+      "name": "Chiles rellenos（奶酪馅）",
+      "description": "Chiles rellenos, cheese-filled"
+    },
+    {
+      "id": "fdc-2710044",
+      "name": "Chiles rellenos（夹馅配肉及奶酪）",
+      "description": "Chiles rellenos, filled with meat and cheese"
+    },
+    {
+      "id": "fdc-2710143",
+      "name": "填馅卷心菜（配肉及米饭；叙利亚式dish；波多黎各式）",
+      "description": "Stuffed cabbage, with meat and rice, Syrian dish, Puerto Rican style"
+    },
+    {
+      "id": "fdc-2710258",
+      "name": "糖（白色；颗粒状或lump）",
+      "description": "Sugar, white, granulated or lump"
+    },
+    {
+      "id": "fdc-2710350",
+      "name": "糖果（non巧克力；其他；未注明具体类型）",
+      "description": "Candy, non chocolate, other, NFS"
+    },
+    {
+      "id": "fdc-2710370",
+      "name": "糖果（non巧克力；无糖）",
+      "description": "Candy, non chocolate, sugar free"
+    },
+    {
+      "id": "fdc-2710384",
+      "name": "咖啡（咖啡con leche）",
+      "description": "Coffee, cafe con leche"
+    },
+    {
+      "id": "fdc-2710385",
+      "name": "咖啡（咖啡con leche；脱咖啡因）",
+      "description": "Coffee, cafe con leche, decaffeinated"
+    },
+    {
+      "id": "fdc-2710582",
+      "name": "果汁饮料(Sunny D)",
+      "description": "Fruit juice drink (Sunny D)"
+    },
+    {
+      "id": "fdc-2710600",
+      "name": "果汁饮料(Capri Sun)",
+      "description": "Fruit juice drink (Capri Sun)"
+    },
+    {
+      "id": "fdc-2710601",
+      "name": "果汁饮料（添加钙(Sunny D)）",
+      "description": "Fruit juice drink, added calcium (Sunny D)"
+    },
+    {
+      "id": "fdc-2710627",
+      "name": "白兰地Alexander",
+      "description": "Brandy Alexander"
+    },
+    {
+      "id": "fdc-2710629",
+      "name": "Cape鳕鱼",
+      "description": "Cape Cod"
+    },
+    {
+      "id": "fdc-2710631",
+      "name": "果冻shot（含酒精）",
+      "description": "Gelatin shot, alcoholic"
+    },
+    {
+      "id": "fdc-2710647",
+      "name": "橙子Blossom",
+      "description": "Orange Blossom"
+    },
+    {
+      "id": "fdc-2710652",
+      "name": "Seven及Seven",
+      "description": "Seven and Seven"
+    },
+    {
+      "id": "fdc-2710671",
+      "name": "Sloe金酒fizz",
+      "description": "Sloe gin fizz"
+    },
+    {
+      "id": "fdc-2710672",
+      "name": "黑色Russian",
+      "description": "Black Russian"
+    },
+    {
+      "id": "fdc-2710673",
+      "name": "白色Russian",
+      "description": "White Russian"
+    },
+    {
+      "id": "fdc-2710685",
+      "name": "金酒fizz",
+      "description": "Gin fizz"
+    },
+    {
+      "id": "fdc-2710694",
+      "name": "葡萄酒cooler",
+      "description": "Wine cooler"
+    },
+    {
+      "id": "fdc-2710714",
+      "name": "营养饮品或奶昔（即饮(Boost)）",
+      "description": "Nutritional drink or shake, ready-to-drink (Boost)"
+    },
+    {
+      "id": "fdc-2710715",
+      "name": "营养饮品或奶昔（即饮(Boost加强型)）",
+      "description": "Nutritional drink or shake, ready-to-drink (Boost Plus)"
+    },
+    {
+      "id": "fdc-2710717",
+      "name": "营养饮品或奶昔（即饮(Ensure)）",
+      "description": "Nutritional drink or shake, ready-to-drink (Ensure)"
+    },
+    {
+      "id": "fdc-2710718",
+      "name": "营养饮品或奶昔（即饮(Ensure加强型)）",
+      "description": "Nutritional drink or shake, ready-to-drink (Ensure Plus)"
+    },
+    {
+      "id": "fdc-2710720",
+      "name": "营养饮品或奶昔（即饮(Muscle牛奶)）",
+      "description": "Nutritional drink or shake, ready-to-drink (Muscle Milk)"
+    },
+    {
+      "id": "fdc-2710721",
+      "name": "营养饮品或奶昔（即饮；淡型(Muscle牛奶)）",
+      "description": "Nutritional drink or shake, ready-to-drink, light (Muscle Milk)"
+    },
+    {
+      "id": "fdc-2710722",
+      "name": "营养饮品或奶昔（即饮(Slim Fast)）",
+      "description": "Nutritional drink or shake, ready-to-drink (Slim Fast)"
+    },
+    {
+      "id": "fdc-2710723",
+      "name": "营养饮品或奶昔（即饮；无糖(Slim Fast)）",
+      "description": "Nutritional drink or shake, ready-to-drink, sugar free (Slim Fast)"
+    },
+    {
+      "id": "fdc-2710724",
+      "name": "营养饮品或奶昔（高蛋白；即饮(Slim Fast)）",
+      "description": "Nutritional drink or shake, high protein, ready-to-drink (Slim Fast)"
+    },
+    {
+      "id": "fdc-2710731",
+      "name": "营养混合粉(EAS乳清蛋白质粉)",
+      "description": "Nutritional powder mix (EAS Whey Protein Powder)"
+    },
+    {
+      "id": "fdc-2710732",
+      "name": "营养混合粉(EAS大豆蛋白质粉)",
+      "description": "Nutritional powder mix (EAS Soy Protein Powder)"
+    },
+    {
+      "id": "fdc-2710733",
+      "name": "营养混合粉（高蛋白(Herbalife)）",
+      "description": "Nutritional powder mix, high protein (Herbalife)"
+    },
+    {
+      "id": "fdc-2710734",
+      "name": "营养混合粉(Isopure)",
+      "description": "Nutritional powder mix (Isopure)"
+    },
+    {
+      "id": "fdc-2710735",
+      "name": "营养混合粉(Muscle牛奶)",
+      "description": "Nutritional powder mix (Muscle Milk)"
+    },
+    {
+      "id": "fdc-2710736",
+      "name": "营养混合粉（淡型(Muscle牛奶)）",
+      "description": "Nutritional powder mix, light (Muscle Milk)"
+    },
+    {
+      "id": "fdc-2710737",
+      "name": "营养混合粉(Slim Fast)",
+      "description": "Nutritional powder mix (Slim Fast)"
+    },
+    {
+      "id": "fdc-2710738",
+      "name": "营养混合粉（无糖(Slim Fast)）",
+      "description": "Nutritional powder mix, sugar free (Slim Fast)"
+    },
+    {
+      "id": "fdc-2710739",
+      "name": "营养混合粉（高蛋白(Slim Fast)）",
+      "description": "Nutritional powder mix, high protein (Slim Fast)"
+    },
+    {
+      "id": "fdc-2710746",
+      "name": "能量饮料(Full Throttle)",
+      "description": "Energy drink (Full Throttle)"
+    },
+    {
+      "id": "fdc-2710748",
+      "name": "能量饮料(激浪AMP)",
+      "description": "Energy drink (Mountain Dew AMP)"
+    },
+    {
+      "id": "fdc-2710749",
+      "name": "能量饮料(无Fear)",
+      "description": "Energy drink (No Fear)"
+    },
+    {
+      "id": "fdc-2710750",
+      "name": "能量饮料(无Fear Motherload)",
+      "description": "Energy drink (No Fear Motherload)"
+    },
+    {
+      "id": "fdc-2710751",
+      "name": "能量饮料(NOS)",
+      "description": "Energy drink (NOS)"
+    },
+    {
+      "id": "fdc-2710752",
+      "name": "能量饮料(红色Bull)",
+      "description": "Energy drink (Red Bull)"
+    },
+    {
+      "id": "fdc-2710753",
+      "name": "能量饮料(Rockstar)",
+      "description": "Energy drink (Rockstar)"
+    },
+    {
+      "id": "fdc-2710754",
+      "name": "能量饮料(SoBe Energize能量果汁饮料)",
+      "description": "Energy drink (SoBe Energize Energy Juice Drink)"
+    },
+    {
+      "id": "fdc-2710755",
+      "name": "能量饮料(Vault)",
+      "description": "Energy drink (Vault)"
+    },
+    {
+      "id": "fdc-2710759",
+      "name": "能量饮料（无糖(激浪AMP)）",
+      "description": "Energy drink, sugar free (Mountain Dew AMP)"
+    },
+    {
+      "id": "fdc-2710760",
+      "name": "能量饮料（无糖(无Fear)）",
+      "description": "Energy drink, sugar free (No Fear)"
+    },
+    {
+      "id": "fdc-2710761",
+      "name": "能量饮料（糖-不含(NOS)）",
+      "description": "Energy drink, sugar-free (NOS)"
+    },
+    {
+      "id": "fdc-2710762",
+      "name": "能量饮料(Ocean喷雾Cran-能量果汁饮料)",
+      "description": "Energy drink (Ocean Spray Cran-Energy Juice Drink)"
+    },
+    {
+      "id": "fdc-2710763",
+      "name": "能量饮料（糖-不含(红色Bull)）",
+      "description": "Energy drink, sugar-free (Red Bull)"
+    },
+    {
+      "id": "fdc-2710764",
+      "name": "能量饮料（无糖(Rockstar)）",
+      "description": "Energy drink, sugar free (Rockstar)"
+    },
+    {
+      "id": "fdc-2710765",
+      "name": "能量饮料（无糖(Vault)）",
+      "description": "Energy drink, sugar free (Vault)"
+    },
+    {
+      "id": "fdc-2710767",
+      "name": "能量饮料(XS Gold加强型)",
+      "description": "Energy drink (XS Gold Plus)"
+    },
+    {
+      "id": "tfda-D1300101",
+      "name": "桑葚（TFDA参考）",
+      "description": "桑葚"
+    },
+    {
+      "id": "tfda-D2300101",
+      "name": "龙眼（TFDA参考）",
+      "description": "龍眼"
+    },
+    {
+      "id": "tfda-D4400101",
+      "name": "无花果（TFDA参考）",
+      "description": "無花果"
+    },
+    {
+      "id": "tfda-O0101301",
+      "name": "苹果汁（100%）（TFDA参考）",
+      "description": "蘋果汁(100%)"
+    },
+    {
+      "id": "tfda-Q0700101",
+      "name": "可颂（TFDA参考）",
+      "description": "可頌"
+    },
+    {
+      "id": "tfda-Q2100301",
+      "name": "果冻（TFDA参考）",
+      "description": "果凍"
+    },
+    {
+      "id": "tfda-Q2106101",
+      "name": "羊羹（TFDA参考）",
+      "description": "羊羹"
+    },
+    {
+      "id": "tfda-Q2200201",
+      "name": "香草冰淇淋（TFDA参考）",
+      "description": "香草冰淇淋"
+    },
+    {
+      "id": "tfda-R4400301",
+      "name": "韩式泡菜（TFDA参考）",
+      "description": "韓式泡菜"
+    },
+    {
+      "id": "tfda-R4701201",
+      "name": "嫩豆腐（TFDA参考）",
+      "description": "嫩豆腐"
+    }
+  ]
+}

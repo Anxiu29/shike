@@ -7,7 +7,7 @@ import {
 
 const timestamp = '2026-10-14T02:00:00.000Z';
 const backup = (): Backup => ({
-  schemaVersion: 2, exportedAt: timestamp,
+  schemaVersion: 10, libraryFoods: [], packagedFoods: [], exportedAt: timestamp, water: [], exercises: [], dailyPlans: [],
   meals: [{ id: 'meal-1', date: '2026-10-14', mealType: 'lunch',
     items: [createFoodEntry(findFood('米饭')!, 150)], mode: 'manual', createdAt: timestamp, updatedAt: timestamp }],
   weights: [{ date: '2026-10-14', weightKg: 65.5, updatedAt: timestamp }],
@@ -59,9 +59,21 @@ describe('共享结构校验', () => {
     data.meals[0]!.items[0]!.nutrientsPer100g.fatG = null;
     expect(backupSchema.parse(JSON.parse(JSON.stringify(data)))).toEqual(data);
   });
+  it('百炼个人估算与历史营养快照可导出恢复，兼容旧供应商', () => {
+    const food = { ...estimatedFood(), provider: 'qwen' as const, model: 'qwen3.7-flash' };
+    const entry = createEstimatedFoodEntry(food, 200);
+    const data = backup();
+    data.estimatedFoods = [food];
+    data.meals[0]!.items = [entry];
+    const restored = backupSchema.parse(JSON.parse(JSON.stringify(data)));
+    expect(restored.estimatedFoods[0]!.provider).toBe('qwen');
+    expect(restored.meals[0]!.items[0]!.aiEstimateSnapshot?.provider).toBe('qwen');
+    expect(restored.meals[0]!.items[0]!.nutrientsPer100g).toEqual(food.nutrientsPer100g);
+    expect(estimatedFoodSchema.parse(estimatedFood()).provider).toBe('gemini');
+  });
   it('旧 v1 备份自动升级为 v2，旧 FoodEntry 保持原营养快照', () => {
     const data = backup();
-    const { estimatedFoods: _estimatedFoods, ...old } = data;
+    const { libraryFoods: _libraryFoods, packagedFoods: _packagedFoods, estimatedFoods: _estimatedFoods, water: _water, exercises: _exercises, dailyPlans: _plans, ...old } = data;
     const parsed = backupSchema.parse({ ...old, schemaVersion: 1 });
     expect(parsed).toEqual(data);
     expect(parsed.estimatedFoods).toEqual([]);
@@ -69,7 +81,7 @@ describe('共享结构校验', () => {
   });
   it('拒绝错误版本、重复主键与未经声明的照片字段', () => {
     const data = backup();
-    expect(backupSchema.safeParse({ ...data, schemaVersion: 3 }).success).toBe(false);
+    expect(backupSchema.safeParse({ ...data, schemaVersion: 99 }).success).toBe(false);
     expect(backupSchema.safeParse({ ...data, meals: [data.meals[0], data.meals[0]] }).success).toBe(false);
     expect(backupSchema.safeParse({ ...data, weights: [data.weights[0], data.weights[0]] }).success).toBe(false);
     expect(backupSchema.safeParse({ ...data, photo: 'base64' }).success).toBe(false);

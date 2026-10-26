@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-android/
 .npm-cache/
 .data-cache/
 /picture/

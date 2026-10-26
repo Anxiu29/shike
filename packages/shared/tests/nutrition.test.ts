@@ -12,11 +12,17 @@ describe('可追溯营养数据与计算', () => {
     expect(new Set(names).size).toBe(names.length);
     for (const food of foods) {
       expect(foodCategories).toContain(food.category);
-      expect(['USDA SR Legacy', 'USDA FNDDS']).toContain(food.source.dataset);
-      expect(food.source.version).toBe(food.source.dataset === 'USDA FNDDS' ? '2021-2023' : '2018-04');
+      expect(['USDA SR Legacy', 'USDA FNDDS', 'TFDA 食品营养成分']).toContain(food.source.dataset);
+      expect(food.source.version).toBe(food.source.dataset === 'TFDA 食品营养成分' ? '2026-10-19 快照' : food.source.dataset === 'USDA FNDDS' ? '2021-2023' : '2018-04');
       expect(food.source.description.length).toBeGreaterThan(0);
-      expect(food.source.url).toContain(`/food-details/${food.source.fdcId}/nutrients`);
-      expect(food.source.downloadUrl).toMatch(/^https:\/\/fdc\.nal\.usda\.gov\//);
+      if (food.source.dataset === 'TFDA 食品营养成分') {
+        expect(food.source.sampleCode).toMatch(/^[A-Z]\d{5,7}$/);
+        expect(food.source.url).toBe('https://data.gov.tw/dataset/8543');
+        expect(food.source.downloadUrl).toBe('https://data.fda.gov.tw/data/opendata/export/20/json');
+      } else {
+        expect(food.source.url).toContain(`/food-details/${food.source.fdcId}/nutrients`);
+        expect(food.source.downloadUrl).toMatch(/^https:\/\/fdc\.nal\.usda\.gov\//);
+      }
       for (const amount of Object.values(food.nutrientsPer100g)) {
         expect(amount === null || (Number.isFinite(amount) && amount >= 0)).toBe(true);
       }

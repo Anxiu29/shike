@@ -1,0 +1,2922 @@
+{
+  "schemaVersion": 1,
+  "rule": "packages/shared/src/food-curation.ts",
+  "thresholdsPer100g": {
+    "energyKcal": 5,
+    "proteinG": 1,
+    "fatG": 1,
+    "carbsG": 2
+  },
+  "originalCount": 5982,
+  "availableCount": 5880,
+  "removedCount": 102,
+  "groups": [
+    {
+      "representativeId": "fdc-168878",
+      "members": [
+        {
+          "id": "fdc-168878",
+          "name": "白米饭（熟）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 130,
+            "proteinG": 2.69,
+            "fatG": 0.28,
+            "carbsG": 28.17
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/168878/nutrients"
+        },
+        {
+          "id": "fdc-168880",
+          "name": "中粒米饭（熟）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 130,
+            "proteinG": 2.38,
+            "fatG": 0.21,
+            "carbsG": 28.59
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/168880/nutrients"
+        },
+        {
+          "id": "fdc-168882",
+          "name": "短粒米饭（熟）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 130,
+            "proteinG": 2.36,
+            "fatG": 0.19,
+            "carbsG": 28.73
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/168882/nutrients"
+        },
+        {
+          "id": "fdc-2708403",
+          "name": "米饭（白色；熟制；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 129,
+            "proteinG": 2.67,
+            "fatG": 0.28,
+            "carbsG": 28
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708403/nutrients"
+        },
+        {
+          "id": "fdc-2708408",
+          "name": "米饭（白色；熟制；无额外脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 129,
+            "proteinG": 2.67,
+            "fatG": 0.28,
+            "carbsG": 28
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708408/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-168914",
+      "members": [
+        {
+          "id": "fdc-168914",
+          "name": "米粉（熟）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 108,
+            "proteinG": 1.79,
+            "fatG": 0.2,
+            "carbsG": 24.01
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/168914/nutrients"
+        },
+        {
+          "id": "fdc-2708356",
+          "name": "熟米粉（膳食参考）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 107,
+            "proteinG": 1.78,
+            "fatG": 0.2,
+            "carbsG": 23.9
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708356/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-168928",
+      "members": [
+        {
+          "id": "fdc-168928",
+          "name": "意面（熟，无盐）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 158,
+            "proteinG": 5.8,
+            "fatG": 0.93,
+            "carbsG": 30.86
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/168928/nutrients"
+        },
+        {
+          "id": "fdc-2708357",
+          "name": "意面（熟制）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 157,
+            "proteinG": 5.76,
+            "fatG": 0.92,
+            "carbsG": 30.7
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708357/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-172684",
+      "members": [
+        {
+          "id": "fdc-172684",
+          "name": "黑麦面包",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 259,
+            "proteinG": 8.5,
+            "fatG": 3.3,
+            "carbsG": 48.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/172684/nutrients"
+        },
+        {
+          "id": "fdc-2707755",
+          "name": "面包（黑麦）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 259,
+            "proteinG": 8.5,
+            "fatG": 3.3,
+            "carbsG": 48.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707755/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-174916",
+      "members": [
+        {
+          "id": "fdc-174916",
+          "name": "全麦皮塔饼",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 262,
+            "proteinG": 9.8,
+            "fatG": 1.71,
+            "carbsG": 55.89
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/174916/nutrients"
+        },
+        {
+          "id": "fdc-2707730",
+          "name": "面包（皮塔饼；全麦）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 262,
+            "proteinG": 9.8,
+            "fatG": 1.71,
+            "carbsG": 55.9
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707730/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-172179",
+      "members": [
+        {
+          "id": "fdc-172179",
+          "name": "茅屋奶酪",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 98,
+            "proteinG": 11.12,
+            "fatG": 4.3,
+            "carbsG": 3.38
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/172179/nutrients"
+        },
+        {
+          "id": "fdc-2705748",
+          "name": "奶酪（农家型；奶油烩制；大份或小份凝乳）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 103,
+            "proteinG": 11.6,
+            "fatG": 4.22,
+            "carbsG": 4.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2705748/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-171251",
+      "members": [
+        {
+          "id": "fdc-171251",
+          "name": "瑞士奶酪",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 393,
+            "proteinG": 26.96,
+            "fatG": 30.99,
+            "carbsG": 1.44
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/171251/nutrients"
+        },
+        {
+          "id": "fdc-2705735",
+          "name": "奶酪（瑞士式）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 393,
+            "proteinG": 27,
+            "fatG": 31,
+            "carbsG": 1.44
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2705735/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-169228",
+      "members": [
+        {
+          "id": "fdc-169228",
+          "name": "茄子（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 25,
+            "proteinG": 0.98,
+            "fatG": 0.18,
+            "carbsG": 5.88
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/169228/nutrients"
+        },
+        {
+          "id": "fdc-2709785",
+          "name": "茄子（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 25,
+            "proteinG": 0.98,
+            "fatG": 0.18,
+            "carbsG": 5.88
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709785/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-168389",
+      "members": [
+        {
+          "id": "fdc-168389",
+          "name": "芦笋（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 20,
+            "proteinG": 2.2,
+            "fatG": 0.12,
+            "carbsG": 3.88
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/168389/nutrients"
+        },
+        {
+          "id": "fdc-2709767",
+          "name": "芦笋（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 20,
+            "proteinG": 2.2,
+            "fatG": 0.12,
+            "carbsG": 3.88
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709767/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-169988",
+      "members": [
+        {
+          "id": "fdc-169988",
+          "name": "芹菜（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 14,
+            "proteinG": 0.69,
+            "fatG": 0.17,
+            "carbsG": 2.97
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/169988/nutrients"
+        },
+        {
+          "id": "fdc-2709778",
+          "name": "芹菜（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 17,
+            "proteinG": 0.49,
+            "fatG": 0.16,
+            "carbsG": 3.32
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709778/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-169256",
+      "members": [
+        {
+          "id": "fdc-169256",
+          "name": "芥菜（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 27,
+            "proteinG": 2.86,
+            "fatG": 0.42,
+            "carbsG": 4.67
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/169256/nutrients"
+        },
+        {
+          "id": "fdc-2709606",
+          "name": "芥菜（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 27,
+            "proteinG": 2.86,
+            "fatG": 0.42,
+            "carbsG": 4.67
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709606/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-170108",
+      "members": [
+        {
+          "id": "fdc-170108",
+          "name": "红甜椒（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 26,
+            "proteinG": 0.99,
+            "fatG": 0.3,
+            "carbsG": 6.03
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/170108/nutrients"
+        },
+        {
+          "id": "fdc-2709801",
+          "name": "椒类（甜味；红色；生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 31,
+            "proteinG": 0.9,
+            "fatG": 0.13,
+            "carbsG": 6.65
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709801/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-170427",
+      "members": [
+        {
+          "id": "fdc-170427",
+          "name": "青甜椒（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 20,
+            "proteinG": 0.86,
+            "fatG": 0.17,
+            "carbsG": 4.64
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/170427/nutrients"
+        },
+        {
+          "id": "fdc-2709800",
+          "name": "椒类（甜味；绿色；生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 23,
+            "proteinG": 0.72,
+            "fatG": 0.11,
+            "carbsG": 4.78
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709800/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-170379",
+      "members": [
+        {
+          "id": "fdc-170379",
+          "name": "西兰花（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 34,
+            "proteinG": 2.82,
+            "fatG": 0.37,
+            "carbsG": 6.64
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/170379/nutrients"
+        },
+        {
+          "id": "fdc-2709643",
+          "name": "西兰花（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 39,
+            "proteinG": 2.57,
+            "fatG": 0.34,
+            "carbsG": 6.27
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709643/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-170393",
+      "members": [
+        {
+          "id": "fdc-170393",
+          "name": "胡萝卜（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 41,
+            "proteinG": 0.93,
+            "fatG": 0.24,
+            "carbsG": 9.58
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/170393/nutrients"
+        },
+        {
+          "id": "fdc-2709660",
+          "name": "胡萝卜（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 44,
+            "proteinG": 0.87,
+            "fatG": 0.24,
+            "carbsG": 9.68
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709660/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-169986",
+      "members": [
+        {
+          "id": "fdc-169986",
+          "name": "花菜（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 25,
+            "proteinG": 1.92,
+            "fatG": 0.28,
+            "carbsG": 4.97
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/169986/nutrients"
+        },
+        {
+          "id": "fdc-2709777",
+          "name": "花菜（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 25,
+            "proteinG": 1.92,
+            "fatG": 0.28,
+            "carbsG": 4.97
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709777/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-168462",
+      "members": [
+        {
+          "id": "fdc-168462",
+          "name": "菠菜（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 23,
+            "proteinG": 2.86,
+            "fatG": 0.39,
+            "carbsG": 3.63
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/168462/nutrients"
+        },
+        {
+          "id": "fdc-2709614",
+          "name": "菠菜（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 27,
+            "proteinG": 2.85,
+            "fatG": 0.62,
+            "carbsG": 2.41
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709614/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-170000",
+      "members": [
+        {
+          "id": "fdc-170000",
+          "name": "洋葱（生）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 40,
+            "proteinG": 1.1,
+            "fatG": 0.1,
+            "carbsG": 9.34
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/170000/nutrients"
+        },
+        {
+          "id": "fdc-2709795",
+          "name": "洋葱（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 38,
+            "proteinG": 0.86,
+            "fatG": 0.08,
+            "carbsG": 8.46
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709795/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-170068",
+      "members": [
+        {
+          "id": "fdc-170068",
+          "name": "西洋菜",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 11,
+            "proteinG": 2.3,
+            "fatG": 0.1,
+            "carbsG": 1.29
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/170068/nutrients"
+        },
+        {
+          "id": "fdc-2709639",
+          "name": "西洋菜（生食／生重）",
+          "state": "raw",
+          "nutrientsPer100g": {
+            "energyKcal": 11,
+            "proteinG": 2.3,
+            "fatG": 0.1,
+            "carbsG": 1.29
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709639/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-167762",
+      "members": [
+        {
+          "id": "fdc-167762",
+          "name": "草莓",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 32,
+            "proteinG": 0.67,
+            "fatG": 0.3,
+            "carbsG": 7.68
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/167762/nutrients"
+        },
+        {
+          "id": "fdc-2709283",
+          "name": "草莓（生食／生重）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 36,
+            "proteinG": 0.64,
+            "fatG": 0.22,
+            "carbsG": 7.96
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709283/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-167765",
+      "members": [
+        {
+          "id": "fdc-167765",
+          "name": "西瓜",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 30,
+            "proteinG": 0.61,
+            "fatG": 0.15,
+            "carbsG": 7.55
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/167765/nutrients"
+        },
+        {
+          "id": "fdc-2709270",
+          "name": "西瓜（生食／生重）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 30,
+            "proteinG": 0.61,
+            "fatG": 0.15,
+            "carbsG": 7.55
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709270/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-173946",
+      "members": [
+        {
+          "id": "fdc-173946",
+          "name": "黑莓",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 43,
+            "proteinG": 1.39,
+            "fatG": 0.49,
+            "carbsG": 9.61
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/173946/nutrients"
+        },
+        {
+          "id": "fdc-2709273",
+          "name": "黑莓（生食／生重）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 43,
+            "proteinG": 1.39,
+            "fatG": 0.49,
+            "carbsG": 9.61
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709273/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-171722",
+      "members": [
+        {
+          "id": "fdc-171722",
+          "name": "蔓越莓",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 46,
+            "proteinG": 0.46,
+            "fatG": 0.13,
+            "carbsG": 11.97
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/171722/nutrients"
+        },
+        {
+          "id": "fdc-2709279",
+          "name": "蔓越莓（生食／生重）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 46,
+            "proteinG": 0.46,
+            "fatG": 0.13,
+            "carbsG": 12
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709279/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-171401",
+      "members": [
+        {
+          "id": "fdc-171401",
+          "name": "猪油",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 902,
+            "proteinG": 0,
+            "fatG": 100,
+            "carbsG": 0
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/171401/nutrients"
+        },
+        {
+          "id": "fdc-2710166",
+          "name": "猪油（膳食参考）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 902,
+            "proteinG": 0,
+            "fatG": 100,
+            "carbsG": 0
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2710166/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-169640",
+      "members": [
+        {
+          "id": "fdc-169640",
+          "name": "蜂蜜",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 304,
+            "proteinG": 0.3,
+            "fatG": 0,
+            "carbsG": 82.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/169640/nutrients"
+        },
+        {
+          "id": "fdc-2710281",
+          "name": "蜂蜜（膳食参考）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 304,
+            "proteinG": 0.3,
+            "fatG": 0,
+            "carbsG": 82.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2710281/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-172442",
+      "members": [
+        {
+          "id": "fdc-172442",
+          "name": "味噌",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 198,
+            "proteinG": 12.79,
+            "fatG": 6.01,
+            "carbsG": 25.37
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/172442/nutrients"
+        },
+        {
+          "id": "fdc-2707439",
+          "name": "味噌（膳食参考）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 198,
+            "proteinG": 12.8,
+            "fatG": 6.01,
+            "carbsG": 25.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707439/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-174091",
+      "members": [
+        {
+          "id": "fdc-174091",
+          "name": "全麦法式面包",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 239,
+            "proteinG": 8.33,
+            "fatG": 1.04,
+            "carbsG": 49.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/174091/nutrients"
+        },
+        {
+          "id": "fdc-2707728",
+          "name": "面包（法式或维也纳型；全麦）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 239,
+            "proteinG": 8.33,
+            "fatG": 1.04,
+            "carbsG": 49.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707728/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-172678",
+      "members": [
+        {
+          "id": "fdc-172678",
+          "name": "燕麦面包",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 269,
+            "proteinG": 8.4,
+            "fatG": 4.4,
+            "carbsG": 48.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/172678/nutrients"
+        },
+        {
+          "id": "fdc-2707768",
+          "name": "面包（燕麦粥）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 269,
+            "proteinG": 8.4,
+            "fatG": 4.4,
+            "carbsG": 48.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707768/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707166",
+      "members": [
+        {
+          "id": "fdc-2707164",
+          "name": "鸡蛋（整粒或完整型；烘烤；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 185,
+            "proteinG": 11.6,
+            "fatG": 15,
+            "carbsG": 0.91
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707164/nutrients"
+        },
+        {
+          "id": "fdc-2707166",
+          "name": "鸡蛋（整粒或完整型；烘烤；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 185,
+            "proteinG": 11.6,
+            "fatG": 15,
+            "carbsG": 0.91
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707166/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707171",
+      "members": [
+        {
+          "id": "fdc-2707169",
+          "name": "鸡蛋（白色；熟制；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 100,
+            "proteinG": 9.99,
+            "fatG": 5.72,
+            "carbsG": 2.21
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707169/nutrients"
+        },
+        {
+          "id": "fdc-2707171",
+          "name": "鸡蛋（白色；熟制；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 100,
+            "proteinG": 9.99,
+            "fatG": 5.72,
+            "carbsG": 2.21
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707171/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707175",
+      "members": [
+        {
+          "id": "fdc-2707173",
+          "name": "鸡蛋（蛋黄仅；熟制；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 357,
+            "proteinG": 15.1,
+            "fatG": 32.6,
+            "carbsG": 0.96
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707173/nutrients"
+        },
+        {
+          "id": "fdc-2707175",
+          "name": "鸡蛋（蛋黄仅；熟制；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 357,
+            "proteinG": 15.1,
+            "fatG": 32.6,
+            "carbsG": 0.96
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707175/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707229",
+      "members": [
+        {
+          "id": "fdc-2707229",
+          "name": "蛋饼或炒蛋（配番茄；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 165,
+            "proteinG": 10.3,
+            "fatG": 13.2,
+            "carbsG": 1.47
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707229/nutrients"
+        },
+        {
+          "id": "fdc-2707231",
+          "name": "蛋饼或炒蛋（配番茄；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 165,
+            "proteinG": 10.3,
+            "fatG": 13.2,
+            "carbsG": 1.47
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707231/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707232",
+      "members": [
+        {
+          "id": "fdc-2707232",
+          "name": "蛋饼或炒蛋（配深绿色蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 166,
+            "proteinG": 10.5,
+            "fatG": 13.2,
+            "carbsG": 1.35
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707232/nutrients"
+        },
+        {
+          "id": "fdc-2707234",
+          "name": "蛋饼或炒蛋（配深绿色蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 166,
+            "proteinG": 10.5,
+            "fatG": 13.2,
+            "carbsG": 1.35
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707234/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707235",
+      "members": [
+        {
+          "id": "fdc-2707235",
+          "name": "蛋饼或炒蛋（配番茄及深绿蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 165,
+            "proteinG": 10.3,
+            "fatG": 13.1,
+            "carbsG": 1.44
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707235/nutrients"
+        },
+        {
+          "id": "fdc-2707237",
+          "name": "蛋饼或炒蛋（配番茄及深绿蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 165,
+            "proteinG": 10.3,
+            "fatG": 13.1,
+            "carbsG": 1.44
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707237/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707238",
+      "members": [
+        {
+          "id": "fdc-2707238",
+          "name": "蛋饼或炒蛋（配深绿蔬菜及／或番茄以外的蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 167,
+            "proteinG": 10.6,
+            "fatG": 13.2,
+            "carbsG": 1.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707238/nutrients"
+        },
+        {
+          "id": "fdc-2707240",
+          "name": "蛋饼或炒蛋（配深绿蔬菜及／或番茄以外的蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 167,
+            "proteinG": 10.6,
+            "fatG": 13.2,
+            "carbsG": 1.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707240/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707241",
+      "members": [
+        {
+          "id": "fdc-2707241",
+          "name": "蛋饼或炒蛋（配奶酪及番茄；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 186,
+            "proteinG": 11.4,
+            "fatG": 14.9,
+            "carbsG": 1.86
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707241/nutrients"
+        },
+        {
+          "id": "fdc-2707243",
+          "name": "蛋饼或炒蛋（配奶酪及番茄；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 186,
+            "proteinG": 11.4,
+            "fatG": 14.9,
+            "carbsG": 1.86
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707243/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707244",
+      "members": [
+        {
+          "id": "fdc-2707244",
+          "name": "蛋饼或炒蛋（配奶酪及深绿蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 187,
+            "proteinG": 11.6,
+            "fatG": 14.9,
+            "carbsG": 1.75
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707244/nutrients"
+        },
+        {
+          "id": "fdc-2707246",
+          "name": "蛋饼或炒蛋（配奶酪及深绿蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 187,
+            "proteinG": 11.6,
+            "fatG": 14.9,
+            "carbsG": 1.75
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707246/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707247",
+      "members": [
+        {
+          "id": "fdc-2707247",
+          "name": "蛋饼或炒蛋（配奶酪；番茄；及深绿蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 186,
+            "proteinG": 11.4,
+            "fatG": 14.8,
+            "carbsG": 1.83
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707247/nutrients"
+        },
+        {
+          "id": "fdc-2707249",
+          "name": "蛋饼或炒蛋（配奶酪；番茄；及深绿蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 186,
+            "proteinG": 11.4,
+            "fatG": 14.8,
+            "carbsG": 1.83
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707249/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707250",
+      "members": [
+        {
+          "id": "fdc-2707250",
+          "name": "蛋饼或炒蛋（配奶酪及蔬菜以外深绿色及／或番茄；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 188,
+            "proteinG": 11.6,
+            "fatG": 14.9,
+            "carbsG": 1.89
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707250/nutrients"
+        },
+        {
+          "id": "fdc-2707252",
+          "name": "蛋饼或炒蛋（配奶酪及蔬菜以外深绿色及／或番茄；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 188,
+            "proteinG": 11.6,
+            "fatG": 14.9,
+            "carbsG": 1.89
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707252/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707253",
+      "members": [
+        {
+          "id": "fdc-2707253",
+          "name": "蛋饼或炒蛋（配肉及番茄；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 172,
+            "proteinG": 11.1,
+            "fatG": 13.5,
+            "carbsG": 1.48
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707253/nutrients"
+        },
+        {
+          "id": "fdc-2707255",
+          "name": "蛋饼或炒蛋（配肉及番茄；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 172,
+            "proteinG": 11.1,
+            "fatG": 13.5,
+            "carbsG": 1.48
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707255/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707256",
+      "members": [
+        {
+          "id": "fdc-2707256",
+          "name": "蛋饼或炒蛋（配肉及深绿蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 173,
+            "proteinG": 11.3,
+            "fatG": 13.6,
+            "carbsG": 1.37
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707256/nutrients"
+        },
+        {
+          "id": "fdc-2707258",
+          "name": "蛋饼或炒蛋（配肉及深绿蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 173,
+            "proteinG": 11.3,
+            "fatG": 13.6,
+            "carbsG": 1.37
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707258/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707259",
+      "members": [
+        {
+          "id": "fdc-2707259",
+          "name": "蛋饼或炒蛋（配肉；番茄；及深绿蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 174,
+            "proteinG": 11.5,
+            "fatG": 13.6,
+            "carbsG": 1.46
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707259/nutrients"
+        },
+        {
+          "id": "fdc-2707261",
+          "name": "蛋饼或炒蛋（配肉；番茄；及深绿蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 174,
+            "proteinG": 11.5,
+            "fatG": 13.6,
+            "carbsG": 1.46
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707261/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707262",
+      "members": [
+        {
+          "id": "fdc-2707262",
+          "name": "蛋饼或炒蛋（配肉及蔬菜以外深绿色及／或番茄；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 173,
+            "proteinG": 11.3,
+            "fatG": 13.6,
+            "carbsG": 1.51
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707262/nutrients"
+        },
+        {
+          "id": "fdc-2707264",
+          "name": "蛋饼或炒蛋（配肉及蔬菜以外深绿色及／或番茄；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 173,
+            "proteinG": 11.3,
+            "fatG": 13.6,
+            "carbsG": 1.51
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707264/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707265",
+      "members": [
+        {
+          "id": "fdc-2707265",
+          "name": "蛋饼或炒蛋（配奶酪；肉；及番茄；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 199,
+            "proteinG": 12.6,
+            "fatG": 15.8,
+            "carbsG": 1.66
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707265/nutrients"
+        },
+        {
+          "id": "fdc-2707267",
+          "name": "蛋饼或炒蛋（配奶酪；肉；及番茄；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 199,
+            "proteinG": 12.6,
+            "fatG": 15.8,
+            "carbsG": 1.66
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707267/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707268",
+      "members": [
+        {
+          "id": "fdc-2707268",
+          "name": "蛋饼或炒蛋（配奶酪；肉；及深绿蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 199,
+            "proteinG": 12.7,
+            "fatG": 15.8,
+            "carbsG": 1.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707268/nutrients"
+        },
+        {
+          "id": "fdc-2707270",
+          "name": "蛋饼或炒蛋（配奶酪；肉；及深绿蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 199,
+            "proteinG": 12.7,
+            "fatG": 15.8,
+            "carbsG": 1.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707270/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707271",
+      "members": [
+        {
+          "id": "fdc-2707271",
+          "name": "蛋饼或炒蛋（配奶酪；肉；番茄；及深绿蔬菜；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 190,
+            "proteinG": 12.1,
+            "fatG": 15,
+            "carbsG": 1.81
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707271/nutrients"
+        },
+        {
+          "id": "fdc-2707273",
+          "name": "蛋饼或炒蛋（配奶酪；肉；番茄；及深绿蔬菜；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 190,
+            "proteinG": 12.1,
+            "fatG": 15,
+            "carbsG": 1.81
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707273/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707274",
+      "members": [
+        {
+          "id": "fdc-2707274",
+          "name": "蛋饼或炒蛋（配奶酪；肉；及蔬菜以外深绿色及／或番茄；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 200,
+            "proteinG": 12.7,
+            "fatG": 15.8,
+            "carbsG": 1.67
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707274/nutrients"
+        },
+        {
+          "id": "fdc-2707276",
+          "name": "蛋饼或炒蛋（配奶酪；肉；及蔬菜以外深绿色及／或番茄；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 200,
+            "proteinG": 12.7,
+            "fatG": 15.8,
+            "carbsG": 1.67
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707276/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2707277",
+      "members": [
+        {
+          "id": "fdc-2707277",
+          "name": "蛋饼或炒蛋（配土豆及／或洋葱；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 172,
+            "proteinG": 10.4,
+            "fatG": 13.2,
+            "carbsG": 2.97
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707277/nutrients"
+        },
+        {
+          "id": "fdc-2707279",
+          "name": "蛋饼或炒蛋（配土豆及／或洋葱；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 172,
+            "proteinG": 10.4,
+            "fatG": 13.2,
+            "carbsG": 2.97
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2707279/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708366",
+      "members": [
+        {
+          "id": "fdc-2708364",
+          "name": "玉米粗粉粥（普通或快煮型；用水制作；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 71,
+            "proteinG": 1.19,
+            "fatG": 1.84,
+            "carbsG": 12.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708364/nutrients"
+        },
+        {
+          "id": "fdc-2708366",
+          "name": "玉米粗粉粥（普通或快煮型；用水制作；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 71,
+            "proteinG": 1.19,
+            "fatG": 1.84,
+            "carbsG": 12.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708366/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708369",
+      "members": [
+        {
+          "id": "fdc-2708367",
+          "name": "玉米粗粉粥（配奶酪；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 108,
+            "proteinG": 3.56,
+            "fatG": 5.28,
+            "carbsG": 11.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708367/nutrients"
+        },
+        {
+          "id": "fdc-2708369",
+          "name": "玉米粗粉粥（配奶酪；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 108,
+            "proteinG": 3.56,
+            "fatG": 5.28,
+            "carbsG": 11.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708369/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708371",
+      "members": [
+        {
+          "id": "fdc-2708371",
+          "name": "玉米粗粉粥（速溶；用水制作；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 85,
+            "proteinG": 1.36,
+            "fatG": 2.85,
+            "carbsG": 14.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708371/nutrients"
+        },
+        {
+          "id": "fdc-2708372",
+          "name": "玉米粗粉粥（速溶；用水制作；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 85,
+            "proteinG": 1.36,
+            "fatG": 2.85,
+            "carbsG": 14.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708372/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708375",
+      "members": [
+        {
+          "id": "fdc-2708373",
+          "name": "玉米面糊状（未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 71,
+            "proteinG": 1.11,
+            "fatG": 1.84,
+            "carbsG": 12.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708373/nutrients"
+        },
+        {
+          "id": "fdc-2708375",
+          "name": "玉米面糊状（添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 71,
+            "proteinG": 1.11,
+            "fatG": 1.84,
+            "carbsG": 12.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708375/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708401",
+      "members": [
+        {
+          "id": "fdc-2708399",
+          "name": "藜麦（未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 146,
+            "proteinG": 4.2,
+            "fatG": 5.42,
+            "carbsG": 20.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708399/nutrients"
+        },
+        {
+          "id": "fdc-2708401",
+          "name": "藜麦（添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 146,
+            "proteinG": 4.2,
+            "fatG": 5.42,
+            "carbsG": 20.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708401/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708414",
+      "members": [
+        {
+          "id": "fdc-2708409",
+          "name": "米饭（棕色；熟制；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 123,
+            "proteinG": 2.44,
+            "fatG": 1.11,
+            "carbsG": 25.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708409/nutrients"
+        },
+        {
+          "id": "fdc-2708414",
+          "name": "米饭（棕色；熟制；无额外脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 123,
+            "proteinG": 2.43,
+            "fatG": 1.11,
+            "carbsG": 25.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708414/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708420",
+      "members": [
+        {
+          "id": "fdc-2708419",
+          "name": "黄色米饭（熟制；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 88,
+            "proteinG": 1.8,
+            "fatG": 0.45,
+            "carbsG": 19.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708419/nutrients"
+        },
+        {
+          "id": "fdc-2708420",
+          "name": "黄色米饭（熟制；无额外脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 88,
+            "proteinG": 1.8,
+            "fatG": 0.45,
+            "carbsG": 19.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708420/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708425",
+      "members": [
+        {
+          "id": "fdc-2708423",
+          "name": "米饭（野生；100%；熟制；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 122,
+            "proteinG": 3.86,
+            "fatG": 3.08,
+            "carbsG": 20.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708423/nutrients"
+        },
+        {
+          "id": "fdc-2708425",
+          "name": "米饭（野生；100%；熟制；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 122,
+            "proteinG": 3.86,
+            "fatG": 3.08,
+            "carbsG": 20.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708425/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708428",
+      "members": [
+        {
+          "id": "fdc-2708428",
+          "name": "米饭（白色及野生；熟制；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 112,
+            "proteinG": 2.17,
+            "fatG": 2.14,
+            "carbsG": 20.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708428/nutrients"
+        },
+        {
+          "id": "fdc-2708429",
+          "name": "米饭（白色及野生；熟制；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 112,
+            "proteinG": 2.17,
+            "fatG": 2.14,
+            "carbsG": 20.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708429/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708438",
+      "members": [
+        {
+          "id": "fdc-2708438",
+          "name": "布格麦（无额外脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 83,
+            "proteinG": 3.06,
+            "fatG": 0.24,
+            "carbsG": 18.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708438/nutrients"
+        },
+        {
+          "id": "fdc-2708440",
+          "name": "布格麦（未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 83,
+            "proteinG": 3.06,
+            "fatG": 0.24,
+            "carbsG": 18.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708440/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2708998",
+      "members": [
+        {
+          "id": "fdc-2708996",
+          "name": "米饭（白色；配玉米；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 134,
+            "proteinG": 2.58,
+            "fatG": 2.5,
+            "carbsG": 25.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708996/nutrients"
+        },
+        {
+          "id": "fdc-2708998",
+          "name": "米饭（白色；配玉米；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 134,
+            "proteinG": 2.58,
+            "fatG": 2.5,
+            "carbsG": 25.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708998/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709001",
+      "members": [
+        {
+          "id": "fdc-2708999",
+          "name": "米饭（白色；配豌豆；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 133,
+            "proteinG": 3.22,
+            "fatG": 2.42,
+            "carbsG": 24
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2708999/nutrients"
+        },
+        {
+          "id": "fdc-2709001",
+          "name": "米饭（白色；配豌豆；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 133,
+            "proteinG": 3.22,
+            "fatG": 2.42,
+            "carbsG": 24
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709001/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709004",
+      "members": [
+        {
+          "id": "fdc-2709002",
+          "name": "米饭（白色；配胡萝卜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 123,
+            "proteinG": 2.16,
+            "fatG": 2.42,
+            "carbsG": 22.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709002/nutrients"
+        },
+        {
+          "id": "fdc-2709004",
+          "name": "米饭（白色；配胡萝卜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 123,
+            "proteinG": 2.16,
+            "fatG": 2.42,
+            "carbsG": 22.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709004/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709007",
+      "members": [
+        {
+          "id": "fdc-2709005",
+          "name": "米饭（白色；配豌豆胡萝卜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 128,
+            "proteinG": 2.69,
+            "fatG": 2.45,
+            "carbsG": 23.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709005/nutrients"
+        },
+        {
+          "id": "fdc-2709007",
+          "name": "米饭（白色；配豌豆胡萝卜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 128,
+            "proteinG": 2.69,
+            "fatG": 2.45,
+            "carbsG": 23.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709007/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709010",
+      "members": [
+        {
+          "id": "fdc-2709008",
+          "name": "米饭（白色；配番茄及／或番茄基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 107,
+            "proteinG": 2,
+            "fatG": 2.18,
+            "carbsG": 19.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709008/nutrients"
+        },
+        {
+          "id": "fdc-2709010",
+          "name": "米饭（白色；配番茄及／或番茄基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 107,
+            "proteinG": 2,
+            "fatG": 2.18,
+            "carbsG": 19.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709010/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709013",
+      "members": [
+        {
+          "id": "fdc-2709011",
+          "name": "米饭（白色；配深绿色蔬菜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 125,
+            "proteinG": 2.62,
+            "fatG": 2.45,
+            "carbsG": 22.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709011/nutrients"
+        },
+        {
+          "id": "fdc-2709013",
+          "name": "米饭（白色；配深绿色蔬菜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 125,
+            "proteinG": 2.62,
+            "fatG": 2.45,
+            "carbsG": 22.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709013/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709016",
+      "members": [
+        {
+          "id": "fdc-2709014",
+          "name": "米饭（白色；配胡萝卜及番茄及／或番茄基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 114,
+            "proteinG": 2.07,
+            "fatG": 2.29,
+            "carbsG": 20.9
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709014/nutrients"
+        },
+        {
+          "id": "fdc-2709016",
+          "name": "米饭（白色；配胡萝卜及番茄及／或番茄基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 114,
+            "proteinG": 2.07,
+            "fatG": 2.29,
+            "carbsG": 20.9
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709016/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709019",
+      "members": [
+        {
+          "id": "fdc-2709017",
+          "name": "米饭（白色；配深绿色蔬菜及番茄及／或番茄基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 2.29,
+            "fatG": 2.32,
+            "carbsG": 20.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709017/nutrients"
+        },
+        {
+          "id": "fdc-2709019",
+          "name": "米饭（白色；配深绿色蔬菜及番茄及／或番茄基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 2.29,
+            "fatG": 2.32,
+            "carbsG": 20.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709019/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709022",
+      "members": [
+        {
+          "id": "fdc-2709020",
+          "name": "米饭（白色；配胡萝卜及深绿色蔬菜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 124,
+            "proteinG": 2.38,
+            "fatG": 2.44,
+            "carbsG": 22.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709020/nutrients"
+        },
+        {
+          "id": "fdc-2709022",
+          "name": "米饭（白色；配胡萝卜及深绿色蔬菜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 124,
+            "proteinG": 2.38,
+            "fatG": 2.44,
+            "carbsG": 22.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709022/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709025",
+      "members": [
+        {
+          "id": "fdc-2709023",
+          "name": "米饭（白色；配胡萝卜；深绿色蔬菜；及番茄及／或番茄基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 2.26,
+            "fatG": 2.28,
+            "carbsG": 20.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709023/nutrients"
+        },
+        {
+          "id": "fdc-2709025",
+          "name": "米饭（白色；配胡萝卜；深绿色蔬菜；及番茄及／或番茄基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 118,
+            "proteinG": 2.25,
+            "fatG": 2.35,
+            "carbsG": 21.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709025/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709028",
+      "members": [
+        {
+          "id": "fdc-2709026",
+          "name": "米饭（白色；配其他蔬菜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 124,
+            "proteinG": 2.3,
+            "fatG": 2.41,
+            "carbsG": 22.7
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709026/nutrients"
+        },
+        {
+          "id": "fdc-2709028",
+          "name": "米饭（白色；配其他蔬菜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 124,
+            "proteinG": 2.3,
+            "fatG": 2.41,
+            "carbsG": 22.7
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709028/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709030",
+      "members": [
+        {
+          "id": "fdc-2709029",
+          "name": "米饭（白色；配小扁豆；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 150,
+            "proteinG": 5.5,
+            "fatG": 4.83,
+            "carbsG": 21.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709029/nutrients"
+        },
+        {
+          "id": "fdc-2709030",
+          "name": "米饭（白色；配小扁豆；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 150,
+            "proteinG": 5.5,
+            "fatG": 4.83,
+            "carbsG": 21.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709030/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709039",
+      "members": [
+        {
+          "id": "fdc-2709037",
+          "name": "米饭（棕色；配玉米；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 128,
+            "proteinG": 2.64,
+            "fatG": 2.71,
+            "carbsG": 23.7
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709037/nutrients"
+        },
+        {
+          "id": "fdc-2709039",
+          "name": "米饭（棕色；配玉米；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 128,
+            "proteinG": 2.64,
+            "fatG": 2.71,
+            "carbsG": 23.7
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709039/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709042",
+      "members": [
+        {
+          "id": "fdc-2709040",
+          "name": "米饭（棕色；配豌豆；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 127,
+            "proteinG": 3.18,
+            "fatG": 2.64,
+            "carbsG": 22.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709040/nutrients"
+        },
+        {
+          "id": "fdc-2709042",
+          "name": "米饭（棕色；配豌豆；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 127,
+            "proteinG": 3.18,
+            "fatG": 2.64,
+            "carbsG": 22.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709042/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709045",
+      "members": [
+        {
+          "id": "fdc-2709043",
+          "name": "米饭（棕色；配胡萝卜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 119,
+            "proteinG": 2.27,
+            "fatG": 2.63,
+            "carbsG": 21.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709043/nutrients"
+        },
+        {
+          "id": "fdc-2709045",
+          "name": "米饭（棕色；配胡萝卜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 119,
+            "proteinG": 2.27,
+            "fatG": 2.63,
+            "carbsG": 21.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709045/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709048",
+      "members": [
+        {
+          "id": "fdc-2709046",
+          "name": "米饭（棕色；配豌豆胡萝卜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 123,
+            "proteinG": 2.73,
+            "fatG": 2.66,
+            "carbsG": 22
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709046/nutrients"
+        },
+        {
+          "id": "fdc-2709048",
+          "name": "米饭（棕色；配豌豆胡萝卜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 123,
+            "proteinG": 2.73,
+            "fatG": 2.66,
+            "carbsG": 22
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709048/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709051",
+      "members": [
+        {
+          "id": "fdc-2709049",
+          "name": "米饭（棕色；配番茄及／或番茄基底酱汁；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 105,
+            "proteinG": 2.13,
+            "fatG": 2.41,
+            "carbsG": 18.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709049/nutrients"
+        },
+        {
+          "id": "fdc-2709051",
+          "name": "米饭（棕色；配番茄及／或番茄基底酱汁；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 105,
+            "proteinG": 2.13,
+            "fatG": 2.41,
+            "carbsG": 18.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709051/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709054",
+      "members": [
+        {
+          "id": "fdc-2709052",
+          "name": "米饭（棕色；配深绿色蔬菜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 120,
+            "proteinG": 2.67,
+            "fatG": 2.67,
+            "carbsG": 21.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709052/nutrients"
+        },
+        {
+          "id": "fdc-2709054",
+          "name": "米饭（棕色；配深绿色蔬菜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 120,
+            "proteinG": 2.67,
+            "fatG": 2.67,
+            "carbsG": 21.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709054/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709057",
+      "members": [
+        {
+          "id": "fdc-2709055",
+          "name": "米饭（棕色；配胡萝卜及番茄及／或番茄基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 111,
+            "proteinG": 2.2,
+            "fatG": 2.51,
+            "carbsG": 20
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709055/nutrients"
+        },
+        {
+          "id": "fdc-2709057",
+          "name": "米饭（棕色；配胡萝卜及番茄及／或番茄基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 111,
+            "proteinG": 2.2,
+            "fatG": 2.51,
+            "carbsG": 20
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709057/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709060",
+      "members": [
+        {
+          "id": "fdc-2709058",
+          "name": "米饭（棕色；配深绿色蔬菜及番茄及／或番茄基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 112,
+            "proteinG": 2.38,
+            "fatG": 2.54,
+            "carbsG": 19.9
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709058/nutrients"
+        },
+        {
+          "id": "fdc-2709060",
+          "name": "米饭（棕色；配深绿色蔬菜及番茄及／或番茄基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 110,
+            "proteinG": 2.39,
+            "fatG": 2.46,
+            "carbsG": 19.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709060/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709063",
+      "members": [
+        {
+          "id": "fdc-2709061",
+          "name": "米饭（棕色；配胡萝卜及深绿色蔬菜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 120,
+            "proteinG": 2.47,
+            "fatG": 2.66,
+            "carbsG": 21.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709061/nutrients"
+        },
+        {
+          "id": "fdc-2709063",
+          "name": "米饭（棕色；配胡萝卜及深绿色蔬菜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 120,
+            "proteinG": 2.47,
+            "fatG": 2.66,
+            "carbsG": 21.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709063/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709067",
+      "members": [
+        {
+          "id": "fdc-2709065",
+          "name": "米饭（棕色；配胡萝卜；深绿色蔬菜；及番茄及／或番茄基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 114,
+            "proteinG": 2.35,
+            "fatG": 2.57,
+            "carbsG": 20.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709065/nutrients"
+        },
+        {
+          "id": "fdc-2709067",
+          "name": "米饭（棕色；配胡萝卜；深绿色蔬菜；及番茄及／或番茄基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 114,
+            "proteinG": 2.35,
+            "fatG": 2.57,
+            "carbsG": 20.4
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709067/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709070",
+      "members": [
+        {
+          "id": "fdc-2709068",
+          "name": "米饭（棕色；配其他蔬菜；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 119,
+            "proteinG": 2.4,
+            "fatG": 2.64,
+            "carbsG": 21.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709068/nutrients"
+        },
+        {
+          "id": "fdc-2709070",
+          "name": "米饭（棕色；配其他蔬菜；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 119,
+            "proteinG": 2.4,
+            "fatG": 2.64,
+            "carbsG": 21.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709070/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709085",
+      "members": [
+        {
+          "id": "fdc-2709085",
+          "name": "西班牙式调味饭（添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 2.87,
+            "fatG": 2.6,
+            "carbsG": 19.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709085/nutrients"
+        },
+        {
+          "id": "fdc-2709087",
+          "name": "西班牙式调味饭（未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 2.87,
+            "fatG": 2.6,
+            "carbsG": 19.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709087/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709094",
+      "members": [
+        {
+          "id": "fdc-2709092",
+          "name": "米饭（白色；配奶酪及／或奶油基底酱汁；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 166,
+            "proteinG": 5.16,
+            "fatG": 7.03,
+            "carbsG": 20
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709092/nutrients"
+        },
+        {
+          "id": "fdc-2709094",
+          "name": "米饭（白色；配奶酪及／或奶油基底酱汁；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 166,
+            "proteinG": 5.16,
+            "fatG": 7.03,
+            "carbsG": 20
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709094/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709097",
+      "members": [
+        {
+          "id": "fdc-2709095",
+          "name": "米饭（白色；配肉汁酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 117,
+            "proteinG": 1.98,
+            "fatG": 2.96,
+            "carbsG": 20
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709095/nutrients"
+        },
+        {
+          "id": "fdc-2709097",
+          "name": "米饭（白色；配肉汁酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 117,
+            "proteinG": 1.98,
+            "fatG": 2.96,
+            "carbsG": 20
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709097/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709100",
+      "members": [
+        {
+          "id": "fdc-2709098",
+          "name": "米饭（白色；配酱油基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 117,
+            "proteinG": 2.01,
+            "fatG": 2.19,
+            "carbsG": 21.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709098/nutrients"
+        },
+        {
+          "id": "fdc-2709100",
+          "name": "米饭（白色；配酱油基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 117,
+            "proteinG": 2.01,
+            "fatG": 2.19,
+            "carbsG": 21.5
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709100/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709103",
+      "members": [
+        {
+          "id": "fdc-2709101",
+          "name": "米饭（棕色；配奶酪及／或奶油基底酱汁；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 157,
+            "proteinG": 4.87,
+            "fatG": 6.62,
+            "carbsG": 19.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709101/nutrients"
+        },
+        {
+          "id": "fdc-2709103",
+          "name": "米饭（棕色；配奶酪及／或奶油基底酱汁；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 157,
+            "proteinG": 4.87,
+            "fatG": 6.62,
+            "carbsG": 19.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709103/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709106",
+      "members": [
+        {
+          "id": "fdc-2709104",
+          "name": "米饭（棕色；配肉汁酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 114,
+            "proteinG": 2.11,
+            "fatG": 3.08,
+            "carbsG": 19.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709104/nutrients"
+        },
+        {
+          "id": "fdc-2709106",
+          "name": "米饭（棕色；配肉汁酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 114,
+            "proteinG": 2.11,
+            "fatG": 3.08,
+            "carbsG": 19.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709106/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709109",
+      "members": [
+        {
+          "id": "fdc-2709107",
+          "name": "米饭（棕色；配酱油基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 114,
+            "proteinG": 2.14,
+            "fatG": 2.42,
+            "carbsG": 20.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709107/nutrients"
+        },
+        {
+          "id": "fdc-2709109",
+          "name": "米饭（棕色；配酱油基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 114,
+            "proteinG": 2.14,
+            "fatG": 2.42,
+            "carbsG": 20.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709109/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709112",
+      "members": [
+        {
+          "id": "fdc-2709110",
+          "name": "米饭（白色；配蔬菜；奶酪及／或奶油基底酱汁；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 146,
+            "proteinG": 4.7,
+            "fatG": 5.66,
+            "carbsG": 18.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709110/nutrients"
+        },
+        {
+          "id": "fdc-2709112",
+          "name": "米饭（白色；配蔬菜；奶酪及／或奶油基底酱汁；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 146,
+            "proteinG": 4.7,
+            "fatG": 5.66,
+            "carbsG": 18.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709112/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709115",
+      "members": [
+        {
+          "id": "fdc-2709113",
+          "name": "米饭（白色；配蔬菜及肉汁酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 107,
+            "proteinG": 2.15,
+            "fatG": 2.4,
+            "carbsG": 18.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709113/nutrients"
+        },
+        {
+          "id": "fdc-2709115",
+          "name": "米饭（白色；配蔬菜及肉汁酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 107,
+            "proteinG": 2.15,
+            "fatG": 2.4,
+            "carbsG": 18.6
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709115/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709118",
+      "members": [
+        {
+          "id": "fdc-2709116",
+          "name": "米饭（白色；配蔬菜；酱油基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 106,
+            "proteinG": 2.18,
+            "fatG": 1.79,
+            "carbsG": 19.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709116/nutrients"
+        },
+        {
+          "id": "fdc-2709118",
+          "name": "米饭（白色；配蔬菜；酱油基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 106,
+            "proteinG": 2.18,
+            "fatG": 1.79,
+            "carbsG": 19.8
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709118/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709121",
+      "members": [
+        {
+          "id": "fdc-2709119",
+          "name": "米饭（棕色；配蔬菜；奶酪及／或奶油基底酱汁；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 140,
+            "proteinG": 4.51,
+            "fatG": 5.47,
+            "carbsG": 18.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709119/nutrients"
+        },
+        {
+          "id": "fdc-2709121",
+          "name": "米饭（棕色；配蔬菜；奶酪及／或奶油基底酱汁；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 140,
+            "proteinG": 4.51,
+            "fatG": 5.47,
+            "carbsG": 18.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709121/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709124",
+      "members": [
+        {
+          "id": "fdc-2709122",
+          "name": "米饭（棕色；配蔬菜及肉汁酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 105,
+            "proteinG": 2.24,
+            "fatG": 2.56,
+            "carbsG": 18.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709122/nutrients"
+        },
+        {
+          "id": "fdc-2709124",
+          "name": "米饭（棕色；配蔬菜及肉汁酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 105,
+            "proteinG": 2.24,
+            "fatG": 2.56,
+            "carbsG": 18.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709124/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709127",
+      "members": [
+        {
+          "id": "fdc-2709125",
+          "name": "米饭（棕色；配蔬菜；酱油基底酱；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 105,
+            "proteinG": 2.27,
+            "fatG": 2.02,
+            "carbsG": 19.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709125/nutrients"
+        },
+        {
+          "id": "fdc-2709127",
+          "name": "米饭（棕色；配蔬菜；酱油基底酱；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 105,
+            "proteinG": 2.27,
+            "fatG": 2.02,
+            "carbsG": 19.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709127/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709495",
+      "members": [
+        {
+          "id": "fdc-2709495",
+          "name": "土豆（泥状；加热即食）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 106,
+            "proteinG": 1.97,
+            "fatG": 5.01,
+            "carbsG": 13.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709495/nutrients"
+        },
+        {
+          "id": "fdc-2709507",
+          "name": "土豆（泥状；加热即食；未注明具体类型）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 106,
+            "proteinG": 1.97,
+            "fatG": 5.01,
+            "carbsG": 13.3
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709507/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709700",
+      "members": [
+        {
+          "id": "fdc-2709698",
+          "name": "红薯（烘烤；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 1.58,
+            "fatG": 4.53,
+            "carbsG": 17.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709698/nutrients"
+        },
+        {
+          "id": "fdc-2709700",
+          "name": "红薯（烘烤；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 1.58,
+            "fatG": 4.53,
+            "carbsG": 17.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709700/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709703",
+      "members": [
+        {
+          "id": "fdc-2709701",
+          "name": "红薯（水煮；未注明脂肪量）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 1.58,
+            "fatG": 4.53,
+            "carbsG": 17.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709701/nutrients"
+        },
+        {
+          "id": "fdc-2709703",
+          "name": "红薯（水煮；添加脂肪）",
+          "state": "cooked",
+          "nutrientsPer100g": {
+            "energyKcal": 115,
+            "proteinG": 1.58,
+            "fatG": 4.53,
+            "carbsG": 17.1
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709703/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2709707",
+      "members": [
+        {
+          "id": "fdc-2709705",
+          "name": "红薯（罐装；未注明脂肪量）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 124,
+            "proteinG": 1.58,
+            "fatG": 4.35,
+            "carbsG": 20
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709705/nutrients"
+        },
+        {
+          "id": "fdc-2709707",
+          "name": "红薯（罐装；添加脂肪）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 124,
+            "proteinG": 1.58,
+            "fatG": 4.35,
+            "carbsG": 20
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2709707/nutrients"
+        }
+      ]
+    },
+    {
+      "representativeId": "fdc-2710320",
+      "members": [
+        {
+          "id": "fdc-2710319",
+          "name": "冰棒（未注明具体类型）",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 79,
+            "proteinG": 0,
+            "fatG": 0.24,
+            "carbsG": 19.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2710319/nutrients"
+        },
+        {
+          "id": "fdc-2710320",
+          "name": "冰棒",
+          "state": "ready",
+          "nutrientsPer100g": {
+            "energyKcal": 79,
+            "proteinG": 0,
+            "fatG": 0.24,
+            "carbsG": 19.2
+          },
+          "sourceUrl": "https://fdc.nal.usda.gov/food-details/2710320/nutrients"
+        }
+      ]
+    }
+  ]
+}

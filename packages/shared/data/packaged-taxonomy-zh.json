@@ -1,0 +1,1430 @@
+{
+  "sourceUrl": "https://static.openfoodfacts.org/data/taxonomies/categories.json",
+  "retrievedAt": "2026-10-19T03:03:27.381Z",
+  "license": "ODbL-1.0",
+  "sha256": "1c073f07558674fcb1d66b71d088167bc4edc383d1392fd268cba04b7ec0e2fb",
+  "entries": {
+    "en:alcoholic-beverages": {
+      "name": {
+        "zh": "酒",
+        "en": "Alcoholic beverages"
+      }
+    },
+    "en:almond-based-drinks": {
+      "name": {
+        "zh": "杏仁饮料",
+        "en": "Almond-based drinks"
+      }
+    },
+    "en:animal-fats": {
+      "name": {
+        "zh": "动物脂肪",
+        "en": "Animal fats"
+      }
+    },
+    "en:appetizers": {
+      "name": {
+        "zh": "开胃菜",
+        "en": "Appetizers"
+      }
+    },
+    "en:apple-compotes": {
+      "name": {
+        "zh": "苹果果泥",
+        "en": "Apple compotes"
+      }
+    },
+    "en:apples": {
+      "name": {
+        "zh": "苹果",
+        "en": "Apples"
+      }
+    },
+    "en:artificially-sweetened-beverages": {
+      "name": {
+        "zh": "人工甜味剂饮料",
+        "en": "Artificially sweetened beverages"
+      }
+    },
+    "en:baby-foods": {
+      "name": {
+        "zh": "婴儿食品",
+        "en": "Baby foods"
+      }
+    },
+    "en:bars": {
+      "name": {
+        "zh": "棒状零食",
+        "en": "Bars"
+      }
+    },
+    "en:bee-products": {
+      "name": {
+        "zh": "蜂产品",
+        "en": "Bee products"
+      }
+    },
+    "en:beers": {
+      "name": {
+        "zh": "啤酒",
+        "en": "Beers"
+      }
+    },
+    "en:berry-jams": {
+      "name": {
+        "zh": "莓类果酱",
+        "en": "Berry jams"
+      }
+    },
+    "en:beverage-preparations": {
+      "name": {
+        "zh": "饮料调制品",
+        "en": "Beverage preparations"
+      }
+    },
+    "en:beverages": {
+      "name": {
+        "zh": "饮料",
+        "en": "Beverages"
+      }
+    },
+    "en:beverages-and-beverages-preparations": {
+      "name": {
+        "zh": "饮料及饮料备制品",
+        "en": "Beverages and beverages preparations"
+      }
+    },
+    "en:biscuits": {
+      "name": {
+        "zh": "面饼",
+        "en": "Biscuits"
+      }
+    },
+    "en:biscuits-and-cakes": {
+      "name": {
+        "zh": "饼干和蛋糕",
+        "en": "Biscuits and cakes"
+      }
+    },
+    "en:black-teas": {
+      "name": {
+        "zh": "黑茶",
+        "en": "Black teas"
+      }
+    },
+    "en:bread-coverings": {
+      "name": {
+        "zh": "面包罩",
+        "en": "Bread coverings"
+      }
+    },
+    "en:breads": {
+      "name": {
+        "zh": "面包",
+        "en": "Breads"
+      }
+    },
+    "en:breadsticks": {
+      "name": {
+        "zh": "面包棒",
+        "en": "Breadsticks"
+      }
+    },
+    "en:breakfast-cereals": {
+      "name": {
+        "zh": "早餐谷物",
+        "en": "Breakfast cereals"
+      }
+    },
+    "en:breakfasts": {
+      "name": {
+        "zh": "早餐",
+        "en": "Breakfasts"
+      }
+    },
+    "en:butter-fat": {
+      "name": {
+        "zh": "黄油脂肪",
+        "en": "Butter fat"
+      }
+    },
+    "en:cakes": {
+      "name": {
+        "zh": "蛋糕",
+        "en": "Cakes"
+      }
+    },
+    "en:candies": {
+      "name": {
+        "zh": "糖果",
+        "en": "Candies"
+      }
+    },
+    "en:candy-chocolate-bars": {
+      "name": {
+        "zh": "巧克力棒",
+        "en": "Candy chocolate bars"
+      }
+    },
+    "en:canned-fishes": {
+      "name": {
+        "zh": "罐头鱼",
+        "en": "Canned fishes"
+      }
+    },
+    "en:canned-foods": {
+      "name": {
+        "zh": "罐头食品",
+        "en": "Canned foods"
+      }
+    },
+    "en:canned-fruits": {
+      "name": {
+        "zh": "水果类罐头",
+        "en": "Canned fruits"
+      }
+    },
+    "en:canned-legumes": {
+      "name": {
+        "zh": "罐装豆类",
+        "en": "Canned legumes"
+      }
+    },
+    "en:canned-meals": {
+      "name": {
+        "zh": "罐头饭菜",
+        "en": "Canned meals"
+      }
+    },
+    "en:canned-plant-based-foods": {
+      "name": {
+        "zh": "罐装植物性食品",
+        "en": "Canned plant-based foods"
+      }
+    },
+    "en:canned-vegetables": {
+      "name": {
+        "zh": "罐头蔬菜",
+        "en": "Canned vegetables"
+      }
+    },
+    "en:carbonated-drinks": {
+      "name": {
+        "zh": "碳酸饮料",
+        "en": "Carbonated drinks"
+      }
+    },
+    "en:carbonated-fruit-soft-drink": {
+      "name": {
+        "zh": "果汁碳酸饮料",
+        "en": "Carbonated fruit soft drink"
+      }
+    },
+    "en:carrageenans": {
+      "name": {
+        "zh": "卡拉胶",
+        "en": "Carrageenans"
+      }
+    },
+    "en:cereal-grains": {
+      "name": {
+        "zh": "麦片谷物",
+        "en": "Cereal grains"
+      }
+    },
+    "en:cereal-oils": {
+      "name": {
+        "zh": "谷物油",
+        "en": "Cereal oils"
+      }
+    },
+    "en:cereal-pastas": {
+      "name": {
+        "zh": "谷物意大利面",
+        "en": "Cereal pastas"
+      }
+    },
+    "en:cereals-and-potatoes": {
+      "name": {
+        "zh": "谷物和土豆",
+        "en": "Cereals and potatoes"
+      }
+    },
+    "en:cereals-and-their-products": {
+      "name": {
+        "zh": "谷物及其制品",
+        "en": "Cereals and their products"
+      }
+    },
+    "en:cheeses": {
+      "name": {
+        "zh": "奶酪",
+        "en": "Cheeses"
+      }
+    },
+    "en:chestnuts": {
+      "name": {
+        "zh": "栗子",
+        "en": "Chestnuts"
+      }
+    },
+    "en:chicken-and-its-products": {
+      "name": {
+        "zh": "鸡肉及其制品",
+        "en": "Chicken and its products"
+      }
+    },
+    "en:chicken-sausages": {
+      "name": {
+        "zh": "鸡肠",
+        "en": "Chicken sausages"
+      }
+    },
+    "en:chickens": {
+      "name": {
+        "zh": "鸡",
+        "en": "Chickens"
+      }
+    },
+    "en:chinese-green-teas": {
+      "name": {
+        "zh": "中国绿茶",
+        "en": "Chinese green teas"
+      }
+    },
+    "en:chinese-noodles": {
+      "name": {
+        "zh": "中式面条",
+        "en": "Chinese noodles"
+      }
+    },
+    "en:chips-and-fries": {
+      "name": {
+        "zh": "薯片和薯条",
+        "en": "Chips and fries"
+      }
+    },
+    "en:chocolate-biscuits": {
+      "name": {
+        "zh": "巧克力饼干",
+        "en": "Chocolate biscuits"
+      }
+    },
+    "en:chocolate-cakes": {
+      "name": {
+        "zh": "巧克力蛋糕",
+        "en": "Chocolate cakes"
+      }
+    },
+    "en:chocolate-candies": {
+      "name": {
+        "zh": "巧克力糖果",
+        "en": "Chocolate candies"
+      }
+    },
+    "en:chocolates": {
+      "name": {
+        "zh": "巧克力",
+        "en": "Chocolates"
+      }
+    },
+    "en:cocoa-and-its-products": {
+      "name": {
+        "zh": "可可及其制品",
+        "en": "Cocoa and its products"
+      }
+    },
+    "en:coffees": {
+      "name": {
+        "zh": "咖啡",
+        "en": "Coffees"
+      }
+    },
+    "en:colas": {
+      "name": {
+        "zh": "可乐",
+        "en": "Colas"
+      }
+    },
+    "en:compotes": {
+      "name": {
+        "zh": "蜜饯",
+        "en": "Compotes"
+      }
+    },
+    "en:condiments": {
+      "name": {
+        "zh": "调味品",
+        "en": "Condiments"
+      }
+    },
+    "en:confectioneries": {
+      "name": {
+        "zh": "糖果及甜食",
+        "en": "Confectioneries"
+      }
+    },
+    "en:cooking-helpers": {
+      "name": {
+        "zh": "厨房神器",
+        "en": "Cooking helpers"
+      }
+    },
+    "en:corn": {
+      "name": {
+        "zh": "玉米",
+        "en": "Corn"
+      }
+    },
+    "en:cottage-cheeses": {
+      "name": {
+        "zh": "茅屋起司",
+        "en": "Cottage cheeses"
+      }
+    },
+    "en:cow-cheeses": {
+      "name": {
+        "zh": "牛乳奶酪",
+        "en": "Cow cheeses"
+      }
+    },
+    "en:crisps": {
+      "name": {
+        "zh": "薯片",
+        "en": "Crisps"
+      }
+    },
+    "en:culinary-plants": {
+      "name": {
+        "zh": "食用植物",
+        "en": "Culinary plants"
+      }
+    },
+    "en:cured-sausages": {
+      "name": {
+        "zh": "腌制香肠",
+        "en": "Cured sausages"
+      }
+    },
+    "en:dairies": {
+      "name": {
+        "zh": "乳製品",
+        "en": "Dairies"
+      }
+    },
+    "en:dairy-desserts": {
+      "name": {
+        "zh": "奶类甜品",
+        "en": "Dairy desserts"
+      }
+    },
+    "en:dairy-drinks": {
+      "name": {
+        "zh": "奶饮料",
+        "en": "Dairy drinks"
+      }
+    },
+    "en:dairy-substitutes": {
+      "name": {
+        "zh": "乳制品替代品",
+        "en": "Dairy substitutes"
+      }
+    },
+    "en:dark-chocolates": {
+      "name": {
+        "zh": "黑巧克力",
+        "en": "Dark chocolates"
+      }
+    },
+    "en:dates": {
+      "name": {
+        "zh": "椰枣",
+        "en": "Dates"
+      }
+    },
+    "en:desserts": {
+      "name": {
+        "zh": "甜品",
+        "en": "Desserts"
+      }
+    },
+    "en:dietary-supplements": {
+      "name": {
+        "zh": "膳食补充剂",
+        "en": "Dietary supplements"
+      }
+    },
+    "en:dips": {
+      "name": {
+        "zh": "蘸酱",
+        "en": "Dips"
+      }
+    },
+    "en:dried-fruits": {
+      "name": {
+        "zh": "干燥水果",
+        "en": "Dried fruits"
+      }
+    },
+    "en:dried-plant-based-foods": {
+      "name": {
+        "zh": "干燥植物性食品",
+        "en": "Dried plant-based foods"
+      }
+    },
+    "en:dried-products": {
+      "name": {
+        "zh": "干制品",
+        "en": "Dried products"
+      }
+    },
+    "en:dried-products-to-be-rehydrated": {
+      "name": {
+        "zh": "复水干燥食品",
+        "en": "Dried products to be rehydrated"
+      }
+    },
+    "en:drinking-water": {
+      "name": {
+        "zh": "饮用水",
+        "en": "Drinking water"
+      }
+    },
+    "en:dry-pastas": {
+      "name": {
+        "zh": "干意面",
+        "en": "Dry pastas"
+      }
+    },
+    "en:egg-noodles": {
+      "name": {
+        "zh": "鸡蛋面",
+        "en": "Egg noodles"
+      }
+    },
+    "en:eggs": {
+      "name": {
+        "zh": "鸟蛋",
+        "en": "Eggs"
+      }
+    },
+    "en:energy-drinks": {
+      "name": {
+        "zh": "能量饮料",
+        "en": "Energy drinks"
+      }
+    },
+    "en:farming-products": {
+      "name": {
+        "zh": "农产品",
+        "en": "Farming products"
+      }
+    },
+    "en:fats": {
+      "name": {
+        "zh": "脂肪",
+        "en": "Fats"
+      }
+    },
+    "en:fatty-fishes": {
+      "name": {
+        "zh": "高脂鱼类",
+        "en": "Fatty fishes"
+      }
+    },
+    "en:fermented-dairy-desserts": {
+      "name": {
+        "zh": "发酵乳制甜点",
+        "en": "Fermented dairy desserts"
+      }
+    },
+    "en:fermented-dairy-desserts-with-fruits": {
+      "name": {
+        "zh": "发酵乳制甜点附上水果",
+        "en": "Fermented dairy desserts with fruits"
+      }
+    },
+    "en:fermented-drinks": {
+      "name": {
+        "zh": "发酵饮料",
+        "en": "Fermented drinks"
+      }
+    },
+    "en:fermented-foods": {
+      "name": {
+        "zh": "发酵食品",
+        "en": "Fermented foods"
+      }
+    },
+    "en:fermented-milk-products": {
+      "name": {
+        "zh": "发酵乳制品",
+        "en": "Fermented milk products"
+      }
+    },
+    "en:festive-foods": {
+      "name": {
+        "zh": "节庆食品",
+        "en": "Festive foods"
+      }
+    },
+    "en:fishes": {
+      "name": {
+        "zh": "鱼类",
+        "en": "Fishes"
+      }
+    },
+    "en:fishes-and-their-products": {
+      "name": {
+        "zh": "鱼类及其制品",
+        "en": "Fishes and their products"
+      }
+    },
+    "en:flavoured-yogurts": {
+      "name": {
+        "zh": "调味酸奶",
+        "en": "Flavoured yogurts"
+      }
+    },
+    "en:flours": {
+      "name": {
+        "zh": "面粉",
+        "en": "Flours"
+      }
+    },
+    "en:food-additives": {
+      "name": {
+        "zh": "食品添加剂",
+        "en": "Food additives"
+      }
+    },
+    "en:food-decorations": {
+      "name": {
+        "zh": "食品装饰品",
+        "en": "Food decorations"
+      }
+    },
+    "en:french-cheeses": {
+      "name": {
+        "zh": "法国奶酪",
+        "en": "French cheeses"
+      }
+    },
+    "en:french-sausages": {
+      "name": {
+        "zh": "法国香肠",
+        "en": "French sausages"
+      }
+    },
+    "en:fresh-foods": {
+      "name": {
+        "zh": "新鲜食物",
+        "en": "Fresh foods"
+      }
+    },
+    "en:fresh-milks": {
+      "name": {
+        "zh": "鲜奶",
+        "en": "Fresh milks"
+      }
+    },
+    "en:fresh-plant-based-foods": {
+      "name": {
+        "zh": "新鲜蔬菜食品",
+        "en": "Fresh plant-based foods"
+      }
+    },
+    "en:fresh-vegetables": {
+      "name": {
+        "zh": "新鲜蔬菜",
+        "en": "Fresh vegetables"
+      }
+    },
+    "en:frozen-desserts": {
+      "name": {
+        "zh": "冷冻甜点",
+        "en": "Frozen desserts"
+      }
+    },
+    "en:frozen-foods": {
+      "name": {
+        "zh": "冷冻食物",
+        "en": "Frozen foods"
+      }
+    },
+    "en:frozen-plant-based-foods": {
+      "name": {
+        "zh": "冷冻蔬菜食品",
+        "en": "Frozen plant-based foods"
+      }
+    },
+    "en:frozen-vegetables": {
+      "name": {
+        "zh": "冷藏蔬菜",
+        "en": "Frozen vegetables"
+      }
+    },
+    "en:fruit-and-vegetable-preserves": {
+      "name": {
+        "zh": "水果及蔬菜加工品",
+        "en": "Fruit and vegetable preserves"
+      }
+    },
+    "en:fruit-based-beverages": {
+      "name": {
+        "zh": "果汁饮料",
+        "en": "Fruit-based beverages"
+      }
+    },
+    "en:fruit-juices": {
+      "name": {
+        "zh": "水果汁",
+        "en": "Fruit juices"
+      }
+    },
+    "en:fruit-sodas": {
+      "name": {
+        "zh": "水果汽水",
+        "en": "Fruit sodas"
+      }
+    },
+    "en:fruit-teas": {
+      "name": {
+        "zh": "水果茶",
+        "en": "Fruit teas"
+      }
+    },
+    "en:fruit-yogurts": {
+      "name": {
+        "zh": "水果酸奶",
+        "en": "Fruit yogurts"
+      }
+    },
+    "en:fruits": {
+      "name": {
+        "zh": "水果",
+        "en": "Fruits"
+      }
+    },
+    "en:fruits-and-vegetables-based-foods": {
+      "name": {
+        "zh": "以水果和蔬菜为基础的食品",
+        "en": "Fruits and vegetables based foods"
+      }
+    },
+    "en:goat-cheeses": {
+      "name": {
+        "zh": "山羊奶酪",
+        "en": "Goat cheeses"
+      }
+    },
+    "en:greek-style-yogurts": {
+      "name": {
+        "zh": "希腊酸奶",
+        "en": "Greek-style yogurts"
+      }
+    },
+    "en:green-teas": {
+      "name": {
+        "zh": "绿茶",
+        "en": "Green teas"
+      }
+    },
+    "en:ground-coffees": {
+      "name": {
+        "zh": "研磨咖啡",
+        "en": "Ground coffees"
+      }
+    },
+    "en:hams": {
+      "name": {
+        "zh": "火腿",
+        "en": "Hams"
+      }
+    },
+    "en:hard-cheeses": {
+      "name": {
+        "zh": "硬质奶酪",
+        "en": "Hard cheeses"
+      }
+    },
+    "en:herbal-teas": {
+      "name": {
+        "zh": "花草茶",
+        "en": "Herbal teas"
+      }
+    },
+    "en:honeys": {
+      "name": {
+        "zh": "蜂蜜",
+        "en": "Honeys"
+      }
+    },
+    "en:hot-beverages": {
+      "name": {
+        "zh": "热饮料",
+        "en": "Hot beverages"
+      }
+    },
+    "en:ice-creams": {
+      "name": {
+        "zh": "冰淇淋",
+        "en": "Ice creams"
+      }
+    },
+    "en:ice-creams-and-sorbets": {
+      "name": {
+        "zh": "冰淇淋和果汁冰糕",
+        "en": "Ice creams and sorbets"
+      }
+    },
+    "en:iced-teas": {
+      "name": {
+        "zh": "冰柠檬茶",
+        "en": "Iced teas"
+      }
+    },
+    "en:instant-coffees": {
+      "name": {
+        "zh": "速溶咖啡",
+        "en": "Instant coffees"
+      }
+    },
+    "en:instant-noodle-soups": {
+      "name": {
+        "zh": "方便面汤",
+        "en": "Instant noodle soups"
+      }
+    },
+    "en:instant-noodles": {
+      "name": {
+        "zh": "方便面",
+        "en": "Instant noodles"
+      }
+    },
+    "en:jams": {
+      "name": {
+        "zh": "果酱",
+        "en": "Jams"
+      }
+    },
+    "en:juices-and-nectars": {
+      "name": {
+        "zh": "果汁及果浆饮料",
+        "en": "Juices and nectars"
+      }
+    },
+    "en:legume-seeds": {
+      "name": {
+        "zh": "豆类种子",
+        "en": "Legume seeds"
+      }
+    },
+    "en:legumes": {
+      "name": {
+        "zh": "豆类",
+        "en": "Legumes"
+      }
+    },
+    "en:legumes-and-their-products": {
+      "name": {
+        "zh": "豆类及其制品",
+        "en": "Legumes and their products"
+      }
+    },
+    "en:lollipops": {
+      "name": {
+        "zh": "棒棒糖",
+        "en": "Lollipops"
+      }
+    },
+    "en:meals": {
+      "name": {
+        "zh": "菜肴",
+        "en": "Meals"
+      }
+    },
+    "en:meals-with-meat": {
+      "name": {
+        "zh": "肉餐",
+        "en": "Meals with meat"
+      }
+    },
+    "en:meat-alternatives": {
+      "name": {
+        "zh": "肉类替代品",
+        "en": "Meat alternatives"
+      }
+    },
+    "en:meat-analogues": {
+      "name": {
+        "zh": "植物肉",
+        "en": "Meat analogues"
+      }
+    },
+    "en:meat-preparations": {
+      "name": {
+        "zh": "肉类调制品",
+        "en": "Meat preparations"
+      }
+    },
+    "en:meats": {
+      "name": {
+        "zh": "肉类",
+        "en": "Meats"
+      }
+    },
+    "en:meats-and-their-products": {
+      "name": {
+        "zh": "肉制品",
+        "en": "Meats and their products"
+      }
+    },
+    "en:milk-chocolates": {
+      "name": {
+        "zh": "牛奶巧克力",
+        "en": "Milk chocolates"
+      }
+    },
+    "en:milk-substitutes": {
+      "name": {
+        "zh": "代乳品",
+        "en": "Milk substitutes"
+      }
+    },
+    "en:milks": {
+      "name": {
+        "zh": "奶",
+        "en": "Milks"
+      }
+    },
+    "en:mineral-waters": {
+      "name": {
+        "zh": "矿泉水",
+        "en": "Mineral waters"
+      }
+    },
+    "en:mirin": {
+      "name": {
+        "zh": "味醂",
+        "en": "Mirin"
+      }
+    },
+    "en:mueslis": {
+      "name": {
+        "zh": "木斯里",
+        "en": "Mueslis"
+      }
+    },
+    "en:non-alcoholic-beverages": {
+      "name": {
+        "zh": "无酒精饮料",
+        "en": "Non-alcoholic beverages"
+      }
+    },
+    "en:noodles": {
+      "name": {
+        "zh": "面条",
+        "en": "Noodles"
+      }
+    },
+    "en:nuts": {
+      "name": {
+        "zh": "坚果",
+        "en": "Nuts"
+      }
+    },
+    "en:nuts-and-their-products": {
+      "name": {
+        "zh": "坚果及其制品",
+        "en": "Nuts and their products"
+      }
+    },
+    "en:oat-based-drinks": {
+      "name": {
+        "zh": "燕麦奶",
+        "en": "Oat-based drinks"
+      }
+    },
+    "en:oilseed-purees": {
+      "name": {
+        "zh": "油籽泥",
+        "en": "Oilseed purees"
+      }
+    },
+    "en:onions": {
+      "name": {
+        "zh": "洋葱",
+        "en": "Onions"
+      }
+    },
+    "en:orange-juices": {
+      "name": {
+        "zh": "橙子汁",
+        "en": "Orange juices"
+      }
+    },
+    "en:palm-oils": {
+      "name": {
+        "zh": "棕榈油",
+        "en": "Palm oils"
+      }
+    },
+    "en:pasta-dishes": {
+      "name": {
+        "zh": "意大利面料理",
+        "en": "Pasta dishes"
+      }
+    },
+    "en:pastas": {
+      "name": {
+        "zh": "意式面食",
+        "en": "Pastas"
+      }
+    },
+    "en:pastries": {
+      "name": {
+        "zh": "糕点",
+        "en": "Pastries"
+      }
+    },
+    "en:peanut-butters": {
+      "name": {
+        "zh": "花生酱",
+        "en": "Peanut butters"
+      }
+    },
+    "en:peanuts": {
+      "name": {
+        "zh": "花生",
+        "en": "Peanuts"
+      }
+    },
+    "en:pestos": {
+      "name": {
+        "zh": "青酱",
+        "en": "Pestos"
+      }
+    },
+    "en:petit-beurre": {
+      "name": {
+        "zh": "不的波",
+        "en": "Petit-Beurre"
+      }
+    },
+    "en:pickles": {
+      "name": {
+        "zh": "腌渍食品",
+        "en": "Pickles"
+      }
+    },
+    "en:pizzas": {
+      "name": {
+        "zh": "比萨",
+        "en": "Pizzas"
+      }
+    },
+    "en:pizzas-pies-and-quiches": {
+      "name": {
+        "zh": "披萨、派和法式咸派",
+        "en": "Pizzas pies and quiches"
+      }
+    },
+    "en:plant-based-beverages": {
+      "name": {
+        "zh": "植物性饮料",
+        "en": "Plant-based beverages"
+      }
+    },
+    "en:plant-based-foods": {
+      "name": {
+        "zh": "植物性食物",
+        "en": "Plant-based foods"
+      }
+    },
+    "en:plant-based-foods-and-beverages": {
+      "name": {
+        "zh": "植物性食物与饮品",
+        "en": "Plant-based foods and beverages"
+      }
+    },
+    "en:plant-based-milk-alternatives": {
+      "name": {
+        "zh": "植物奶",
+        "en": "Plant-based milk alternatives"
+      }
+    },
+    "en:plant-based-pickles": {
+      "name": {
+        "zh": "植物腌渍物",
+        "en": "Plant-based pickles"
+      }
+    },
+    "en:plant-based-spreads": {
+      "name": {
+        "zh": "植物性涂抹酱",
+        "en": "Plant-based spreads"
+      }
+    },
+    "en:pork": {
+      "name": {
+        "zh": "猪肉",
+        "en": "Pork"
+      }
+    },
+    "en:pork-and-its-products": {
+      "name": {
+        "zh": "猪肉及其制品",
+        "en": "Pork and its products"
+      }
+    },
+    "en:potato-crisps": {
+      "name": {
+        "zh": "马铃薯薯片",
+        "en": "Potato crisps"
+      }
+    },
+    "en:poultries": {
+      "name": {
+        "zh": "家禽",
+        "en": "Poultries"
+      }
+    },
+    "en:prepared-meats": {
+      "name": {
+        "zh": "预制肉类",
+        "en": "Prepared meats"
+      }
+    },
+    "en:prepared-salads": {
+      "name": {
+        "zh": "预制沙拉",
+        "en": "Prepared salads"
+      }
+    },
+    "en:pretzel": {
+      "name": {
+        "zh": "椒鹽卷餅",
+        "en": "Pretzel"
+      }
+    },
+    "en:pulses": {
+      "name": {
+        "zh": "干燥豆类",
+        "en": "Pulses"
+      }
+    },
+    "en:quarks": {
+      "name": {
+        "zh": "奶渣",
+        "en": "Quarks"
+      }
+    },
+    "en:quinoa": {
+      "name": {
+        "zh": "藜麦",
+        "en": "Quinoa"
+      }
+    },
+    "en:rice-vermicelli": {
+      "name": {
+        "zh": "米粉",
+        "en": "Rice vermicelli"
+      }
+    },
+    "en:rice-vinegars": {
+      "name": {
+        "zh": "米醋",
+        "en": "Rice vinegars"
+      }
+    },
+    "en:rices": {
+      "name": {
+        "zh": "米",
+        "en": "Rices"
+      }
+    },
+    "en:salad-dressings": {
+      "name": {
+        "zh": "沙拉醬",
+        "en": "Salad dressings"
+      }
+    },
+    "en:salty-snacks": {
+      "name": {
+        "zh": "咸味零食",
+        "en": "Salty snacks"
+      }
+    },
+    "en:sauces": {
+      "name": {
+        "zh": "酱汁",
+        "en": "Sauces"
+      }
+    },
+    "en:sausages": {
+      "name": {
+        "zh": "香肠",
+        "en": "Sausages"
+      }
+    },
+    "en:seafood": {
+      "name": {
+        "zh": "海鲜",
+        "en": "Seafood"
+      }
+    },
+    "en:seeds": {
+      "name": {
+        "zh": "种子",
+        "en": "Seeds"
+      }
+    },
+    "en:sesame": {
+      "name": {
+        "zh": "芝麻",
+        "en": "Sesame"
+      }
+    },
+    "en:sesame-oils": {
+      "name": {
+        "zh": "芝麻油",
+        "en": "Sesame oils"
+      }
+    },
+    "en:sheep-s-milk-cheeses": {
+      "name": {
+        "zh": "羊奶酪",
+        "en": "sheep's-milk cheeses"
+      }
+    },
+    "en:snacks": {
+      "name": {
+        "zh": "零食",
+        "en": "Snacks"
+      }
+    },
+    "en:sodas": {
+      "name": {
+        "zh": "汽水",
+        "en": "Sodas"
+      }
+    },
+    "en:soups": {
+      "name": {
+        "zh": "汤",
+        "en": "Soups"
+      }
+    },
+    "en:soy-vermicelli": {
+      "name": {
+        "zh": "豆腐粉丝",
+        "en": "Soy vermicelli"
+      }
+    },
+    "en:special-breads": {
+      "name": {
+        "zh": "特殊面包",
+        "en": "Special breads"
+      }
+    },
+    "en:specific-products": {
+      "name": {
+        "zh": "特定产品",
+        "en": "Specific products"
+      }
+    },
+    "en:spices": {
+      "name": {
+        "zh": "香辛料",
+        "en": "Spices"
+      }
+    },
+    "en:spreads": {
+      "name": {
+        "zh": "塗抺食品",
+        "en": "Spreads"
+      }
+    },
+    "en:spring-waters": {
+      "name": {
+        "zh": "泉水",
+        "en": "Spring waters"
+      }
+    },
+    "en:stuffed-pastas": {
+      "name": {
+        "zh": "带馅义大利面",
+        "en": "Stuffed pastas"
+      }
+    },
+    "en:sugars": {
+      "name": {
+        "zh": "糖类",
+        "en": "Sugars"
+      }
+    },
+    "en:sweet-corn": {
+      "name": {
+        "zh": "甜玉米",
+        "en": "Sweet corn"
+      }
+    },
+    "en:sweet-pastries-and-pies": {
+      "name": {
+        "zh": "甜糕点及派",
+        "en": "Sweet pastries and pies"
+      }
+    },
+    "en:sweet-snacks": {
+      "name": {
+        "zh": "含糖零食",
+        "en": "Sweet snacks"
+      }
+    },
+    "en:sweet-spreads": {
+      "name": {
+        "zh": "甜味涂抹酱",
+        "en": "Sweet spreads"
+      }
+    },
+    "en:sweetened-beverages": {
+      "name": {
+        "zh": "含糖饮料",
+        "en": "Sweetened beverages"
+      }
+    },
+    "en:sweeteners": {
+      "name": {
+        "zh": "糖精",
+        "en": "Sweeteners"
+      }
+    },
+    "en:syrups": {
+      "name": {
+        "zh": "糖浆",
+        "en": "Syrups"
+      }
+    },
+    "en:tea-based-beverages": {
+      "name": {
+        "zh": "茶饮料",
+        "en": "Tea-based beverages"
+      }
+    },
+    "en:teas": {
+      "name": {
+        "zh": "茶",
+        "en": "Teas"
+      }
+    },
+    "en:thickeners": {
+      "name": {
+        "zh": "增稠剂",
+        "en": "Thickeners"
+      }
+    },
+    "en:tomato-sauces": {
+      "name": {
+        "zh": "番茄酱",
+        "en": "Tomato sauces"
+      }
+    },
+    "en:tomatoes-and-their-products": {
+      "name": {
+        "zh": "番茄及其制品",
+        "en": "Tomatoes and their products"
+      }
+    },
+    "en:tunas": {
+      "name": {
+        "zh": "吞拿鱼",
+        "en": "Tunas"
+      }
+    },
+    "en:unsweetened-beverages": {
+      "name": {
+        "zh": "无糖饮料",
+        "en": "Unsweetened beverages"
+      }
+    },
+    "en:vegetable-fats": {
+      "name": {
+        "zh": "蔬菜脂肪",
+        "en": "Vegetable fats"
+      }
+    },
+    "en:vegetable-oils": {
+      "name": {
+        "zh": "植物油",
+        "en": "Vegetable oils"
+      }
+    },
+    "en:vegetable-soups": {
+      "name": {
+        "zh": "蔬菜汤",
+        "en": "Vegetable soups"
+      }
+    },
+    "en:vegetables": {
+      "name": {
+        "zh": "蔬菜",
+        "en": "Vegetables"
+      }
+    },
+    "en:vegetables-based-foods": {
+      "name": {
+        "zh": "蔬菜类食品",
+        "en": "Vegetables based foods"
+      }
+    },
+    "en:viennoiseries": {
+      "name": {
+        "zh": "维也纳甜酥面包",
+        "en": "Viennoiseries"
+      }
+    },
+    "en:vinegars": {
+      "name": {
+        "zh": "醋",
+        "en": "Vinegars"
+      }
+    },
+    "en:waters": {
+      "name": {
+        "zh": "水",
+        "en": "Waters"
+      }
+    },
+    "en:white-chocolates": {
+      "name": {
+        "zh": "白巧克力",
+        "en": "White chocolates"
+      }
+    },
+    "en:white-hams": {
+      "name": {
+        "zh": "白火腿",
+        "en": "White hams"
+      }
+    },
+    "en:wines": {
+      "name": {
+        "zh": "葡萄酒",
+        "en": "Wines"
+      }
+    },
+    "en:yogurts": {
+      "name": {
+        "zh": "酸奶",
+        "en": "Yogurts"
+      }
+    },
+    "en:zongzi": {
+      "name": {
+        "zh": "粽子",
+        "en": "Zongzi"
+      }
+    }
+  }
+}

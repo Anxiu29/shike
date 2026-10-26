@@ -1,0 +1,38 @@
+/** 2024 Adult Compendium 原始 MET 值，中文名称只做说明，不合并不同强度。 */
+export const exerciseActivities = [
+  { code: '17170', name: '平地步行 · 约 4 km/h', category: '步行与跑步', unit: 'minutes', met: 3.0, source: 'https://pacompendium.com/walking/' },
+  { code: '17200', name: '快走 · 约 5.6–6.3 km/h', category: '步行与跑步', unit: 'minutes', met: 4.8, source: 'https://pacompendium.com/walking/' },
+  { code: '12020', name: '慢跑 · 自选配速', category: '步行与跑步', unit: 'minutes', met: 7.5, source: 'https://pacompendium.com/running/' },
+  { code: '01010', name: '休闲骑行 · 低于 16 km/h', category: '骑行', unit: 'minutes', met: 4.0, source: 'https://pacompendium.com/bicycling/' },
+  // 原始分类为含俯卧撑的徒手体操；没有官方固定kcal/个，次数须经明确的节奏假设换成时间。
+  { code: '02022', name: '俯卧撑 · 中等强度', category: '健身与力量', unit: 'repetitions', met: 3.8, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02020', name: '俯卧撑 · 较高强度', category: '健身与力量', unit: 'repetitions', met: 7.5, source: 'https://pacompendium.com/conditioning-exercise/' },
+  // 2024官方编号与MET逐项核对；只增加项目，不修改已有记录采用的强度。
+  { code: '17151', name: '慢走 · 低于 3.2 km/h', category: '步行与跑步', unit: 'minutes', met: 2.3, source: 'https://pacompendium.com/walking/' },
+  { code: '17131', name: '爬楼梯 · 一般速度', category: '步行与跑步', unit: 'minutes', met: 6.8, source: 'https://pacompendium.com/walking/' },
+  { code: '17082', name: '徒步 · 一般配速、不负重', category: '步行与跑步', unit: 'minutes', met: 5.3, source: 'https://pacompendium.com/walking/' },
+  { code: '12025', name: '原地慢跑', category: '步行与跑步', unit: 'minutes', met: 4.8, source: 'https://pacompendium.com/running/' },
+  { code: '12030', name: '跑步 · 约 8.0–8.4 km/h', category: '步行与跑步', unit: 'minutes', met: 8.5, source: 'https://pacompendium.com/running/' },
+  { code: '01016', name: '骑行 · 自选中等强度', category: '骑行', unit: 'minutes', met: 7.0, source: 'https://pacompendium.com/bicycling/' },
+  { code: '01214', name: '健身单车 · 50 W轻强度', category: '骑行', unit: 'minutes', met: 4.0, source: 'https://pacompendium.com/bicycling/' },
+  { code: '02048', name: '椭圆机 · 中等强度', category: '健身与力量', unit: 'minutes', met: 5.0, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02054', name: '力量训练 · 多项目、8–15次一组', category: '健身与力量', unit: 'minutes', met: 3.5, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02052', name: '负重深蹲／硬拉训练', category: '健身与力量', unit: 'minutes', met: 5.0, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02056', name: '徒手训练 · 深蹲、弓步等', category: '健身与力量', unit: 'minutes', met: 3.0, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02024', name: '平板支撑／卷腹 · 轻强度', category: '健身与力量', unit: 'minutes', met: 2.8, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02101', name: '拉伸 · 轻度', category: '健身与力量', unit: 'minutes', met: 2.3, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02175', name: '瑜伽 · 一般练习', category: '健身与力量', unit: 'minutes', met: 2.3, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02105', name: '普拉提 · 一般练习', category: '健身与力量', unit: 'minutes', met: 2.8, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '02210', name: '间歇训练 · 中等强度', category: '健身与力量', unit: 'minutes', met: 7.0, source: 'https://pacompendium.com/conditioning-exercise/' },
+  { code: '15030', name: '羽毛球 · 休闲单打／双打', category: '球类与跳绳', unit: 'minutes', met: 5.5, source: 'https://pacompendium.com/sports/' },
+  { code: '15660', name: '乒乓球', category: '球类与跳绳', unit: 'minutes', met: 4.0, source: 'https://pacompendium.com/sports/' },
+  { code: '15050', name: '篮球 · 非比赛的一般活动', category: '球类与跳绳', unit: 'minutes', met: 6.0, source: 'https://pacompendium.com/sports/' },
+  { code: '15610', name: '足球 · 休闲活动', category: '球类与跳绳', unit: 'minutes', met: 7.0, source: 'https://pacompendium.com/sports/' },
+  { code: '15685', name: '网球 · 休闲双打', category: '球类与跳绳', unit: 'minutes', met: 4.5, source: 'https://pacompendium.com/sports/' },
+  { code: '15670', name: '太极／气功 · 一般练习', category: '健身与力量', unit: 'minutes', met: 3.3, source: 'https://pacompendium.com/sports/' },
+  { code: '15552', name: '跳绳 · 慢节奏、低于100次／分钟', category: '球类与跳绳', unit: 'minutes', met: 8.3, source: 'https://pacompendium.com/sports/' },
+  { code: '18240', name: '游泳 · 自由泳、休闲慢速', category: '游泳', unit: 'minutes', met: 5.8, source: 'https://pacompendium.com/water-activities/' },
+  { code: '18265', name: '游泳 · 蛙泳、休闲', category: '游泳', unit: 'minutes', met: 5.3, source: 'https://pacompendium.com/water-activities/' },
+  { code: '18255', name: '游泳 · 仰泳、休闲', category: '游泳', unit: 'minutes', met: 4.8, source: 'https://pacompendium.com/water-activities/' },
+] as const;
+export const exerciseGroups = ['步行与跑步', '骑行', '健身与力量', '球类与跳绳', '游泳'] as const;

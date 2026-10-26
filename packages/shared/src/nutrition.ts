@@ -1,6 +1,15 @@
-import { foods, type FoodDefinition } from './food-data.js';
+/**
+ * 共享计算层不依赖Vue/HTTP/数据库：给定FoodEntry快照，返回营养，便于独立测试。
+ * 普通食物按每100g×可食重量/100；包装交给package-label，容量快照按每100mL换算。
+ * 工厂createFoodEntry/createRecipeEntry/createEstimatedFoodEntry复制依据，不让库更新重算历史。
+ * 三档区间按选中档取中值记账；切档只改本地快照，油档替换原配料，不能再加一份油。
+ * calculateNutrients保留null，aggregateNutrients返回known/missing，未知与明确0分别处理。
+ * 修改公式可先读shared/tests/nutrition.test.ts及estimate-ranges.test.ts中的边界案例。
+ */
+import { foods, catalogFoods, foodProvenance, type FoodDefinition } from './food-data.js';
 import { recipes, type Recipe } from './recipes.js';
 import { createId } from './id.js';
+import { packageNutrients } from './package-label.js';
 import {
   estimatedFoodSchema, normalizeFoodName, numericRangeSchema, nutrientRangesSchema, nutritionEstimateProfileSchema,
   type EstimateLevel, type EstimatedFood, type FoodEntry, type NumericRange, type NutrientRanges,
@@ -12,7 +21,7 @@ export const emptyNutrients = (): Nutrients => ({ energyKcal: null, proteinG: nu
 // 大食物库用索引查找，避免每次识别／配方换算都遍历几千条记录。
 const foodsById = new Map(foods.map(food => [food.id, food]));
 const foodsByName = new Map<string, FoodDefinition>();
-for (const food of foods) for (const label of [food.name, ...food.aliases]) {
+for (const food of catalogFoods) for (const label of [food.name, ...food.aliases]) {
   const key = normalizeFoodName(label);
   if (!foodsByName.has(key)) foodsByName.set(key, food);
 }
@@ -133,10 +142,11 @@ export function createFoodEntry(food: FoodDefinition, weightG: number | null): F
   return {
     id: createId(), name: food.name, weightG,
     nutrientsPer100g: { ...food.nutrientsPer100g },
-    provenance: `${food.source.dataset} ${food.source.version} · FDC ${food.source.fdcId} · ${food.source.description}`,
+    provenance: foodProvenance(food),
     kind: 'database', referenceId: food.id, warnings: [
       ...(food.state === 'raw' ? ['此数据对应生食／生重；熟食需选择相符的数据或配方。'] : []),
       ...(food.source.dataset === 'USDA FNDDS' ? ['USDA 膳食调查参考，可能采用美国常见配方；请核对具体做法、糖、油和品牌，不能视为这份食物的实测值。'] : []),
+      ...(food.source.dataset === 'TFDA 食品营养成分' ? ['TFDA 成品样本参考，按每100g可食部分换算；地区配方、糖油和含水量可能不同，不代表当前食品或品牌的实测值。'] : []),
     ],
   };
 }
@@ -194,7 +204,7 @@ export function createRecipeEntry(recipe: Recipe, weightG: number, ingredientOve
     return {
       id: ingredient.id, foodId: food.id, name: food.name, weightG: ingredientWeight,
       nutrientsPer100g: { ...food.nutrientsPer100g },
-      provenance: `${food.source.dataset} ${food.source.version} · FDC ${food.source.fdcId}`,
+      provenance: foodProvenance(food),
       note: ingredient.note,
     };
   });
@@ -225,6 +235,12 @@ export function createRecipeEntry(recipe: Recipe, weightG: number, ingredientOve
 }
 // 历史记录只使用保存时的营养快照，不用最新数据库重新匹配。
 export function calculateNutrients(entry: FoodEntry): Nutrients {
+  if (entry.volumeSnapshot) {
+    const { amountMl, nutrientsPer100ml } = entry.volumeSnapshot, result = emptyNutrients();
+    for (const key of nutrientKeys) result[key] = amountMl === 0 ? 0 : amountMl === null || nutrientsPer100ml[key] === null ? null : nutrientsPer100ml[key]! * amountMl / 100;
+    return result;
+  }
+  if (entry.kind === 'label' && entry.packageSnapshot) return packageNutrients(entry.packageSnapshot);
   const result = emptyNutrients();
   for (const key of nutrientKeys) {
     const per100g = entry.nutrientsPer100g[key];

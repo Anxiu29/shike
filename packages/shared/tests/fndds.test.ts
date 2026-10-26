@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { calculateNutrients, createFoodEntry, findFood, findRecipe, foods, nutrientsSchema } from '../src/index.js';
+import { surveyFoods } from '../src/fndds-foods.generated.js';
 
 const survey = foods.filter(food => food.source.dataset === 'USDA FNDDS');
 const manifest = JSON.parse(readFileSync(new URL('../data/fndds-import-manifest.json', import.meta.url), 'utf8'));
@@ -11,8 +12,9 @@ describe('USDA FNDDS 膳食参考扩库', () => {
     expect(manifest.importedCount).toBe(survey.length);
     expect(manifest.originalCount).toBe(survey.length + Object.values<number>(manifest.skipped).reduce((sum, count) => sum + count, 0));
     expect(manifest.sourceSha256).toMatch(/^[a-f0-9]{64}$/);
-    expect(manifest.chineseSearchNames).toBe(survey.filter(food => /[\u3400-\u9fff]/.test(food.name)).length);
-    expect(manifest.fullyChineseNames).toBe(survey.filter(food => !/[a-z]/i.test(food.name)).length);
+    // 该清单描述营养原始导入表；后续中文展示补译另有独立清单，不能改写营养源。
+    expect(manifest.chineseSearchNames).toBe(surveyFoods.filter(food => /[\u3400-\u9fff]/.test(food.name)).length);
+    expect(manifest.fullyChineseNames).toBe(surveyFoods.filter(food => !/[a-z]/i.test(food.name)).length);
     for (const food of survey) {
       expect(food.source.version).toBe('2021-2023');
       expect(food.source.foodCode).toMatch(/^\d{8}$/);
