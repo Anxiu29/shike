@@ -28,7 +28,11 @@ async function operation(action: () => Promise<PersonalState>, success: string) 
   finally { working.value = false }
 }
 const pickerKey = computed(() => JSON.stringify([state.value.activeId, state.value.profiles.map(profile => [profile.id, profile.model, profile.models])]))
-function modelSwitching(value: boolean) { switching.value = value; if (!value) void operation(getPersonalState, '') }
+async function reloadSelection() {
+  const previous = pickerKey.value
+  if (await operation(getPersonalState, '') && pickerKey.value !== previous) message.value = '已切换模型，下一次拍照与聊天使用新模型。'
+}
+function modelSwitching(value: boolean) { switching.value = value; if (!value) void reloadSelection() }
 onMounted(() => { void operation(getPersonalState, '') })
 function openForm(profile?: PersonalProfile) {
   if (busy.value || formOpen.value) return

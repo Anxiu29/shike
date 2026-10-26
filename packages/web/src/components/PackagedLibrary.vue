@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
 import { PackageOpen, Search, Camera, Trash2, LoaderCircle, Bookmark } from '@lucide/vue'
 import { barcodeSchema, builtinPackagedFoods, packagedCategories, packageFromEntry, packagedEntry, labelNutrients, type FoodEntry, type PackagedFood } from '@shike/shared'
 import { db, savePackagedFood } from '../lib/db'
@@ -7,10 +7,13 @@ import { lookupProduct } from '../lib/food-catalog'
 import { readBarcode } from '../lib/barcode'
 import { numberLabel } from '../lib/dates'
 import AppSheet from './AppSheet.vue'
+import { notifyKey } from '../lib/toast'
 const props = withDefaults(defineProps<{ candidate?: FoodEntry; selection?: boolean; initialBarcode?: string }>(), { selection: true })
 const emit = defineEmits<{ close: []; select: [entry: FoodEntry] }>()
 const records = ref<PackagedFood[]>([]), query = ref(''), barcode = ref(props.initialBarcode ?? props.candidate?.packageSnapshot?.barcode ?? '')
 const brand = ref(props.candidate?.packageSnapshot?.brand ?? ''), busy = ref(false), error = ref(''), message = ref(''), preview = ref<PackagedFood | null>(null)
+const notify = inject(notifyKey, () => {})
+watch([message, error], ([success, failure]) => { if (failure || success) notify(failure || success) })
 const photo = ref<HTMLInputElement | null>(null)
 const previewElement = ref<HTMLElement | null>(null)
 const publicCategory = ref('全部商品'), visiblePublic = ref(12)
@@ -60,15 +63,15 @@ async function fromPhoto(event: Event) {
   finally { busy.value = false }
   if (!error.value) await searchBarcode()
 }
-async function savePreview() { if (!preview.value || busy.value) return; busy.value = true; error.value = ''; try { await save(preview.value) } catch { error.value = '保存失败，请检查本机存储。' } finally { busy.value = false } }
-async function remove(food: PackagedFood) { if (!window.confirm(`删除包装库中的「${food.name}」？历史餐食仍保留。`)) return; busy.value = true; try { await db.packagedFoods.delete(food.id); await reload(); message.value = '库条目已删除，历史记录保持不变。' } catch { error.value = '删除失败，请重试。' } finally { busy.value = false } }
+async function savePreview() { if (!preview.value || busy.value) return; busy.value = true; error.value = ''; message.value = ''; try { await save(preview.value) } catch { error.value = '保存失败，请检查本机存储。' } finally { busy.value = false } }
+async function remove(food: PackagedFood) { if (busy.value) return; if (!window.confirm(`删除包装库中的「${food.name}」？历史餐食仍保留。`)) return; busy.value = true; error.value = ''; message.value = ''; try { await db.packagedFoods.delete(food.id); await reload(); message.value = '库条目已删除，历史记录保持不变。' } catch { error.value = '删除失败，请重试。' } finally { busy.value = false } }
 function use(food: PackagedFood) { emit('select', packagedEntry(food)); emit('close') }
 async function showPreview(food: PackagedFood) { preview.value = food; message.value = ''; error.value = ''; await nextTick(); previewElement.value?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }
 function basis(food: PackagedFood) { return ({ '100g': '每100 g', '100ml': '每100 mL', serving: '每份', package: '每包', unknown: '基准待确认' })[food.label.basis] }
 </script>
 <template>
   <AppSheet :open="true" :title="candidate ? '保存到包装库' : '包装食品库'" subtitle="内置商品参考 · 免费条码查询" :busy="busy" test-id="packaged-library" @close="emit('close')">
-    <section v-if="candidate" class="package-library-save"><h3>{{ candidate.name }}</h3><label>品牌（可选）<input v-model="brand" maxlength="200" data-testid="library-brand" :disabled="busy" /></label><label>商品条码（可选）<input v-model="barcode" inputmode="numeric" maxlength="14" data-testid="library-save-barcode" :disabled="busy" placeholder="填写后下次可扫码查找" /></label><p class="tiny muted">只保存当前标签，不保存本次摄入量。模拟标签不能进入真实包装库。</p><button class="button primary full" data-testid="confirm-save-package" :disabled="busy" @click="saveCandidate"><Bookmark :size="16" />确认保存标签</button></section>
+    <section v-if="candidate" class="package-library-save"><h3>{{ candidate.name }}</h3><label>品牌（可选）<input v-model="brand" maxlength="200" data-testid="library-brand" :disabled="busy" /></label><label>商品条码（可选）<input v-model="barcode" inputmode="numeric" maxlength="14" data-testid="library-save-barcode" :disabled="busy" placeholder="填写后下次可扫码查找" /></label><p class="tiny muted">只保存当前标签，不保存本次摄入量。模拟标签不能进入真实包装库。</p><button class="button primary full" data-testid="confirm-save-package" :disabled="busy" @click="saveCandidate"><LoaderCircle v-if="busy" :size="16" class="spin"/><Bookmark v-else :size="16" />{{ busy ? '正在保存…' : '确认保存标签' }}</button></section>
     <template v-else><div class="package-catalog-note"><PackageOpen :size="20" /><p>先查本地；未找到再联网查询 Open Food Facts。无需 API Key，商品数据可能缺失或过期，请核对实物。</p></div><form class="barcode-query" @submit.prevent="searchBarcode"><label>商品条码<input v-model="barcode" data-testid="catalog-barcode" inputmode="numeric" maxlength="14" placeholder="输入包装条码下的数字" :disabled="busy" /></label><button class="button primary" data-testid="catalog-query" :disabled="busy"><LoaderCircle v-if="busy" class="spin" :size="16" /><Search v-else :size="16" />查询</button></form><input ref="photo" tabindex="-1" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" data-testid="barcode-photo-input" :disabled="busy" @change="fromPhoto" /><button class="button secondary full" data-testid="catalog-photo" :disabled="busy" @click="photo?.click()"><Camera :size="17" />拍条码／选条码照片</button><p class="tiny muted">在设备本地读码，不上传条码照片。让条码横向、完整且清晰；也可直接输入。</p></template>
     <p v-if="message" class="notice subtle" role="status" data-testid="catalog-message">{{ message }}</p><p v-if="error" class="notice danger" role="alert" data-testid="catalog-error">{{ error }}</p>
     <article v-if="preview" ref="previewElement" class="catalog-preview" data-testid="catalog-preview"><h3>{{ preview.name }}</h3><p class="small-text muted">{{ preview.brand || '品牌待核对' }} · {{ preview.barcode }}</p><strong>{{ basis(preview) }} · {{ numberLabel(labelNutrients(preview.label).energyKcal) }} kcal</strong><p class="tiny">净含量 {{ preview.label.netContent ? `${numberLabel(preview.label.netContent.amount)} ${preview.label.netContent.unit}` : '待补充' }} · 摄入量在加入后填写</p><p v-if="preview.source" class="tiny"><a :href="preview.source.url" target="_blank" rel="noopener noreferrer">Open Food Facts · {{ preview.source.license }} · 查看来源</a></p><div class="backup-buttons"><button v-if="selection" class="button primary" data-testid="use-catalog-product" :disabled="busy" @click="use(preview)">加入这一餐</button><button class="button secondary" data-testid="save-catalog-product" :disabled="busy" @click="savePreview">保存到包装库</button></div></article>

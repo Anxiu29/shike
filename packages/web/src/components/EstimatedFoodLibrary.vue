@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { BookOpen, Search, ChevronRight, Trash2 } from '@lucide/vue'
+import { BookOpen, Search, ChevronRight, Trash2, LoaderCircle } from '@lucide/vue'
 import type { EstimatedFood } from '@shike/shared'
 import AppSheet from './AppSheet.vue'
 import { numberLabel } from '../lib/dates'
-const props = defineProps<{ foods: EstimatedFood[]; compact?: boolean }>()
+const props = defineProps<{ foods: EstimatedFood[]; compact?: boolean; deletingId?: string | null }>()
 const emit = defineEmits<{ remove: [food: EstimatedFood] }>()
 const open = ref(false), query = ref(''), limit = ref(10)
 const filtered = computed(() => {
@@ -22,12 +22,12 @@ function show() { query.value = ''; limit.value = 10; open.value = true }
     </button>
     <p v-if="!compact" class="tiny muted library-note">同名食物可复用；修改或删除估算不影响历史饮食快照。</p>
   </article>
-  <AppSheet :open="open" title="个人估算库" subtitle="搜索、核对与管理已确认保存的 AI 估算" test-id="estimate-library" @close="open = false">
+  <AppSheet :open="open" :busy="!!deletingId" title="个人估算库" subtitle="搜索、核对与管理已确认保存的 AI 估算" test-id="estimate-library" @close="open = false">
     <label class="estimate-search"><Search :size="18"/><input v-model="query" type="search" aria-label="搜索个人估算" placeholder="搜索食物名称或模型" data-testid="estimate-search"/></label>
     <p class="tiny muted estimate-result-count">{{ filtered.length }} 项{{ query.trim() ? '匹配结果' : '已保存估算' }} · AI 粗估，未经测量</p>
     <div v-if="!filtered.length" class="personal-empty"><BookOpen :size="26"/><p>{{ foods.length ? '没有找到匹配的估算，试试其他名称。' : '还没有保存的估算。真实 AI 粗估在确认保存后会出现在这里。' }}</p></div>
     <article v-for="(food, index) in filtered.slice(0, limit)" :key="food.id" class="estimate-library-item" :data-testid="`estimated-food-${index}`">
-      <div><strong>{{ food.name }}</strong><button class="icon-button" data-testid="delete-estimated-food" :aria-label="`删除个人估算${food.name}`" @click="emit('remove', food)"><Trash2 :size="16"/></button></div>
+      <div><strong>{{ food.name }}</strong><button class="icon-button" data-testid="delete-estimated-food" :disabled="!!deletingId" :aria-busy="deletingId === food.id" :aria-label="`删除个人估算${food.name}`" @click="emit('remove', food)"><LoaderCircle v-if="deletingId === food.id" class="spin" :size="16"/><Trash2 v-else :size="16"/></button></div>
       <p>{{ food.nutrientsPer100g.energyKcal === null ? '热量待补充' : `约 ${numberLabel(food.nutrientsPer100g.energyKcal)} kcal / 100 g` }}</p>
       <small class="muted">{{ food.provider === 'mock' ? '导入的模拟估算 · 不参与真实匹配' : 'AI 粗估 · 未经测量' }} · {{ food.model }}</small>
       <details class="settings-inline-details"><summary>查看估算假设</summary><p>{{ food.assumptions.join(' ') || '请核对用油、糖和含水量。' }}</p></details>

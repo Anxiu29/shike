@@ -137,3 +137,31 @@ test('单独发图片可发送，失败保留图片和描述，移除附件与�
   await page.getByTestId('assistant-image-input').setInputFiles({ name: '合成图片.png', mimeType: 'image/png', buffer: image });
   await expect(page.getByTestId('assistant-attachment')).toBeVisible(); await page.getByTestId('assistant-remove-photo').click(); await expect(page.getByTestId('assistant-send')).toBeDisabled();
 });
+
+for (const detailed of [false, true]) test(`图片记餐${detailed ? '转详细编辑' : '直接保存'}保留多图，保存后查看与新餐不串图`, async ({ page }) => {
+  await open(page);
+  const image = await sharp({ create: { width: 600, height: 400, channels: 3, background: '#bcd9aa' } }).png().toBuffer();
+  const another = await sharp({ create: { width: 500, height: 700, channels: 3, background: '#e8ccaa' } }).png().toBuffer();
+  for (const [index, buffer] of [image, another].entries()) {
+    await page.getByTestId('assistant-image-input').setInputFiles({ name: `餐食${index}.png`, mimeType: 'image/png', buffer });
+    await expect(page.getByTestId('assistant-attachment')).toBeVisible();
+    await send(page, index === 0 ? '早餐两个肉包，这是照片' : '补充另一张照片，份量不变');
+  }
+  if (detailed) {
+    await page.getByTestId('assistant-review').click(); await expect(page.getByTestId('enlarge-photo')).toBeVisible();
+    await page.getByTestId('enlarge-photo').click(); await expect(page.getByTestId('photo-page')).toHaveText('1 / 2');
+    await page.keyboard.press('Escape'); await page.getByTestId('save-meal').click();
+  } else {
+    await page.getByTestId('assistant-save').click(); await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+    await page.getByTestId('meal-assistant').getByTestId('close-sheet').click();
+  }
+  await expect(page.getByTestId('meal-record')).toHaveCount(1); await page.reload();
+  await page.getByTestId('view-meal-photo').click(); await expect(page.getByTestId('photo-page')).toHaveText('1 / 2');
+  const first = await page.getByTestId('meal-photo-image').getAttribute('src');
+  await page.getByRole('button', { name: '下一张照片' }).click(); await expect(page.getByTestId('photo-page')).toHaveText('2 / 2');
+  expect(await page.getByTestId('meal-photo-image').getAttribute('src')).not.toBe(first);
+  await page.keyboard.press('Escape'); await page.getByTestId('assistant-open').click(); await send(page, '两个肉包');
+  await page.getByTestId('assistant-save').click(); await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+  await page.getByTestId('meal-assistant').getByTestId('close-sheet').click();
+  await expect(page.getByTestId('meal-record')).toHaveCount(2); await expect(page.getByTestId('view-meal-photo')).toHaveCount(1);
+});

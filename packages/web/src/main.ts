@@ -10,5 +10,6 @@ import './personal-foods.css'
 import './diary-refresh.css'
 import './camera-fullscreen.css'
 import './settings.css'
+import './interaction-feedback.css'
 
 createApp(App).mount('#app')

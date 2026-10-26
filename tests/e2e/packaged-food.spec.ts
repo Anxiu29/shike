@@ -19,7 +19,9 @@ async function tab(page: Page, name: 'diary' | 'settings') {
 test('包装kJ识别后填半包，修正标签、保存刷新和改克数，模拟来源保留', async ({ page }) => {
   await recognize(page, [{ name: '测试饼干', label: cookie }]);
   await expect(page.getByTestId('package-label-0')).toContainText('2,092 kJ');
-  await expect(page.getByTestId('package-amount-0')).toHaveValue(''); await expect(page.getByTestId('food-calories-0')).toHaveText('待补充');
+  // 既有常见份量功能为饼干带入30g，明确提示估算；不会把100g整包净含量当作已吃完。
+  await expect(page.getByTestId('package-amount-0')).toHaveValue('30'); await expect(page.getByTestId('food-calories-0')).toContainText('150 kcal');
+  await expect(page.getByTestId('food-item-0')).toContainText('份量估算');
   await expect(page.getByTestId('food-weight-0')).toHaveCount(0);
   await page.getByTestId('package-half-0').click(); await expect(page.getByTestId('food-calories-0')).toContainText('250 kcal');
   await page.getByTestId('package-correction-0').locator('summary').click(); await page.getByTestId('package-energy-0').fill('1673.6');
@@ -54,7 +56,7 @@ test('手填每份包装按份计算，v8备份恢复原标签和摄入快照，
   await tab(page, 'settings'); await expect(page.getByTestId('estimated-food-count')).toHaveText('0 项');
   const pending = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); const download = await pending; const stream = await download.createReadStream();
   if (!stream) throw new Error('没有备份'); const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk)); const buffer = Buffer.concat(chunks), backup = JSON.parse(buffer.toString());
-  expect(backup.schemaVersion).toBe(10); expect(backup.meals[0].items[0].packageSnapshot.label.basis).toBe('serving'); expect(backup.meals[0].items[0].packageSnapshot.consumedAmount).toBe(2);
+  expect(backup.schemaVersion).toBe(11); expect(backup.meals[0].items[0].packageSnapshot.label.basis).toBe('serving'); expect(backup.meals[0].items[0].packageSnapshot.consumedAmount).toBe(2);
   await tab(page, 'diary'); await page.getByTestId('edit-meal').click(); await page.getByTestId('package-amount-0').fill('1'); await page.getByTestId('save-meal').click(); await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await tab(page, 'settings'); await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: '包装备份.json', mimeType: 'application/json', buffer }); await page.getByTestId('confirm-restore').click(); await expect(page.getByTestId('toast')).toContainText('备份已完整恢复');
   await tab(page, 'diary'); await expect(page.getByTestId('meal-record')).toContainText('2 份'); await expect(page.getByTestId('daily-calories')).toContainText('240');

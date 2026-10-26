@@ -8,7 +8,7 @@
  * 不依赖 WebView canGoBack，也没有接管普通浏览器的后退历史。
  * 阅读 androidBack/navigate、refresh/persist，再对照模板中的 props 与 @事件。
  */
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { Utensils, Scale, SlidersHorizontal, Camera, Check, X, LoaderCircle, Target, ChevronRight } from '@lucide/vue'
 import type { FoodEntry, LibraryFood, PackagedFood, MealRecord, MealType, WeightRecord, Settings, EstimatedFood, WaterRecord, ExerciseRecord, DailyPlan } from '@shike/shared'
 import { liveQuery } from 'dexie'
@@ -21,15 +21,17 @@ import PersonalFoodLibrary from './components/PersonalFoodLibrary.vue'
 import ManualFoodSheet from './components/ManualFoodSheet.vue'
 import MealAssistant from './components/MealAssistant.vue'
 import CaptureCamera from './components/CaptureCamera.vue'
+import AppToast from './components/AppToast.vue'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { backLayers } from './lib/use-back-layer'
 import { useAndroidBack } from './lib/use-android-back'
-import { db, loadData, saveMeal, saveLibraryFood } from './lib/db'
+import { db, loadData, saveMeal, deleteMeal, saveLibraryFood } from './lib/db'
 import { getHealth, type Health } from './lib/api'
 import { dateLabel, localDate, suggestedMealType } from './lib/dates'
 import { duplicateMealDraft } from './lib/diary-shortcuts'
 import type { ToastAction } from './lib/toast'
+import { notifyKey } from './lib/toast'
 // Android部分WebView在沉浸模式下的env安全区为0，用有限的CSS留白回退保护状态栏。
 document.documentElement.classList.toggle('native-app', Capacitor.isNativePlatform())
 const tab = ref<'diary' | 'weight' | 'goals' | 'settings'>('diary')
@@ -38,9 +40,10 @@ const meals = ref<MealRecord[]>([])
 const weights = ref<WeightRecord[]>([])
 const estimatedFoods = ref<EstimatedFood[]>([])
 const libraryFoods = ref<LibraryFood[]>([]), personalLibraryOpen = ref(false)
+const photoMealIds = ref<string[]>([]), deletingMeal = ref<string | null>(null)
 const personalCreateOpen = ref(false), personalCreateRef = ref<InstanceType<typeof ManualFoodSheet> | null>(null), personalPackages = ref<PackagedFood[]>([])
 let librarySubscription: { unsubscribe: () => void } | undefined
-onMounted(() => { librarySubscription = liveQuery(() => db.libraryFoods.toArray()).subscribe({ next: foods => { libraryFoods.value = foods }, error: () => { notify('常用食物读取失败，请重新打开应用') } }) })
+onMounted(() => { librarySubscription = liveQuery(async () => ({ foods: await db.libraryFoods.toArray(), photos: await db.mealPhotos.orderBy('mealId').uniqueKeys() })).subscribe({ next: data => { libraryFoods.value = data.foods; photoMealIds.value = data.photos as string[] }, error: () => { notify('常用食物读取失败，请重新打开应用') } }) })
 onBeforeUnmount(() => librarySubscription?.unsubscribe())
 const water = ref<WaterRecord[]>([])
 const exercises = ref<ExerciseRecord[]>([])
@@ -52,11 +55,12 @@ const storageError = ref('')
 const loading = ref(true)
 const toast = ref('')
 const toastAction = ref<ToastAction | null>(null), undoBusy = ref(false)
-const editor = ref<{ record?: MealRecord; date?: string; mealType: MealType; start: 'photo' | 'manual' | 'edit'; initialItems?: FoodEntry[]; initialMode?: MealRecord['mode']; reuseSource?: string; initialPhoto?: File; photoKind?: 'food' | 'label'; initialBarcode?: string } | null>(null)
+const editor = ref<{ record?: MealRecord; date?: string; mealType: MealType; start: 'photo' | 'manual' | 'edit'; initialItems?: FoodEntry[]; initialMode?: MealRecord['mode']; reuseSource?: string; initialPhoto?: File; initialPhotos?: string[]; photoKind?: 'food' | 'label'; initialBarcode?: string } | null>(null)
 const editorRef = ref<InstanceType<typeof FoodEditor> | null>(null)
 let toastTimeout: ReturnType<typeof setTimeout>
 const tabs = [{ value: 'diary' as const, label: '饮食', icon: Utensils }, { value: 'weight' as const, label: '体重', icon: Scale }, { value: 'goals' as const, label: '目标', icon: Target }, { value: 'settings' as const, label: '设置', icon: SlidersHorizontal }]
 function notify(message: string, action?: ToastAction) { toast.value = message; toastAction.value = action ?? null; clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toast.value = ''; toastAction.value = null }, action ? 6500 : 3800) }
+provide(notifyKey, notify)
 async function undoToast() {
   if (!toastAction.value || undoBusy.value) return
   const action = toastAction.value
@@ -131,10 +135,24 @@ async function savePersonalFood(entry: FoodEntry) {
   try { await saveLibraryFood(entry, 'manual'); await closeLibraryCreate(); notify('已存为常用食物') }
   catch { personalCreateRef.value?.saveFailed('常用食物保存失败，填写内容已保留，请重试。') }
 }
-async function persist(record: MealRecord) { try { await saveMeal(record); date.value = record.date; await refresh(); editor.value = null; notify('这一餐已保存') } catch { editorRef.value?.saveFailed('保存失败，草稿已保留。请检查浏览器存储权限与剩余空间。') } }
-async function remove(record: MealRecord) { if (!window.confirm('确定删除这条饮食记录？')) return; try { await db.meals.delete(record.id); await refresh(); notify('饮食记录已删除') } catch { notify('删除失败，请检查浏览器存储状态') } }
+async function persist(record: MealRecord, photos?: string[]) { try { await saveMeal(record, db, photos); date.value = record.date; await refresh(); editor.value = null; notify('这一餐已保存') } catch { editorRef.value?.saveFailed('保存失败，草稿与照片已保留。请检查浏览器存储权限与剩余空间。') } }
+async function remove(record: MealRecord) {
+  if (deletingMeal.value || !window.confirm('确定删除这条饮食记录及其照片？')) return
+  deletingMeal.value = record.id
+  try {
+    const photos = await db.mealPhotos.where('mealId').equals(record.id).toArray()
+    await deleteMeal(record.id); await refresh()
+    notify('饮食记录已删除', { label: '撤销', run: async () => {
+      await db.transaction('rw', [db.meals, db.mealPhotos], async () => {
+        if (await db.meals.get(record.id)) throw new Error('记录已存在')
+        await db.meals.add(JSON.parse(JSON.stringify(record))); await db.mealPhotos.bulkAdd(photos)
+      }); await refresh()
+    } })
+  } catch { notify('删除失败，请检查浏览器存储状态') }
+  finally { deletingMeal.value = null }
+}
 async function assistantSaved(record: MealRecord) { date.value = record.date; await refresh(); notify('这一餐已保存') }
-function assistantReview(record: MealRecord) { editor.value = { record, mealType: record.mealType, start: 'edit' } }
+function assistantReview(record: MealRecord, photos: string[]) { editor.value = { record, mealType: record.mealType, start: 'edit', initialPhotos: photos } }
 </script>
 
 <template>
@@ -143,11 +161,11 @@ function assistantReview(record: MealRecord) { editor.value = { record, mealType
       <nav class="desktop-nav" aria-label="主导航"><button v-for="item in tabs" :key="item.value" :class="{ active: tab === item.value }" :data-testid="`desktop-tab-${item.value}`" @click="navigate(item.value)"><component :is="item.icon" :size="17" /> {{ item.label }}{{ item.value === 'diary' ? '记录' : item.value === 'weight' ? '管理' : '' }}</button></nav>
       <div class="header-trailing"><span v-if="health?.mode === 'mock'" class="header-mock" data-testid="header-mock">模拟模式</span><button class="button primary header-add" data-testid="header-camera" @click="add(suggestedMealType(), 'photo')"><Camera :size="17" /> 记录一餐</button></div>
     </header>
-    <main class="main-container"><div v-if="storageError" class="notice danger" role="alert">{{ storageError }}</div><button v-if="healthError && tab === 'diary'" class="connection-hint" data-testid="ai-connection-hint" @click="navigate('settings')"><span class="status-dot offline"></span>AI 暂未连接，手动记录照常使用<ChevronRight :size="14" /></button><div v-if="loading" class="loading-page"><LoaderCircle class="spin" :size="30" /><p>正在打开你的记录…</p></div><template v-else><DiaryView v-if="tab === 'diary'" :date="date" :meals="meals" :settings="settings" :weights="weights" :water="water" :exercises="exercises" :daily-plans="dailyPlans" :library-foods="libraryFoods" @library="personalLibraryOpen = true" @quick-add="quickAdd" @changed="refresh" @notify="notify" @goals="navigate('goals')" @date="date = $event" @add="add" @edit="edit" @reuse="reuse" @remove="remove" /><WeightView v-else-if="tab === 'weight'" :weights="weights" :settings="settings" @changed="refresh" @notify="notify" /><SettingsView v-else-if="tab === 'settings'" :health="health" :health-error="healthError" :checking-health="checkingHealth" :estimated-foods="estimatedFoods" @changed="refresh" @notify="notify" @check-health="checkHealth" @open-food-library="personalLibraryOpen = true" /><KeepAlive><GoalsView v-if="tab === 'goals'" :settings="settings" :weights="weights" @changed="refresh" @notify="notify" /></KeepAlive></template></main>
+    <main class="main-container"><div v-if="storageError" class="notice danger" role="alert">{{ storageError }}</div><button v-if="healthError && tab === 'diary'" class="connection-hint" data-testid="ai-connection-hint" @click="navigate('settings')"><span class="status-dot offline"></span>AI 暂未连接，手动记录照常使用<ChevronRight :size="14" /></button><div v-if="loading" class="loading-page"><LoaderCircle class="spin" :size="30" /><p>正在打开你的记录…</p></div><template v-else><DiaryView v-if="tab === 'diary'" :date="date" :meals="meals" :settings="settings" :weights="weights" :water="water" :exercises="exercises" :daily-plans="dailyPlans" :library-foods="libraryFoods" :photo-meal-ids="photoMealIds" :deleting-meal="deletingMeal" @library="personalLibraryOpen = true" @quick-add="quickAdd" @changed="refresh" @notify="notify" @goals="navigate('goals')" @date="date = $event" @add="add" @edit="edit" @reuse="reuse" @remove="remove" /><WeightView v-else-if="tab === 'weight'" :weights="weights" :settings="settings" @changed="refresh" @notify="notify" /><SettingsView v-else-if="tab === 'settings'" :health="health" :health-error="healthError" :checking-health="checkingHealth" :estimated-foods="estimatedFoods" @changed="refresh" @notify="notify" @check-health="checkHealth" @open-food-library="personalLibraryOpen = true" /><KeepAlive><GoalsView v-if="tab === 'goals'" :settings="settings" :weights="weights" @changed="refresh" @notify="notify" /></KeepAlive></template></main>
     <nav class="mobile-nav" aria-label="手机主导航"><button v-for="item in tabs.slice(0, 2)" :key="item.value" :class="{ active: tab === item.value }" :data-testid="`tab-${item.value}`" @click="navigate(item.value)"><component :is="item.icon" :size="21" stroke-width="1.7"/><span>{{ item.label }}</span></button><button class="mobile-capture" data-testid="mobile-camera" aria-label="拍照记录" @click="add(suggestedMealType(), 'photo')"><Camera :size="25" /><span>记录</span></button><button :class="{ active: tab === 'goals' }" data-testid="tab-goals" @click="navigate('goals')"><Target :size="21" stroke-width="1.7"/><span>目标</span></button><button :class="{ active: tab === 'settings' }" data-testid="tab-settings" @click="navigate('settings')"><SlidersHorizontal :size="21" stroke-width="1.7"/><span>设置</span></button></nav>
-    <FoodEditor v-if="editor" ref="editorRef" :date="editor.date ?? date" :record="editor.record" :meal-type="editor.mealType" :start="editor.start" :initial-items="editor.initialItems" :initial-mode="editor.initialMode" :reuse-source="editor.reuseSource" :initial-photo="editor.initialPhoto" :photo-kind="editor.photoKind" :initial-barcode="editor.initialBarcode" :health="health" :estimated-foods="estimatedFoods" @close="editor = null" @save="persist" />
-    <Transition name="toast"><div v-if="toast" class="toast-message" role="status" data-testid="toast"><Check :size="18" /> {{ toast }}<button v-if="toastAction" class="toast-undo" data-testid="toast-undo" :disabled="undoBusy" @click="undoToast">{{ undoBusy ? '撤销中…' : toastAction.label }}</button><button aria-label="关闭提示" @click="toast = ''; toastAction = null"><X :size="15" /></button></div></Transition>
+    <FoodEditor v-if="editor" ref="editorRef" :date="editor.date ?? date" :record="editor.record" :meal-type="editor.mealType" :start="editor.start" :initial-items="editor.initialItems" :initial-mode="editor.initialMode" :reuse-source="editor.reuseSource" :initial-photo="editor.initialPhoto" :initial-photos="editor.initialPhotos" :photo-kind="editor.photoKind" :initial-barcode="editor.initialBarcode" :health="health" :estimated-foods="estimatedFoods" @close="editor = null" @save="persist" />
   </div>
+  <AppToast :message="toast" :action="toastAction" :busy="undoBusy" @undo="undoToast" @close="toast = ''; toastAction = null"/>
   <ManualFoodSheet v-if="personalCreateOpen" ref="personalCreateRef" purpose="library" :personal-foods="estimatedFoods" :packaged-foods="personalPackages" @close="closeLibraryCreate" @add="savePersonalFood" />
   <PersonalFoodLibrary v-if="personalLibraryOpen" :foods="libraryFoods" @close="personalLibraryOpen = false" @add="quickAdd" @create="createLibraryFood" @changed="refresh" @notify="notify" />
   <CaptureCamera v-if="cameraMeal" :meal-type="cameraMeal" @close="closeCamera" @capture="captured" @barcode="capturedBarcode" @skip="skipCamera" />

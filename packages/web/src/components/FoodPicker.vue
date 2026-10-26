@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, Check, ChevronRight, Plus, Search, SlidersHorizontal, Sparkles, Star, X } from '@lucide/vue'
+import { ArrowLeft, Check, ChevronRight, LoaderCircle, Plus, Search, SlidersHorizontal, Sparkles, Star, X } from '@lucide/vue'
 import { packagedCategories, type LibraryFood, type EstimatedFood, type FoodEntry, type PackagedFood } from '@shike/shared'
 import { buildFoodChoices, entryForFoodChoice, categorySymbols, isEverydayFood, pickerCategories, recommendFoodChoices, searchFoodChoices, type FoodChoice, type FoodMatchContext } from '../lib/food-picker'
 import { db, toggleFoodFavorite } from '../lib/db'
@@ -13,6 +13,7 @@ useBackLayer(() => true, () => emit('close'))
 const query = ref(''), category = ref('全部'), visibleCount = ref(60), includeIngredients = ref(false)
 const packageCategory = ref('全部商品')
 const libraryFoods = ref<LibraryFood[]>([]), favoriteBusy = ref(false), feedback = ref(''), storageError = ref('')
+const pendingFavorite = ref('')
 const savedIds = computed(() => new Set(libraryFoods.value.map(food => food.choiceId)))
 const favorites = computed(() => new Set(libraryFoods.value.filter(food => food.favorite).map(food => food.choiceId)))
 const dialog = ref<HTMLElement | null>(null), search = ref<HTMLInputElement | null>(null), closeButton = ref<HTMLButtonElement | null>(null), list = ref<HTMLElement | null>(null)
@@ -33,15 +34,15 @@ onMounted(async () => {
 })
 async function favorite(choice: FoodChoice) {
   if (favoriteBusy.value) return
-  favoriteBusy.value = true; storageError.value = ''; feedback.value = ''
+  favoriteBusy.value = true; pendingFavorite.value = choice.id; storageError.value = ''; feedback.value = ''
   try {
     const entry = entryForFoodChoice(choice.id, null, props.personalFoods, props.packagedFoods ?? [], libraryFoods.value) ?? (choice.id === props.selectedId ? props.entry : null)
     if (!entry) throw new Error('请先将本次识别存入食品库。')
     const added = await toggleFoodFavorite(choice.id, entry)
     libraryFoods.value = await db.libraryFoods.toArray()
-    feedback.value = added ? '已收藏，下次可从收藏中添加' : '已取消收藏'
+    feedback.value = added ? `已收藏「${choice.name}」，下次可从收藏中添加` : `已取消收藏「${choice.name}」`
   } catch (cause) { storageError.value = cause instanceof Error ? cause.message : '收藏保存失败，请重试。' }
-  finally { favoriteBusy.value = false }
+  finally { favoriteBusy.value = false; pendingFavorite.value = '' }
 }
 function calories(choice: FoodChoice) { const value = (choice.nutritionPerUnit?.value ?? choice.nutrientsPer100g).energyKcal; return choice.energyRange ? `${rangeLabel(choice.energyRange)} kcal` : value === null ? '热量待补充' : `约 ${numberLabel(value)} kcal` }
 function keydown(event: KeyboardEvent) {
@@ -82,7 +83,7 @@ function keydown(event: KeyboardEvent) {
             <section aria-labelledby="food-results-title">
               <div class="picker-section-heading"><h3 id="food-results-title"><SlidersHorizontal :size="15" /> {{ query.trim() ? '搜索结果' : category === '全部' ? '全部食物' : category }}</h3><span role="status" aria-live="polite" data-testid="food-result-count">{{ results.length }} 项</span></div>
               <div v-if="!shown.length" class="food-search-empty" data-testid="food-search-empty"><Search :size="30" /><h3>{{ category === "常用食物" ? "还没有匹配的常用食物" : category === "收藏" ? "还没有匹配的收藏" : category === "我的食物" ? "还没有匹配的个人食物" : "没有找到合适的食物" }}</h3><p>{{ category === "包装食品" ? "没有匹配的公开参考或个人标签。可查条码，也可拍营养表后保存；公开商品库不保证收录。" : "试试更短的名称、常用别名，或切换到全部分类。" }}</p><button v-if="category !== '全部'" type="button" class="text-button" @click="category = '全部'">搜索全部分类 <ChevronRight :size="14" /></button></div>
-              <div v-else class="food-choice-list"><div v-for="choice in shown" :key="choice.id" class="food-choice-item"><button type="button" class="food-choice-row" :class="{ selected: selectedId === choice.id }" :aria-pressed="selectedId === choice.id" :data-testid="`food-option-${choice.id}`" @click="emit('select', choice.id)"><span class="food-choice-symbol" aria-hidden="true">{{ categorySymbols[choice.category] ?? '🍽️' }}</span><span class="food-choice-text"><strong>{{ choice.name }}</strong><span v-if="choice.originalName && choice.originalName !== choice.name" class="food-original-name">原名：{{ choice.originalName }}</span><span>{{ choice.description }}</span></span><span class="food-choice-energy">{{ calories(choice) }}<small>{{ choice.nutritionPerUnit?.unitLabel ?? "每100 g" }}</small></span><span class="food-choice-indicator"><Check v-if="selectedId === choice.id" :size="18" /><Plus v-else :size="17" /></span></button><button v-if="choice.id !== 'ai-current'" type="button" class="food-favorite" :class="{ active: favorites.has(choice.id) }" :disabled="favoriteBusy" :aria-label="`${favorites.has(choice.id) ? '取消收藏' : '收藏'}${choice.name}`" :aria-pressed="favorites.has(choice.id)" :data-testid="`food-favorite-${choice.id}`" @click="favorite(choice)"><Star :size="19" :fill="favorites.has(choice.id) ? 'currentColor' : 'none'" /></button></div></div>
+              <div v-else class="food-choice-list"><div v-for="choice in shown" :key="choice.id" class="food-choice-item"><button type="button" class="food-choice-row" :class="{ selected: selectedId === choice.id }" :aria-pressed="selectedId === choice.id" :data-testid="`food-option-${choice.id}`" @click="emit('select', choice.id)"><span class="food-choice-symbol" aria-hidden="true">{{ categorySymbols[choice.category] ?? '🍽️' }}</span><span class="food-choice-text"><strong>{{ choice.name }}</strong><span v-if="choice.originalName && choice.originalName !== choice.name" class="food-original-name">原名：{{ choice.originalName }}</span><span>{{ choice.description }}</span></span><span class="food-choice-energy">{{ calories(choice) }}<small>{{ choice.nutritionPerUnit?.unitLabel ?? "每100 g" }}</small></span><span class="food-choice-indicator"><Check v-if="selectedId === choice.id" :size="18" /><Plus v-else :size="17" /></span></button><button v-if="choice.id !== 'ai-current'" type="button" class="food-favorite" :class="{ active: favorites.has(choice.id) }" :disabled="favoriteBusy" :aria-label="`${favorites.has(choice.id) ? '取消收藏' : '收藏'}${choice.name}`" :aria-pressed="favorites.has(choice.id)" :aria-busy="pendingFavorite === choice.id" :data-testid="`food-favorite-${choice.id}`" @click="favorite(choice)"><LoaderCircle v-if="pendingFavorite === choice.id" class="spin" :size="19"/><Star v-else :size="19" :fill="favorites.has(choice.id) ? 'currentColor' : 'none'" /></button></div></div>
               <button v-if="shown.length < results.length" type="button" class="button secondary full food-load-more" data-testid="food-load-more" @click="visibleCount += 60">继续查看 · 还有 {{ results.length - shown.length }} 项</button>
             </section>
           </div>

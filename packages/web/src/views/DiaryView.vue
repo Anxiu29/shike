@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ChevronLeft, ChevronRight, CalendarDays, Plus, Sun, Sunrise, Moon, Cookie, Pencil, Trash2, ArrowUpRight, Leaf, Camera, Copy, Check } from '@lucide/vue'
+import { ChevronLeft, ChevronRight, CalendarDays, Plus, Sun, Sunrise, Moon, Cookie, Pencil, Trash2, ArrowUpRight, Leaf, Camera, Copy, Check, LoaderCircle } from '@lucide/vue'
 import { aggregateNutrients, calculateEnergyRange, selectedEstimateOption, type FoodEntry, type LibraryFood, type MealRecord, type MealType, type Settings, type WeightRecord, type WaterRecord, type ExerciseRecord, type DailyPlan } from '@shike/shared'
 import PersonalFoodShelf from '../components/PersonalFoodShelf.vue'
 import DailyWellness from '../components/DailyWellness.vue'
 import EnergySummary from '../components/EnergySummary.vue'
 import DiaryWeek from '../components/DiaryWeek.vue'
 import DateField from '../components/DateField.vue'
+import MealPhotos from '../components/MealPhotos.vue'
 import type { ToastAction } from '../lib/toast'
 import { dateLabel, localDate, numberLabel, rangeLabel, shiftDate, portionLabel, suggestedMealType } from '../lib/dates'
 import { entryBasis } from '../lib/entries'
 
-const props = defineProps<{ date: string; meals: MealRecord[]; settings: Settings; weights: WeightRecord[]; water: WaterRecord[]; exercises: ExerciseRecord[]; dailyPlans: DailyPlan[]; libraryFoods: LibraryFood[] }>()
+const props = defineProps<{ date: string; meals: MealRecord[]; settings: Settings; weights: WeightRecord[]; water: WaterRecord[]; exercises: ExerciseRecord[]; dailyPlans: DailyPlan[]; libraryFoods: LibraryFood[]; photoMealIds?: string[]; deletingMeal?: string | null }>()
 const emit = defineEmits<{ date: [value: string]; add: [type: MealType, start: 'photo' | 'manual']; edit: [record: MealRecord]; reuse: [record: MealRecord, date: string]; remove: [record: MealRecord]; changed: []; notify: [message: string, action?: ToastAction]; goals: []; library: []; quickAdd: [entry: FoodEntry] }>()
 const wellnessRef = ref<InstanceType<typeof DailyWellness> | null>(null)
 const calendarRef = ref<InstanceType<typeof DiaryWeek> | null>(null)
@@ -86,9 +87,10 @@ const recordedGroups = computed(() => new Set(todayMeals.value.map(meal => meal.
             </header>
             <div v-if="!groupRecords(group.type).length" class="meal-empty"><span>还没有记录</span><button v-if="previousByType[group.type]" type="button" class="text-button" :data-testid="'reuse-previous-' + group.type" @click="emit('reuse', previousByType[group.type]!, date)"><Copy :size="14" />复用上次{{ group.label }}</button></div>
             <div v-for="record in groupRecords(group.type)" :key="record.id" class="meal-record" data-testid="meal-record">
-              <div class="record-actions"><span class="record-time">{{ new Date(record.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) }}<span v-if="record.mode === 'mock'" class="mock-tag">模拟记录</span><span v-else-if="record.mode === 'live'" class="ai-tag">AI 辅助</span></span><div><button type="button" class="text-button reuse-meal" aria-label="复用这条饮食记录" data-testid="reuse-meal" @click="emit('reuse', record, localDate())"><Copy :size="13" />再记一餐</button><button class="icon-button small" aria-label="编辑饮食记录" data-testid="edit-meal" @click="emit('edit', record)"><Pencil :size="14" /></button><button class="icon-button small" aria-label="删除饮食记录" data-testid="delete-meal" @click="emit('remove', record)"><Trash2 :size="14" /></button></div></div>
+              <div class="record-actions"><span class="record-time">{{ new Date(record.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) }}<span v-if="record.mode === 'mock'" class="mock-tag">模拟记录</span><span v-else-if="record.mode === 'live'" class="ai-tag">AI 辅助</span></span><div><button type="button" class="text-button reuse-meal" aria-label="复用这条饮食记录" data-testid="reuse-meal" @click="emit('reuse', record, localDate())"><Copy :size="13" />再记一餐</button><button class="icon-button small" aria-label="编辑饮食记录" data-testid="edit-meal" @click="emit('edit', record)"><Pencil :size="14" /></button><button class="icon-button small" aria-label="删除饮食记录" data-testid="delete-meal" :disabled="!!deletingMeal" :aria-busy="deletingMeal === record.id" @click="emit('remove', record)"><LoaderCircle v-if="deletingMeal === record.id" class="spin" :size="14"/><Trash2 v-else :size="14" /></button></div></div>
               <div v-for="item in record.items" :key="item.id" class="record-food"><div><strong>{{ item.name }}</strong><span>{{ portionLabel(item) }} · {{ entryBasis(item) }}{{ item.estimateProfile ? ' · ' + selectedEstimateOption(item.estimateProfile, item.estimateLevel ?? 'medium').label : '' }}</span><p v-if="item.estimateProfile" class="record-range">估算范围约 {{ rangeLabel(calculateEnergyRange(item)) }} kcal · 按中值记账</p></div><span class="food-calories">{{ aggregateNutrients([item]).energyKcal.missing ? '待补充' : '约 ' + numberLabel(aggregateNutrients([item]).energyKcal.known) }} <small v-if="!aggregateNutrients([item]).energyKcal.missing">kcal</small></span></div>
               <p v-if="mealCalories([record]).incompleteEntries" class="record-warning">{{ mealCalories([record]).incompleteEntries }} 项营养数据待补充 · 当前为已知部分估算</p>
+              <MealPhotos v-if="photoMealIds?.includes(record.id)" :meal-id="record.id"/>
             </div>
           </article>
         </div>

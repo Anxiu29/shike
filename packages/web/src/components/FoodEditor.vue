@@ -19,8 +19,9 @@ import PackagedLibrary from './PackagedLibrary.vue'
 import ModelPicker from './ModelPicker.vue'
 import ManualFoodSheet from './ManualFoodSheet.vue'
 import AppSheet from './AppSheet.vue'
+import PhotoViewer from './PhotoViewer.vue'
 import type { FoodMatchContext } from '../lib/food-picker'
-import { compressImage } from '../lib/image'
+import { compressImage, compressedImageBase64 } from '../lib/image'
 import { recognizeImage, type Health } from '../lib/api'
 import { manualEntry, rematchRenamedEntry, discardEstimateContext, entryBasis, resizeEntry, recalculateRecipe, inputNumber } from '../lib/entries'
 import { prepareRecognition } from '../lib/recognition'
@@ -30,8 +31,11 @@ import DateField from './DateField.vue'
 import PortionAmountInput from './PortionAmountInput.vue'
 import type { PortionSnapshot } from '@shike/shared'
 
-const props = defineProps<{ date: string; mealType: MealType; record?: MealRecord; health: Health | null; estimatedFoods: EstimatedFood[]; start: 'photo' | 'manual' | 'edit'; initialItems?: FoodEntry[]; initialMode?: MealRecord['mode']; reuseSource?: string; initialPhoto?: File; photoKind?: 'food' | 'label'; initialBarcode?: string }>()
-const emit = defineEmits<{ close: []; save: [record: MealRecord] }>()
+const props = defineProps<{ date: string; mealType: MealType; record?: MealRecord; health: Health | null; estimatedFoods: EstimatedFood[]; start: 'photo' | 'manual' | 'edit'; initialItems?: FoodEntry[]; initialMode?: MealRecord['mode']; reuseSource?: string; initialPhoto?: File; initialPhotos?: string[]; photoKind?: 'food' | 'label'; initialBarcode?: string }>()
+const emit = defineEmits<{ close: []; save: [record: MealRecord, photos?: string[]] }>()
+const retainedPhotos = ref<string[] | undefined>(props.initialPhotos)
+const storedPhotos = ref<string[]>([])
+const previewPhotos = computed(() => retainedPhotos.value ?? storedPhotos.value)
 const modelChanging = ref(false), libraryOpen = ref(false), libraryCandidate = ref<FoodEntry | undefined>()
 const selectedAiMode = ref(props.health?.mode)
 const cameraOpen = ref(false), photoPreviewOpen = ref(false), photoKind = ref(props.photoKind), barcodeFromCamera = ref(props.initialBarcode)
@@ -57,7 +61,21 @@ const phase = ref<'idle' | 'compressing' | 'recognizing' | 'done' | 'error'>('id
 const error = ref('')
 const notice = ref('')
 const globalWarnings = ref<string[]>([])
-const imageUrl = ref('')
+const imageUrl = ref(props.initialPhotos?.[0] ?? '')
+async function loadSavedPhotos() {
+  if (!props.record || props.initialPhotos !== undefined) return
+  try {
+    const photos = await db.mealPhotos.where('mealId').equals(props.record.id).sortBy('position')
+    storedPhotos.value = photos.map(photo => photo.dataUrl)
+    if (retainedPhotos.value === undefined) imageUrl.value = storedPhotos.value[0] ?? ''
+  } catch { notice.value = '原照片暂时无法读取，修改餐食仍会保留原照片。' }
+}
+function removePhotos() {
+  if (busy.value || saveBusy.value) return
+  if (imageUrl.value.startsWith('blob:')) URL.revokeObjectURL(imageUrl.value)
+  retainedPhotos.value = []; imageUrl.value = ''; photoFile.value = null; phase.value = 'idle'
+  notice.value = '照片将在保存这餐后移除，食物清单保持不变。'
+}
 const editorViewport = ref(window.visualViewport?.height ?? window.innerHeight), editorOffset = ref(window.visualViewport?.offsetTop ?? 0)
 function updateEditorViewport() { editorViewport.value = window.visualViewport?.height ?? window.innerHeight; editorOffset.value = window.visualViewport?.offsetTop ?? 0 }
 const photoFile = ref<File | null>(null)
@@ -90,7 +108,7 @@ function openManualFields(entry: FoodEntry) {
   })
 }
 
-onMounted(() => { previousFocus = document.activeElement as HTMLElement; document.body.style.overflow = 'hidden'; window.visualViewport?.addEventListener('resize', updateEditorViewport); window.visualViewport?.addEventListener('scroll', updateEditorViewport); void reloadPackages(); if (props.initialPhoto) void processFile(props.initialPhoto); if (props.initialBarcode !== undefined) libraryOpen.value = true; if (props.start === 'manual') addItem(); document.querySelector<HTMLElement>('.modal-header .icon-button')?.focus() })
+onMounted(() => { previousFocus = document.activeElement as HTMLElement; document.body.style.overflow = 'hidden'; window.visualViewport?.addEventListener('resize', updateEditorViewport); window.visualViewport?.addEventListener('scroll', updateEditorViewport); void reloadPackages(); void loadSavedPhotos(); if (props.initialPhoto) void processFile(props.initialPhoto); if (props.initialBarcode !== undefined) libraryOpen.value = true; if (props.start === 'manual') addItem(); document.querySelector<HTMLElement>('.modal-header .icon-button')?.focus() })
 onBeforeUnmount(() => { window.visualViewport?.removeEventListener('resize', updateEditorViewport); window.visualViewport?.removeEventListener('scroll', updateEditorViewport); document.body.style.overflow = ''; if (imageUrl.value) URL.revokeObjectURL(imageUrl.value); previousFocus?.focus() })
 
 function keydown(event: KeyboardEvent) {
@@ -150,7 +168,10 @@ async function chooseFile(event: Event) {
 async function processFile(file: File) {
   error.value = ''; phase.value = 'compressing'
   try {
-    photoFile.value = await compressImage(file)
+    const compressed = await compressImage(file)
+    const dataUrl = `data:image/jpeg;base64,${await compressedImageBase64(compressed)}`
+    photoFile.value = compressed
+    retainedPhotos.value = [dataUrl]
     if (imageUrl.value) URL.revokeObjectURL(imageUrl.value)
     imageUrl.value = URL.createObjectURL(photoFile.value)
     await runRecognition()
@@ -296,7 +317,7 @@ function ingredientChanged(entry: FoodEntry, id: string, event: Event) {
 }
 async function submit() {
   error.value = ''
-  if (busy.value || !items.value.length) return
+  if (busy.value || saveBusy.value || !items.value.length) return
   const now = new Date().toISOString()
   const record: MealRecord = { id: props.record?.id ?? createId(), date: date.value, mealType: mealType.value, items: JSON.parse(JSON.stringify(items.value)), mode: mode.value, createdAt: props.record?.createdAt ?? now, updatedAt: now }
   if (items.value.some(item => item.packageSnapshot && !packageSnapshotSchema.safeParse(item.packageSnapshot).success)) { error.value = '请核对包装标签：营养表单位、每份大小和净含量需匹配；实际摄入最多100份／包或20000g／mL。'; return }
@@ -304,7 +325,7 @@ async function submit() {
   if (!parsed.success) { error.value = '请填写食物名称并检查数值：食物重量 0–20,000 g，每 100 g 热量 0–1,000 kcal，蛋白质、脂肪与碳水各 0–100 g。不确定的数据可留空。'; return }
   // 父组件在 IndexedDB 事务成功后关闭面板；失败时原草稿仍在。
   saveBusy.value = true
-  emit('save', parsed.data)
+  emit('save', parsed.data, retainedPhotos.value)
 }
 defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.value = message } })
 </script>
@@ -321,13 +342,14 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
           <div v-if="mode === 'mock' || containsMockEstimate || (!record && selectedAiMode === 'mock')" class="notice warning" data-testid="mock-editor"><Info :size="17" /><span>{{ mode === 'mock' || containsMockEstimate ? '当前餐食包含模拟数据，保存后也会保留模拟标识。' : 'AI 当前为模拟模式：拍照识别使用示例食物，手动添加仍按你填写的数据记录。' }}</span></div>
           <ModelPicker collapsible :busy="busy || saveBusy" @switching="modelChanging = $event" @mode="selectedAiMode = $event" />
           <div v-if="!initialItems?.length || imageUrl" class="capture-area" :class="{ 'has-photo': imageUrl }">
-            <button v-if="imageUrl" type="button" class="photo-preview-button" data-testid="enlarge-photo" aria-label="查看识别照片大图" @click="photoPreviewOpen = true"><img :src="imageUrl" alt="本次识别照片（仅保留在内存）" class="photo-preview" /><span>查看大图</span></button>
+            <button v-if="imageUrl" type="button" class="photo-preview-button" data-testid="enlarge-photo" aria-label="查看识别照片大图" @click="photoPreviewOpen = true"><img :src="imageUrl" alt="本餐识别照片" class="photo-preview" /><span>查看大图{{ previewPhotos.length > 1 ? ` · ${previewPhotos.length}张` : '' }}</span></button>
             <div class="capture-content">
               <span class="camera-orbit"><Camera :size="26" stroke-width="1.6" /></span>
               <h3>{{ imageUrl ? '照片已就绪' : '拍一张，记下这一餐' }}</h3>
               <p>一张照片，识别食物或包装标签<br />餐食核对重量，包装核对营养表</p>
               <div class="capture-buttons"><button class="button primary compact" :disabled="busy" @click="cameraOpen = true"><Camera :size="17" /> 拍照</button><button class="button white compact" :disabled="busy" @click="gallery?.click()"><ImagePlus :size="17" /> 选照片</button></div>
-              <p class="tiny muted">JPEG / PNG / WebP · 原图最多 20 MB · 不保存照片</p>
+              <p class="tiny muted">JPEG / PNG / WebP · 原图最多 20 MB · 保存这餐时保留压缩照片到本机</p>
+              <button v-if="imageUrl" type="button" class="text-button" :disabled="busy || saveBusy" data-testid="remove-meal-photo" @click="removePhotos">移除照片</button>
             </div>
           </div>
           <input ref="camera" data-testid="camera-input" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="chooseFile" />
@@ -373,7 +395,7 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
     </div>
   </Teleport>
   <CaptureCamera v-if="cameraOpen" :meal-type="mealType" @close="cameraOpen = false" @capture="captured" @barcode="scanned" @skip="skipCamera" />
-  <AppSheet v-if="photoPreviewOpen" :open="true" title="查看照片" subtitle="检查食物与营养表是否清晰" test-id="photo-preview-sheet" @close="photoPreviewOpen = false"><img :src="imageUrl" class="photo-full-preview" alt="本次识别照片大图" /></AppSheet>
+  <PhotoViewer v-if="photoPreviewOpen" :photos="previewPhotos" title="查看照片" test-id="photo-preview-sheet" @close="photoPreviewOpen = false"/>
   <PackagedLibrary v-if="libraryOpen" :candidate="libraryCandidate" :initial-barcode="barcodeFromCamera" @close="closeLibrary" @select="usePackage" />
   <ManualFoodSheet v-if="manualFoodOpen" initial-stage="foods" :personal-foods="personalFoods" :packaged-foods="packagedFoods" @changed="reloadPackages" @close="cancelManualFood" @add="confirmManualFood" />
   <FoodPicker v-if="pickerEntry" :entry="pickerEntry" :selected-id="selectedSource(pickerEntry)" :personal-foods="personalFoods" :packaged-foods="packagedFoods" @packages="closeFoodPicker(); openLibrary()" :ai-candidate="aiCandidates[pickerEntry.id]" :recognition="recognitionContexts[pickerEntry.id]" :mock="mode === 'mock' || containsMockEstimate" @close="closeFoodPicker" @select="selectFood" />

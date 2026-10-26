@@ -17,7 +17,8 @@ import { assistantEntry, assistantMeal, type AssistantFood } from '../lib/meal-a
 import { numberLabel, portionLabel, suggestedMealType } from '../lib/dates'
 import { compressImage, compressedImageBase64 } from '../lib/image'
 const props = defineProps<{ date: string; available: boolean; health: Health | null; personalFoods: EstimatedFood[] }>()
-const emit = defineEmits<{ saved: [record: MealRecord]; review: [record: MealRecord] }>()
+const emit = defineEmits<{ saved: [record: MealRecord]; review: [record: MealRecord, photos: string[]] }>()
+const draftPhotos = ref<string[]>([])
 const open = ref(false), input = ref(''), error = ref(''), busy = ref(false), saving = ref(false), modelChanging = ref(false)
 const log = ref<HTMLElement | null>(null), draftPanel = ref<HTMLElement | null>(null), messages = ref<AssistantTurn[]>([]), history = ref<AssistantTurn[]>([])
 const photo = ref(''), photoBusy = ref(false), gallery = ref<HTMLInputElement | null>(null), camera = ref<HTMLInputElement | null>(null), preview = ref('')
@@ -60,10 +61,12 @@ async function send() {
     // 首次发送时按本地时间建议餐次；跨时段继续修改时仍保留草稿中已选的餐次。
     const response = await describeMeal({ text, ...(imageBase64 ? { imageBase64 } : {}), history: history.value.slice(imageBase64 ? -4 : -6), date: props.date, mealType: draft.value?.mealType ?? suggestedMealType(), ...(draft.value ? { previous: draft.value } : {}) })
     const next = response.draft
-    if (next.intent === 'clear') { draft.value = null; entries.value = [] }
+    if (next.intent === 'clear') { draft.value = null; entries.value = []; draftPhotos.value = [] }
     else if (next.intent === 'update' && next.foods.length) {
       // 全部转换成功后才替换，模型异常或份量超限时保留原草稿。
       const foods = next.foods.map(food => assistantEntry(food, props.personalFoods, packages.value))
+      const previousPhotos = draft.value ? draftPhotos.value : []
+      draftPhotos.value = [...new Set([...previousPhotos, ...(imageBase64 ? [imageUrl(imageBase64)] : [])])].slice(-3)
       draft.value = { ...next, foods: next.foods.map((food, index) => food.amount === null && foods[index]?.portionSnapshot ? { ...food, amount: 1, unit: foods[index]!.portionSnapshot!.unit } : food) }; entries.value = foods; mode.value = response.mode
     }
     message('assistant', `${response.mode === 'mock' ? '【模拟模式】' : ''}${next.message}`)
@@ -75,8 +78,8 @@ async function send() {
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '助手暂时不可用，输入与草稿已保留。' }
   finally { busy.value = false }
 }
-function newMeal() { if (pending.value) return; draft.value = null; entries.value = []; messages.value = []; history.value = []; photo.value = ''; preview.value = ''; storedEntries.value = {}; input.value = ''; error.value = '' }
-function remove(index: number) { draft.value?.foods.splice(index, 1); entries.value.splice(index, 1); if (!entries.value.length) draft.value = null }
+function newMeal() { if (pending.value) return; draft.value = null; entries.value = []; draftPhotos.value = []; messages.value = []; history.value = []; photo.value = ''; preview.value = ''; storedEntries.value = {}; input.value = ''; error.value = '' }
+function remove(index: number) { draft.value?.foods.splice(index, 1); entries.value.splice(index, 1); if (!entries.value.length) { draft.value = null; draftPhotos.value = [] } }
 function changeAmount(index: number, event: Event) {
   const food = draft.value?.foods[index]
   if (!food) return
@@ -89,13 +92,13 @@ function record(): MealRecord { if (!draft.value) throw new Error('请先描述�
 async function confirm() {
   if (pending.value || !entries.value.length) return
   error.value = ''; saving.value = true
-  try { const meal = record(); await saveMeal(meal); draft.value = null; entries.value = []; message('assistant', `${mealNames[meal.mealType]}已保存。继续描述会创建新记录。`); emit('saved', meal) }
+  try { const meal = record(); await saveMeal(meal, db, draftPhotos.value); draft.value = null; entries.value = []; draftPhotos.value = []; message('assistant', `${mealNames[meal.mealType]}已保存。继续描述会创建新记录。`); emit('saved', meal) }
   catch { error.value = '保存未成功，草稿已保留。请检查份量和本地存储。' }
   finally { saving.value = false }
 }
 async function review() {
   if (pending.value) return
-  try { const meal = record(); open.value = false; await nextTick(); await nextTick(); draft.value = null; entries.value = []; emit('review', meal) }
+  try { const meal = record(), photos = [...draftPhotos.value]; open.value = false; await nextTick(); await nextTick(); draft.value = null; entries.value = []; draftPhotos.value = []; emit('review', meal, photos) }
   catch { error.value = '草稿格式不完整，请检查份量。' }
 }
 </script>
@@ -113,6 +116,7 @@ async function review() {
       <div class="assistant-fields"><label>记录日期<DateField v-model="draft.date"/></label><label>餐次<select v-model="draft.mealType" :disabled="pending" data-testid="assistant-meal-type"><option v-for="(name, value) in mealNames" :key="value" :value="value">{{ name }}</option></select></label></div>
       <div v-for="(entry, index) in entries" :key="entry.id" class="assistant-food" :data-testid="`assistant-food-${index}`"><div><strong>{{ entry.name }}</strong><small>{{ portionLabel(entry) }}<span v-if="entry.portionSnapshot"> · 份量估算</span></small><small v-if="entry.volumeSnapshot || entry.kind === 'unknown'" class="amber-text">营养待补充，可详细编辑</small><button type="button" class="assistant-save-food" :disabled="pending || libraryBusy || mode === 'mock'" :data-testid="`assistant-store-food-${index}`" @click="storeFood(entry)"><Check v-if="storedEntries[entry.id]" :size="12" /><BookHeart v-else :size="12" />{{ mode === 'mock' ? '模拟食物不可存库' : storedEntries[entry.id] ? '已存为常用' : '存为常用' }}</button></div><label><span class="sr-only">{{ entry.name }}数量</span><input :value="draft.foods[index]?.amount" type="number" min="0.01" max="20000" step="0.01" :placeholder="'常见份量'" :disabled="pending" :data-testid="`assistant-amount-${index}`" @change="changeAmount(index, $event)"/><span>{{ draft.foods[index]?.unit === 'ml' ? 'mL' : draft.foods[index]?.unit }}</span></label><button class="icon-button" :disabled="pending" :aria-label="`移除${entry.name}`" @click="remove(index)"><Trash2 :size="16"/></button></div>
       <p class="tiny muted">热量为已知部分估算。份量可改，缺失营养不当作0；保存前可进入详细编辑。</p>
+      <p v-if="draftPhotos.length" class="tiny muted" data-testid="assistant-retained-photos">保存后可从餐次查看 {{ draftPhotos.length }} 张照片，每餐最多保留最近3张。</p>
       <div class="assistant-draft-actions"><button class="button secondary" :disabled="pending" data-testid="assistant-review" @click="review"><Pencil :size="15"/>详细编辑</button><button class="button primary" :disabled="pending" data-testid="assistant-save" @click="confirm"><Check :size="16"/>{{ saving ? '保存中…' : '确认保存' }}</button></div>
     </div>
     <p v-if="error" class="notice danger" role="alert" data-testid="assistant-error">{{ error }}</p>
@@ -123,7 +127,7 @@ async function review() {
       <input ref="gallery" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" data-testid="assistant-image-input" @change="choosePhoto"/>
       <input ref="camera" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" data-testid="assistant-camera-input" @change="choosePhoto"/>
       <div class="assistant-photo-tools"><button type="button" class="text-button" :disabled="pending" data-testid="assistant-choose-photo" @click="gallery?.click()"><ImagePlus :size="17"/>选图</button><button type="button" class="text-button" :disabled="pending" data-testid="assistant-take-photo" @click="camera?.click()"><Camera :size="17"/>拍照</button><button type="button" class="text-button assistant-new" :disabled="pending" data-testid="assistant-new" @click="newMeal"><Plus :size="15"/>新对话</button><button class="button primary" type="submit" :disabled="pending || (!input.trim() && !photo)" data-testid="assistant-send"><Send :size="16"/>发送</button></div>
-      <p class="tiny muted">发送描述、草稿及最近3轮上下文，最多3张图片；使用所选模型，可能消耗额度。新对话会清空内存中的聊天与照片。</p>
+      <p class="tiny muted">发送描述、草稿及最近3轮上下文，最多3张图片；使用所选模型，可能消耗额度。保存这餐时，相关照片也保存在本机；新对话清空未保存的聊天与照片。</p>
     </form></template>
   </AppSheet>
   <AppSheet :open="!!preview && open" title="查看图片" test-id="assistant-image-preview" @close="preview = ''"><img v-if="preview" class="assistant-full-image" :src="imageUrl(preview)" alt="聊天图片大图" /></AppSheet>

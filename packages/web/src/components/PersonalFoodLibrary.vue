@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { BookHeart, Check, ChevronRight, Plus, Search, Sparkles, Star, Trash2, X } from '@lucide/vue'
+import { BookHeart, Check, ChevronRight, LoaderCircle, Plus, Search, Sparkles, Star, Trash2, X } from '@lucide/vue'
 import { calculateNutrients, normalizeFoodName, type FoodEntry, type LibraryFood } from '@shike/shared'
 import AppSheet from './AppSheet.vue'
 import PersonalFoodDetails from './PersonalFoodDetails.vue'
@@ -13,6 +13,8 @@ import type { ToastAction } from '../lib/toast'
 const props = defineProps<{ foods: LibraryFood[] }>()
 const emit = defineEmits<{ close: []; add: [entry: FoodEntry]; create: []; changed: []; notify: [message: string, action?: ToastAction] }>()
 const query = ref(''), filter = ref('全部'), busy = ref(false), error = ref('')
+const pendingAction = ref(''), favorites = ref<Record<string, boolean>>({})
+const displayedFoods = computed(() => props.foods.map(food => ({ ...food, favorite: favorites.value[food.id] ?? food.favorite })))
 const removedFood = ref<LibraryFood | null>(null)
 const selectedFoodId = ref<string | null>(null)
 const selectedFood = computed(() => props.foods.find(food => food.id === selectedFoodId.value))
@@ -25,33 +27,42 @@ async function addFromDetails() {
   emit('add', copyLibraryEntry(food))
 }
 const filters = ['全部', '星标', 'AI 识别', '手动添加']
-const results = computed(() => sortedPersonalFoods(props.foods).filter(food => {
+const results = computed(() => sortedPersonalFoods(displayedFoods.value).filter(food => {
   if (filter.value === '星标' && !food.favorite) return false
   if (filter.value === 'AI 识别' && food.origin !== 'ai') return false
   if (filter.value === '手动添加' && food.origin !== 'manual') return false
   return normalizeFoodName(food.entry.name).includes(normalizeFoodName(query.value))
 }))
-const favoriteCount = computed(() => props.foods.filter(food => food.favorite).length)
+const favoriteCount = computed(() => displayedFoods.value.filter(food => food.favorite).length)
 function originLabel(food: LibraryFood) { return food.origin === 'ai' ? 'AI 识别' : food.origin === 'manual' ? '手动添加' : '食物库收藏' }
 function energy(food: LibraryFood) { const value = calculateNutrients(food.entry).energyKcal; return value === null ? '热量待补充' : `约 ${numberLabel(value)} kcal` }
 async function favorite(food: LibraryFood) {
   if (busy.value) return
-  busy.value = true; error.value = ''
-  try { await db.libraryFoods.update(food.id, { favorite: !food.favorite, updatedAt: new Date().toISOString() }); emit('changed') }
-  catch { error.value = '星标保存失败，请重试。' }
-  finally { busy.value = false }
+  busy.value = true; pendingAction.value = `favorite:${food.id}`; error.value = ''
+  try {
+    const added = await db.transaction('rw', db.libraryFoods, async () => {
+      const current = await db.libraryFoods.get(food.id)
+      if (!current) throw new Error('食物已移除')
+      await db.libraryFoods.update(food.id, { favorite: !current.favorite, updatedAt: new Date().toISOString() })
+      return !current.favorite
+    })
+    favorites.value[food.id] = added
+    emit('changed'); emit('notify', added ? `已将「${food.entry.name}」设为星标` : `已取消「${food.entry.name}」的星标`)
+  }
+  catch { error.value = '星标保存失败，请重试。'; emit('notify', error.value) }
+  finally { busy.value = false; pendingAction.value = '' }
 }
 async function remove(food: LibraryFood) {
   if (busy.value) return
-  busy.value = true; error.value = ''
+  busy.value = true; pendingAction.value = `remove:${food.id}`; error.value = ''
   try {
     const snapshot = JSON.parse(JSON.stringify(food)) as LibraryFood
     await db.libraryFoods.delete(food.id)
     removedFood.value = snapshot
     emit('changed')
     emit('notify', `已移除「${food.entry.name}」`, { label: '撤销', run: () => restore(snapshot) })
-  } catch { error.value = '移除失败，请检查本机存储后重试。' }
-  finally { busy.value = false }
+  } catch { error.value = '移除失败，请检查本机存储后重试。'; emit('notify', error.value) }
+  finally { busy.value = false; pendingAction.value = '' }
 }
 async function restore(food: LibraryFood) {
   await db.transaction('rw', db.libraryFoods, async () => { if (!await db.libraryFoods.get(food.id)) await db.libraryFoods.put(JSON.parse(JSON.stringify(food))) })
@@ -60,7 +71,7 @@ async function restore(food: LibraryFood) {
 async function undo() {
   if (!removedFood.value || busy.value) return
   busy.value = true
-  try { await restore(removedFood.value); error.value = '' }
+  try { await restore(removedFood.value); error.value = ''; emit('notify', '已撤销移除') }
   catch { error.value = '撤销失败，请重试。' }
   finally { busy.value = false }
 }
@@ -75,9 +86,9 @@ async function undo() {
     <div v-if="removedFood" class="personal-library-undo" role="status"><span>已移除「{{ removedFood.entry.name }}」</span><button type="button" class="text-button" :disabled="busy" data-testid="personal-library-undo" @click="undo">撤销</button></div>
     <div v-if="results.length" class="personal-library-grid">
       <article v-for="food in results" :key="food.id" class="personal-library-food" :data-testid="`personal-food-${food.id}`">
-        <div class="personal-food-card-top"><span class="personal-food-symbol" aria-hidden="true">{{ personalFoodSymbol(food.entry) }}</span><span class="personal-origin" :class="{ ai: food.origin === 'ai' }">{{ originLabel(food) }}</span><button type="button" class="icon-button personal-star" :class="{ active: food.favorite }" :disabled="busy" :aria-label="`${food.favorite ? '取消星标' : '星标'}${food.entry.name}`" :aria-pressed="food.favorite" :data-testid="`personal-favorite-${food.id}`" @click="favorite(food)"><Star :size="18" :fill="food.favorite ? 'currentColor' : 'none'" /></button></div>
+        <div class="personal-food-card-top"><span class="personal-food-symbol" aria-hidden="true">{{ personalFoodSymbol(food.entry) }}</span><span class="personal-origin" :class="{ ai: food.origin === 'ai' }">{{ originLabel(food) }}</span><button type="button" class="icon-button personal-star" :class="{ active: food.favorite }" :disabled="busy" :aria-label="`${food.favorite ? '取消星标' : '星标'}${food.entry.name}`" :aria-pressed="food.favorite" :aria-busy="pendingAction === `favorite:${food.id}`" :data-testid="`personal-favorite-${food.id}`" @click="favorite(food)"><LoaderCircle v-if="pendingAction === `favorite:${food.id}`" :size="18" class="spin"/><Star v-else :size="18" :fill="food.favorite ? 'currentColor' : 'none'" /></button></div>
         <h3><button type="button" class="personal-food-view" :aria-label="`查看${food.entry.name}的详情`" :data-testid="`personal-detail-${food.id}`" @click="selectedFoodId = food.id"><span>{{ food.entry.name }}</span><ChevronRight :size="16" aria-hidden="true" /></button></h3><p class="personal-food-portion">{{ portionLabel(food.entry) }}<span> · {{ energy(food) }}</span></p><p class="personal-food-basis">{{ entryBasis(food.entry) }} · 点击查看详情</p>
-        <div class="personal-food-card-actions"><button type="button" class="button secondary" :disabled="busy" :data-testid="`personal-add-${food.id}`" @click="emit('add', copyLibraryEntry(food))"><Plus :size="16" />加入这一餐</button><button type="button" class="icon-button personal-remove" :disabled="busy" :aria-label="`移除${food.entry.name}`" :data-testid="`personal-delete-${food.id}`" @click="remove(food)"><Trash2 :size="16" /></button></div>
+        <div class="personal-food-card-actions"><button type="button" class="button secondary" :disabled="busy" :data-testid="`personal-add-${food.id}`" @click="emit('add', copyLibraryEntry(food))"><Plus :size="16" />加入这一餐</button><button type="button" class="icon-button personal-remove" :disabled="busy" :aria-label="`移除${food.entry.name}`" :data-testid="`personal-delete-${food.id}`" @click="remove(food)"><LoaderCircle v-if="pendingAction === `remove:${food.id}`" :size="16" class="spin"/><Trash2 v-else :size="16" /></button></div>
       </article>
     </div>
     <div v-else class="personal-library-empty" data-testid="personal-library-empty"><span>{{ foods.length ? '🔎' : '🥣' }}</span><h3>{{ foods.length ? '没有找到匹配的食物' : '从你常吃的第一样开始' }}</h3><p>{{ foods.length ? '换个关键词，或查看全部常用食物。' : '拍照识别或手动添加后，点「存为常用」。份量和营养数据会一起保存。' }}</p><button v-if="foods.length" type="button" class="button secondary" @click="query = ''; filter = '全部'">查看全部</button><button v-else type="button" class="button primary" data-testid="personal-library-first-food" @click="emit('create')"><Plus :size="17" />添加第一项食物</button></div>

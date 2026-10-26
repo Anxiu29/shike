@@ -14,6 +14,7 @@ watch(busy, value => emit('busy', value), { flush: 'sync' })
 const error = ref('')
 const message = ref('')
 async function connect() {
+  if (busy.value) return
   error.value = ''; message.value = ''; busy.value = true
   try {
     const base = normalizeApiBase(address.value)

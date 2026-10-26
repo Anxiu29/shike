@@ -25,16 +25,18 @@ onMounted(async () => {
     publishMode()
   } catch { error.value = '暂时无法读取模型列表，当前配置仍可使用。' }
 })
+const feedback = ref('')
 async function change(event: Event) {
+  if (pending.value || props.busy) return
   const next = (event.target as HTMLSelectElement).value, previous = id.value
-  pending.value = true; emit('switching', true); error.value = ''
+  pending.value = true; emit('switching', true); error.value = ''; feedback.value = ''
   try {
     if (native) { const item = items.value.find(item => item.id === next); if (!item?.profileId || !item.model) throw new Error('未找到模型'); await activatePersonalProfile(item.profileId, item.model) }
     else selectLocalModel(next)
-    id.value = next; publishMode()
+    id.value = next; publishMode(); feedback.value = '已切换模型，后续拍照与聊天使用所选模型'
   }
   catch { id.value = previous; (event.target as HTMLSelectElement).value = previous; error.value = '模型切换失败，原配置保留。' }
   finally { pending.value = false; emit('switching', false) }
 }
 </script>
-<template><div :class="['recognition-model-picker', { compact }]" data-testid="recognition-model-picker"><label>{{ label ?? '本次识别模型' }}<select :value="id" :disabled="busy || pending || !items.length" data-testid="recognition-model" @change="change"><option v-if="!id" value="" disabled>{{ native ? '请在设置添加并选用模型' : '使用本机服务配置' }}</option><option v-for="item in items" :key="item.id" :value="item.id">{{ item.label }}</option></select></label><p v-if="!compact && !collapsible" class="tiny muted">手动选择后使用该模型；识别失败不会自动换模型或Key。{{ native ? '添加和管理配置请前往设置。' : '只列出本机已配置的模型，密钥不进入网页。' }}</p><details v-if="!compact && collapsible" class="model-picker-help"><summary>模型设置与切换说明</summary><p class="tiny muted">使用你手动选定的模型，失败后保留草稿。{{ native ? "添加和管理配置请前往设置。" : "模型配置来自本机服务，密钥不进入网页。" }}不会自动切换模型或Key。</p></details><p v-if="usageNotice" class="notice warning model-usage-notice" data-testid="model-usage-notice">{{ usageNotice }}</p><p v-if="error" class="tiny amber-text" role="status">{{ error }}</p></div></template>
+<template><div :class="['recognition-model-picker', { compact }]" data-testid="recognition-model-picker"><label>{{ label ?? '本次识别模型' }}<select :value="id" :disabled="busy || pending || !items.length" :aria-busy="pending" data-testid="recognition-model" @change="change"><option v-if="!id" value="" disabled>{{ native ? '请在设置添加并选用模型' : '使用本机服务配置' }}</option><option v-for="item in items" :key="item.id" :value="item.id">{{ item.label }}</option></select></label><p v-if="!compact && !collapsible" class="tiny muted">手动选择后使用该模型；识别失败不会自动换模型或Key。{{ native ? '添加和管理配置请前往设置。' : '只列出本机已配置的模型，密钥不进入网页。' }}</p><details v-if="!compact && collapsible" class="model-picker-help"><summary>模型设置与切换说明</summary><p class="tiny muted">使用你手动选定的模型，失败后保留草稿。{{ native ? "添加和管理配置请前往设置。" : "模型配置来自本机服务，密钥不进入网页。" }}不会自动切换模型或Key。</p></details><p v-if="usageNotice" class="notice warning model-usage-notice" data-testid="model-usage-notice">{{ usageNotice }}</p><p v-if="pending" class="model-switch-feedback" role="status" data-testid="model-switch-feedback">正在切换模型…</p><p v-else-if="feedback" class="model-switch-feedback" role="status" data-testid="model-switch-feedback">{{ feedback }}</p><p v-if="error" class="tiny amber-text" role="status">{{ error }}</p></div></template>
