@@ -18,6 +18,7 @@ buildscript {
 apply from: "variables.gradle"
 
 allprojects {
+    tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
     repositories {
         google()
         mavenCentral()

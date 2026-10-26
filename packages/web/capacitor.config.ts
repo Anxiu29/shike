@@ -1,7 +1,6 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
-// 当前只制作联调 APK：页面与 API 使用电脑上的同源服务，密钥永远不打包进 App。
-// 正式版应使用本地 Web 资源与 HTTPS 后端，不使用 server.url 的开发模式。
+// 默认装入 APK 内置页面；只有显式选择 --preview 才使用电脑远程页面。
 const preview = process.env.SHIKE_APP_PREVIEW_URL
 if (preview) {
   const url = new URL(preview)
@@ -10,11 +9,14 @@ if (preview) {
 const config: CapacitorConfig = {
   appId: 'cn.anxiu29.shike',
   appName: '食刻',
-  webDir: 'dist',
+  // Capacitor 默认调试日志可能包含桥接参数；Key 输入与照片不得进入日志。
+  loggingBehavior: 'none',
+  webDir: process.env.VITE_APP_STANDALONE === 'true' ? 'dist-android' : 'dist',
   server: {
+    hostname: 'localhost', androidScheme: 'https',
     ...(preview ? { url: preview, cleartext: preview.startsWith('http:') } : {}),
     errorPath: 'app-connection-error.html',
   },
-  android: { backgroundColor: '#f5f8f0', allowMixedContent: false },
+  android: { backgroundColor: '#f5f8f0', allowMixedContent: false, webContentsDebuggingEnabled: false },
 }
 export default config
