@@ -3,7 +3,7 @@ import { defaultGiteeUpdateRepository, defaultUpdateRepository, giteeUpdateAsset
 import release from '../../../../config/app-release.json'
 
 export interface AppUpdateInfo { appId: string; versionCode: number; versionName: string; repository: string; giteeRepository: string; sdk: number; readyVersionCode: number; readySource?: UpdateSource }
-export interface AppUpdateCheck { current: AppUpdateInfo; status: 'available' | 'current' | 'no_release'; release: UpdateRelease | null; message?: string }
+export interface AppUpdateCheck { current: AppUpdateInfo; status: 'available' | 'current' | 'no_release' | 'partial'; release: UpdateRelease | null; message?: string }
 export interface UpdateProgress { phase: 'downloading' | 'verifying'; percent: number; received: number; total: number; source?: UpdateSource }
 interface UpdaterBridge {
   getInfo(): Promise<AppUpdateInfo>
@@ -45,6 +45,7 @@ export async function checkAppUpdate(): Promise<AppUpdateCheck> {
       if (!response.ok) {
         if (source === 'gitee') { const body = await response.json().catch(() => null); if (body?.error?.code === 'UPDATE_METADATA_INVALID') throw new Error('Gitee更新文件无效，已停止检查。') }
         if (response.status === 404) throw new SourceUnavailable(`${label}仓库或更新文件不存在、尚未公开，请检查仓库与发行版设置。`)
+        if (source === 'github' && (response.status === 403 || response.status === 429) && response.headers.get('x-ratelimit-remaining') === '0') throw new SourceUnavailable('GitHub公开接口请求额度已用完，请稍后重试；更新检查无需Token。')
         throw new SourceUnavailable(`${label}暂时限制访问或服务不可用，请稍后重试。`)
       }
       if (!response.body) throw new Error('更新信息为空。')
@@ -75,7 +76,7 @@ export async function checkAppUpdate(): Promise<AppUpdateCheck> {
     return { current, status: first || backup ? 'current' : 'no_release', release: first || backup }
   } catch (error) {
     if (!(error instanceof SourceUnavailable)) throw new Error('GitHub更新文件无效，已停止检查；请联系发布者。')
-    if (first) return { current, status: 'current', release: first, message: `已检查 Gitee；${error.message} 备用源未完成检查。` }
+    if (first) return { current, status: 'partial', release: first, message: `Gitee提供${first.manifest.versionName}；${error.message} 备用源未完成检查，暂不能确认没有新版本。` }
     throw error
   }
 }

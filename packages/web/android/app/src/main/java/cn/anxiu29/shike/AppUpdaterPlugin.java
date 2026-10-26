@@ -72,7 +72,7 @@ public class AppUpdaterPlugin extends Plugin {
         final String github = repository(), gitee = giteeRepository();
         worker.execute(() -> {
             try {
-                checked = null; Release first = null, result; String reason = "", notice = "";
+                checked = null; Release first = null, result; String reason = "", notice = ""; boolean partial = false;
                 if (!gitee.isEmpty()) {
                     try { first = fetchRelease("gitee", gitee); } catch (SourceUnavailable error) { reason = error.getMessage(); }
                 }
@@ -85,12 +85,12 @@ public class AppUpdaterPlugin extends Plugin {
                         if (!reason.isEmpty() && backup == null) throw new SourceUnavailable(reason + " GitHub暂无可用发行版，尚无法确认更新。");
                     } catch (SourceUnavailable error) {
                         if (first == null) throw error;
-                        result = first; notice = "已检查 Gitee；" + error.getMessage() + " 备用源未完成检查。";
+                        result = first; partial = true; notice = "Gitee提供" + first.manifest.getString("versionName") + "；" + error.getMessage() + " 备用源未完成检查，暂不能确认没有新版本。";
                     }
                 }
                 checked = result;
                 if (ready != null && (result == null || !ready.manifest.toString().equals(result.manifest.toString()))) ready = null;
-                call.resolve(new JSObject().put("current", info()).put("status", result == null ? "no_release" : result.manifest.getLong("versionCode") > version(installed()) ? "available" : "current").put("release", result == null ? JSONObject.NULL : result.json()).put("message", notice));
+                call.resolve(new JSObject().put("current", info()).put("status", result == null ? "no_release" : result.manifest.getLong("versionCode") > version(installed()) ? "available" : partial ? "partial" : "current").put("release", result == null ? JSONObject.NULL : result.json()).put("message", notice));
             } catch (Exception error) { call.reject(message(error, "更新文件无效或读取失败，请检查网络与发行版文件后重试。")); }
             finally { close(); busy.set(false); }
         });
@@ -147,8 +147,10 @@ public class AppUpdaterPlugin extends Plugin {
             try { status = current.getResponseCode(); } catch (IOException error) { current.disconnect(); throw new SourceUnavailable((source.equals("gitee") ? "Gitee" : "GitHub") + "连接失败或超时。"); }
             if (status == 200) return current;
             if (status >= 300 && status < 400) { String location = current.getHeaderField("Location"); current.disconnect(); if (location == null) break; target = new URL(new URL(target), location).toString(); continue; }
+            boolean exhausted = source.equals("github") && "0".equals(current.getHeaderField("X-RateLimit-Remaining"));
             current.disconnect();
             if (status == 404) throw new SourceUnavailable((source.equals("gitee") ? "Gitee" : "GitHub") + "仓库或更新文件不存在、尚未公开，请检查仓库与发行版设置。");
+            if ((status == 403 || status == 429) && exhausted) throw new SourceUnavailable("GitHub公开接口请求额度已用完，请稍后重试；更新检查无需Token。");
             if (status == 403 || status == 429) throw new SourceUnavailable((source.equals("gitee") ? "Gitee" : "GitHub") + "暂时限制访问，请稍后重试并检查网络。");
             throw new SourceUnavailable((source.equals("gitee") ? "Gitee" : "GitHub") + "更新服务暂不可用（HTTP " + status + "）。");
         }

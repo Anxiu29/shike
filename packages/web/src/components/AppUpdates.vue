@@ -7,7 +7,7 @@ import { appUpdateInfo, buildUpdateInfo, cancelAppUpdate, checkAppUpdate, downlo
 
 const native = nativeUpdatesSupported(), info = ref(buildUpdateInfo()), repository = ref(info.value.repository)
 const giteeRepository = ref(info.value.giteeRepository)
-const release = ref<UpdateRelease | null>(null), state = ref<'idle' | 'checking' | 'available' | 'current' | 'no_release' | 'downloading' | 'ready'>('idle')
+const release = ref<UpdateRelease | null>(null), state = ref<'idle' | 'checking' | 'available' | 'current' | 'no_release' | 'partial' | 'downloading' | 'ready'>('idle')
 const progress = ref<UpdateProgress>({ phase: 'downloading', percent: 0, received: 0, total: 0 }), error = ref(''), message = ref(''), saving = ref(false), installing = ref(false), cancelling = ref(false)
 const locked = computed(() => saving.value || installing.value || state.value === 'checking' || state.value === 'downloading')
 const compatible = computed(() => !native || !release.value || release.value.manifest.minSdk <= info.value.sdk)
@@ -64,6 +64,7 @@ async function install() {
     <div class="settings-card-title"><span class="settings-feature-icon"><Smartphone :size="22" /></span><div><h2>版本与更新</h2><p>当前{{ native ? '安装' : '网页' }}版本 <strong data-testid="app-current-version">{{ info.versionName }}</strong></p></div><span class="soft-tag">{{ native ? 'Android' : '网页版' }}</span></div>
     <div class="app-update-overview"><p data-testid="app-update-priority">{{ info.giteeRepository ? 'Gitee 国内源优先，GitHub 作为备用。' : '从 GitHub 检查公开发行版。' }}</p><button type="button" class="button secondary" data-testid="check-app-update" :disabled="locked" @click="check"><LoaderCircle v-if="state === 'checking'" :size="16" class="spin" /><RefreshCw v-else :size="16" />{{ state === 'checking' ? '正在检查' : '检查更新' }}</button></div>
     <p v-if="state === 'current'" class="notice" data-testid="app-update-status">当前已是此发布源提供的版本或更新版本。</p>
+    <p v-if="state === 'partial'" class="notice warning" data-testid="app-update-status">部分更新源检查未完成，请稍后重试，或到发行版页面核对。</p>
     <p v-if="state === 'no_release'" class="notice warning" data-testid="app-update-status">暂未发现带更新文件的公开发行版，请先在仓库发布 APK 和更新说明文件。</p>
     <div v-if="release && ['available', 'downloading', 'ready'].includes(state)" class="app-update-release" data-testid="app-update-release">
       <div class="section-heading"><h3>发现新版 {{ release.manifest.versionName }}</h3><span class="soft-tag">{{ formatBytes(release.manifest.bytes) }}</span></div>
@@ -75,6 +76,7 @@ async function install() {
       <p class="app-update-verification"><ShieldCheck :size="14" /><span>{{ native ? '下载后核对文件完整性、应用标识、版本和签名，由系统确认安装。' : '安卓 APK 用于手机安装；网页由部署者更新，刷新时保留同一来源的本地记录。' }}</span></p>
     </div>
     <p v-if="error" class="notice danger" role="alert" data-testid="app-update-error">{{ error }}</p><p v-if="message" class="notice" role="status" data-testid="app-update-message">{{ message }}</p>
+    <p v-if="(state === 'partial' || error) && info.giteeRepository" class="tiny"><a class="text-button" :href="`https://gitee.com/${info.giteeRepository}/releases`" target="_blank" rel="noopener noreferrer">直接查看 Gitee 发行版<ArrowUpRight :size="13"/></a></p>
     <details class="settings-inline-details app-update-source" data-testid="app-update-source"><summary>更新仓库与说明</summary><p>先查 Gitee；连接失败、未发布或没有更高版本时再查 GitHub。读取公开版本无需令牌。</p><label>Gitee 国内源（优先）<input v-model="giteeRepository" :disabled="locked" placeholder="用户名/仓库名；留空停用" autocomplete="off" spellcheck="false" data-testid="update-gitee-repository" /></label><label>GitHub 备用源<input v-model="repository" :disabled="locked" placeholder="用户名/仓库名" autocomplete="off" spellcheck="false" data-testid="update-repository" /></label><button class="button secondary" :disabled="locked" data-testid="save-update-repository" @click="saveRepository">保存仓库</button><p>点击检查才联网；测试发行版也会列出。Gitee 下载连接失败时，仅在备用源版本与哈希一致时切换；校验失败会停止。下载可取消，安装由系统确认，保留记录与模型配置。</p></details>
   </article>
 </template>

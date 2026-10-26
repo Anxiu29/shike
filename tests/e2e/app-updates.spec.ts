@@ -21,7 +21,7 @@ async function nativeUpdater(page: Page) {
         if (method === 'removeListener') { listeners.delete(input.callbackId); return {}; }
         if (method === 'check') {
           if (w.__updateMode === 'error') throw new Error('GitHub仓库或更新文件不存在、尚未公开，请检查仓库与发行版设置。');
-          return { current: structuredClone(state), status: w.__updateMode, release: w.__updateMode === 'no_release' ? null : { manifest: { ...manifest, versionCode: w.__updateMode === 'current' ? code : code + 1 }, source: 'gitee', apkUrl: `https://gitee.com/${state.giteeRepository}/releases/download/v-next/shike.apk`, releaseUrl: `https://gitee.com/${state.giteeRepository}/releases/tag/v-next` } };
+          return { current: structuredClone(state), status: w.__updateMode, message: w.__updateMode === 'partial' ? 'GitHub公开接口请求额度已用完；备用源未完成检查。' : '', release: w.__updateMode === 'no_release' ? null : { manifest: { ...manifest, versionCode: ['current', 'partial'].includes(w.__updateMode) ? code : code + 1 }, source: 'gitee', apkUrl: `https://gitee.com/${state.giteeRepository}/releases/download/v-next/shike.apk`, releaseUrl: `https://gitee.com/${state.giteeRepository}/releases/tag/v-next` } };
         }
         if (method === 'download') {
           if (w.__downloadError) throw new Error(w.__downloadError);
@@ -53,6 +53,16 @@ test('安卓检查更新、下载进度、安装授权和系统确认，不把�
   await expect(page.getByTestId('app-current-version')).toHaveText(appRelease.versionName);
   for (const width of [320, 390, 820, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width); const button = page.getByTestId('install-app-update'); await button.evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' })); expect(await button.evaluate(element => { const box = element.getBoundingClientRect(); return element.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)); })).toBe(true); }
   if (info.project.name === 'Chrome 手机') { await page.setViewportSize({ width: 390, height: 844 }); await page.getByTestId('app-update-card').evaluate(element => element.scrollIntoView({ block: 'start', behavior: 'instant' })); await page.getByTestId('app-update-card').screenshot({ path: 'docs/screenshots/app-update-mobile.png' }); }
+});
+
+test('备用源未完成检查时明确提示，提供Gitee入口且不误报最新', async ({ page }) => {
+  await nativeUpdater(page); await page.goto('/'); await tab(page, 'settings');
+  await page.evaluate(() => { (window as any).__updateMode = 'partial'; });
+  await page.getByTestId('check-app-update').click();
+  await expect(page.getByTestId('app-update-status')).toContainText('部分更新源检查未完成'); await expect(page.getByTestId('app-update-status')).not.toContainText('当前已是');
+  await expect(page.getByTestId('app-update-message')).toContainText('公开接口请求额度已用完');
+  await expect(page.getByRole('link', { name: '直接查看 Gitee 发行版' })).toHaveAttribute('href', 'https://gitee.com/anxiu29/shike/releases');
+  await expect(page.getByTestId('download-app-update')).toHaveCount(0);
 });
 
 test('取消下载与签名失败均不可进入安装，原有饮食记录仍能恢复', async ({ page }) => {

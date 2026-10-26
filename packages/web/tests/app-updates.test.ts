@@ -50,7 +50,7 @@ describe('更新桥接与网页版只读检查', () => {
     const fetcher = vi.fn().mockResolvedValueOnce(response(giteeList)).mockResolvedValueOnce(response({ ...manifest, sha256: 'bad' })); vi.stubGlobal('fetch', fetcher);
     await expect(checkAppUpdate()).rejects.toThrow('Gitee更新文件无效'); expect(fetcher).toHaveBeenCalledTimes(2);
     fetcher.mockReset().mockResolvedValueOnce(response(giteeList)).mockResolvedValueOnce(response({ ...manifest, versionCode: buildUpdateInfo().versionCode })).mockRejectedValueOnce(new Error());
-    const result = await checkAppUpdate(); expect(result.status).toBe('current'); expect(result.message).toContain('备用源未完成检查');
+    const result = await checkAppUpdate(); expect(result.status).toBe('partial'); expect(result.message).toContain('备用源未完成检查');
     fetcher.mockReset().mockRejectedValueOnce(new Error()).mockResolvedValueOnce(response([])); await expect(checkAppUpdate()).rejects.toThrow('尚无法确认更新');
   });
   it('保留旧仓库、自定义仓库不自动指向官方镜像，两个源可独立保存和停用', async () => {
@@ -59,6 +59,11 @@ describe('更新桥接与网页版只读检查', () => {
     await setUpdateRepository('team/custom', 'https://gitee.com/team_cn/app.git'); expect(buildUpdateInfo()).toMatchObject({ repository: 'team/custom', giteeRepository: 'team_cn/app' });
     await setUpdateRepository('team/custom', ''); expect(buildUpdateInfo().giteeRepository).toBe('');
     await expect(setUpdateRepository('Anxiu29/shike', 'https://token@gitee.com/a/b')).rejects.toThrow();
+  });
+  it('匿名GitHub额度耗尽与Token失效区分；只检查到旧镜像时不宣称最新', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response(giteeList)).mockResolvedValueOnce(response({ ...manifest, versionCode: buildUpdateInfo().versionCode }))
+      .mockResolvedValueOnce(new Response('{}', { status: 403, headers: { 'x-ratelimit-remaining': '0' } })); vi.stubGlobal('fetch', fetcher);
+    const result = await checkAppUpdate(); expect(result.status).toBe('partial'); expect(result.message).toContain('公开接口请求额度已用完'); expect(result.message).toContain('无需Token');
   });
   it('原生下载与安装不接受网页提供的APK地址或版本，安装窗口打开不等于更新完成', async () => {
     mock.native = true;
