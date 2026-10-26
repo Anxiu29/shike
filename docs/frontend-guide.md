@@ -1,6 +1,6 @@
 # 前端教学：对照代码追踪一次编辑与保存
 
-项目全景先看 [开发指南](development-guide.md)。这里聚焦Vue状态、条目转换、本地事务与原生桥。当前IndexedDB结构版本5，JSON备份格式版本10。
+项目全景先看 [开发指南](development-guide.md)。这里聚焦Vue状态、条目转换、本地事务与原生桥。当前IndexedDB结构版本6，JSON备份格式版本11。
 
 ## 1. 从App.vue理解状态和事件
 
@@ -29,7 +29,7 @@ views是页面，components是可组合界面，lib放网络/存储/业务转换
 
 ## 3. 图片压缩与网络调用
 
-[compressImage()](../packages/web/src/lib/image.ts)检查格式、空文件、20MB原图和解码像素上限，用Canvas将最长边缩到1280px、重编码JPEG，再调质量/尺寸达到1MB目标。ImageBitmap与预览Object URL需要释放；照片不进数据库和备份。
+[compressImage()](../packages/web/src/lib/image.ts)检查格式、空文件、20MB原图和解码像素上限，用Canvas将最长边缩到1280px、重编码JPEG，再调质量/尺寸达到1MB目标。ImageBitmap与预览Object URL需要释放；保存餐次时照片进入独立 mealPhotos 表，与餐次同事务提交；v11 备份包含这些压缩照片。取消未保存草稿仍会释放内存图片。
 
 [recognizeImage()](../packages/web/src/lib/api.ts)是统一入口：网页FormData请求/api/recognitions；安卓直连模式交 [personal-vision.ts](../packages/web/src/lib/personal-vision.ts) 的Java插件。两条路返回同一RecognitionResponse，组件不用理解供应商协议。
 
@@ -77,7 +77,7 @@ FoodEditor.storeFood调 [saveLibraryFood()](../packages/web/src/lib/db.ts) 显�
 
 [saveMeal()](../packages/web/src/lib/db.ts)校验后，将餐食、符合条件的个人AI估算及当日计划放同一事务，全部成功才提示已保存。未保存候选、Mock、手填营养、已用可靠库的条目不进入自动估算表。
 
-JSON转换用于剥离Vue Proxy；只因这些领域数据仅含JSON值才适用，不能当成处理任意Date/Map/循环引用的通用复制。数据库结构5包含9张表，备份10可读1～10，两种版本独立演进。
+JSON转换用于剥离Vue Proxy；只因这些领域数据仅含JSON值才适用，不能当成处理任意Date/Map/循环引用的通用复制。数据库结构6包含10张表，备份11可读1～11，两种版本独立演进。
 
 恢复先校验结构、日期、重复主键/名称和跨字段算术，预览后确认整体替换；清空与回填在同一事务，失败回滚。恢复不重新执行saveMeal生成估算库，也不重算营养。照片、模型Key和访问凭证不进备份。
 

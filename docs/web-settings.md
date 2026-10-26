@@ -21,7 +21,7 @@
 
 ## 备份与恢复
 
-点击首页“备份与恢复”进入详情，再导出JSON或选择备份文件。恢复前展示文件及条数，确认后完整替换本机记录、目标和个人食物；原有备份格式及餐食快照不变。饮食照片与模型Key不进入备份。建议恢复前导出当前记录。
+点击首页“备份与恢复”进入详情，再导出JSON或选择备份文件。恢复前展示文件及条数，确认后完整替换本机记录、目标和个人食物；v11备份包含已保存餐次的压缩照片，兼容v1～v10旧格式。照片也随记录整体替换；恢复旧备份会清空现有照片。模型Key不进入备份。建议恢复前导出当前记录。
 
 实现入口：[SettingsView.vue](../packages/web/src/views/SettingsView.vue)、[PersonalModels.vue](../packages/web/src/components/PersonalModels.vue)、[settings.css](../packages/web/src/settings.css)。
 

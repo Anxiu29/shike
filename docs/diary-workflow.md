@@ -36,7 +36,7 @@
 
 手机的AI悬浮入口改为窄版图标加文字，给主要添加按钮留下点击空间；浏览器回归直接检查拍照与添加按钮中心的命中元素，避免仅检测可见性。
 
-这些入口由已有的meals和libraryFoods推导，不增加数据库表，也不改变备份v10或IndexedDB v5。
+快捷入口由meals和libraryFoods推导。照片查看另使用IndexedDB v6的mealPhotos表，v11备份随餐次保存照片。
 
 ## 源码与验证入口
 

@@ -31,7 +31,7 @@ APK新增`@capgo/camera-preview@8.12.5`原生适配器，Android侧使用CameraX
 
 ## 隐私与存储
 
-原生拍摄使用`storeToFile:false`、`saveToGallery:false`，照片经内存JPEG返回；不写入相册或饮食备份。明确关闭录音、定位、时间及位置水印。应用Manifest合并时移除录音、定位和广泛存储权限；条码仍使用既有ZXing，不启用新增插件的MLKit自动模型下载。拍食物和营养表后的图片只交给用户选定的AI模型。
+原生拍摄使用`storeToFile:false`、`saveToGallery:false`，照片经内存JPEG返回；拍摄阶段不写入系统相册。用户确认保存餐次后，识别用压缩照片进入本机餐次照片表并随 v11 备份导出。明确关闭录音、定位、时间及位置水印。应用Manifest合并时移除录音、定位和广泛存储权限；条码仍使用既有ZXing，不启用新增插件的MLKit自动模型下载。拍食物和营养表后的图片只交给用户选定的AI模型。
 
 ## 代码路径
 

@@ -122,7 +122,7 @@ form.append('image', file)
 
 浏览器生成 multipart boundary，不能手动设置 Content-Type。客户端用 AbortController 限时，服务端上游也有限时；都需要 finally 清理定时器或并发令牌。
 
-前端压缩目标为最长边1280px、文件不超过1MB；服务端另限上传2MB、解码1000万像素，核对签名和MIME，拒绝动画后重编码。两个限制属于不同阶段。照片只参与本次内存流程，不进入餐食表和JSON备份。
+前端压缩目标为最长边1280px、文件不超过1MB；服务端另限上传2MB、解码1000万像素，核对签名和MIME，拒绝动画后重编码。两个限制属于不同阶段。照片压缩后由用户确认保存餐次，进入独立 mealPhotos 表和 v11 JSON 备份；服务端仍仅在内存处理图片。
 
 prepareRecognition 对 foods 做 map：每项保留自己的估重，不能平均整盘重量，也不能把一道菜的可见配料再次记成摄入。包装标签优先；普通条目在 matchedEntry 中先配方，再基础库，再同名个人估算和本次AI候选。旧个人单值没有有效热量三档时，本次有效三档可以优先。
 
@@ -195,7 +195,7 @@ await database.transaction('rw', [database.meals, database.estimatedFoods,
 
 保存食品库与保存一餐是独立动作。再次添加个人食品时复制并生成新ID；收藏不直接增加摄入。公共库项目移除后仍可用收藏快照或当前记录快照。
 
-当前 **IndexedDB结构版本5，JSON备份格式版本10**，分别看 ShikeDatabase 与 backupSchema。数据库名称 shike-local-v1 是既有名字，不是当前结构版本。备份可读1～10，先统一转10，检查重复主键、同日重复累计等，再事务性替换；旧备份缺表补空，因此恢复是整体替换，不是合并。
+当前 **IndexedDB结构版本6，JSON备份格式版本11**，分别看 ShikeDatabase 与 backupSchema。数据库名称 shike-local-v1 是既有名字，不是当前结构版本。备份可读1～11，先统一转11，检查重复主键、同日重复累计等，再事务性替换；旧备份缺表补空，因此恢复是整体替换，不是合并。
 
 数据按origin隔离，协议、主机、端口变化均可能换存储空间。localhost与127.0.0.1不共享记录，电脑和手机也不自动同步。
 
