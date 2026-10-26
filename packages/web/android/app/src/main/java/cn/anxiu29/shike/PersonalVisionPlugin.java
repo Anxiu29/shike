@@ -3,6 +3,7 @@ package cn.anxiu29.shike;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
+import android.graphics.Bitmap;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
@@ -201,13 +202,29 @@ public class PersonalVisionPlugin extends Plugin {
         run(call, () -> {
             JSONObject p = requestProfile(read(), call);
             String prompt = call.getString("prompt", ""), text = call.getString("request", "");
-            if (prompt.length() < 100 || prompt.length() > 10000 || text.length() > 16000) throw new SafeFailure("助手输入过长，请简化描述。");
+            if (prompt.length() < 100 || prompt.length() > 10000 || text.length() > 3 * 1_398_104 + 32768) throw new SafeFailure("助手输入过长，请简化描述。");
             JSONObject input = new JSONObject(text);
-            if (input.optString("text").trim().isEmpty() || input.optString("text").length() > 1000) throw new SafeFailure("请输入1000字以内的饮食描述。");
+            if (input.optString("text").length() > 1000 || (input.optString("text").trim().isEmpty() && !input.has("imageBase64"))) throw new SafeFailure("请输入1000字以内的描述或选择图片。");
+            JSONArray history = input.optJSONArray("history"), images = new JSONArray();
+            if (history != null) {
+                if (history.length() > 6) throw new SafeFailure("聊天上下文过长，请开始新对话。");
+                for (int i = 0; i < history.length(); i++) {
+                    JSONObject turn = history.getJSONObject(i); String role = turn.optString("role"), value = turn.optString("text");
+                    if ((!role.equals("user") && !role.equals("assistant")) || value.length() > 1000 || (value.trim().isEmpty() && !turn.has("imageBase64")) || (role.equals("assistant") && turn.has("imageBase64"))) throw new SafeFailure("聊天上下文无效。");
+                    assistantImage(turn, images);
+                }
+            }
+            assistantImage(input, images);
+            text = input.toString();
+            JSONArray content = new JSONArray().put(new JSONObject().put("type", "text").put("text", text));
+            for (int i = 0; i < images.length(); i++) {
+                if (p.getString("provider").equals("gemini")) content.put(new JSONObject().put("type", "image").put("mime_type", "image/jpeg").put("data", images.getString(i)));
+                else content.put(new JSONObject().put("type", "image_url").put("image_url", new JSONObject().put("url", "data:image/jpeg;base64," + images.getString(i))));
+            }
             JSONObject body = new JSONObject().put("model", p.getString("model"));
             if (p.getString("provider").equals("gemini")) {
                 body.put("store", false).put("system_instruction", prompt)
-                    .put("input", new JSONArray().put(new JSONObject().put("type", "text").put("text", text)))
+                    .put("input", content)
                     .put("response_format", new JSONObject().put("type", "text").put("mime_type", "application/json").put("schema", call.getObject("schema")))
                     .put("generation_config", new JSONObject().put("thinking_level", "minimal").put("max_output_tokens", 2048));
             } else {
@@ -215,11 +232,28 @@ public class PersonalVisionPlugin extends Plugin {
                 for (Iterator<String> names = options.keys(); names.hasNext();) { String name = names.next(); body.put(name, options.get(name)); }
                 if (!p.getString("provider").equals("glm") || VisionPolicy.glm53(p.getString("model"))) body.put("response_format", responseFormat(p, call.getObject("schema")));
                 body.put("max_tokens", p.getString("provider").equals("glm") && VisionPolicy.glm53(p.getString("model")) ? 4096 : 2048)
-                    .put("messages", new JSONArray().put(new JSONObject().put("role", "system").put("content", prompt)).put(new JSONObject().put("role", "user").put("content", text)));
+                    .put("messages", new JSONArray().put(new JSONObject().put("role", "system").put("content", prompt)).put(new JSONObject().put("role", "user").put("content", images.length() == 0 ? text : content)));
             }
             String data = request(p, body);
             JSObject result = new JSObject(); result.put("provider", p.getString("provider")); result.put("model", p.getString("model")); result.put("data", data); return result;
         });
+    }
+
+    private void assistantImage(JSONObject turn, JSONArray images) throws Exception {
+        if (!turn.has("imageBase64")) return;
+        String encoded = turn.getString("imageBase64");
+        if (images.length() >= 3 || encoded.isEmpty() || encoded.length() > 1_398_104 || encoded.length() % 4 != 0 || !encoded.matches("[A-Za-z0-9+/]*={0,2}")) throw new SafeFailure("最多携带3张不超过1 MB的JPEG图片。");
+        byte[] bytes = Base64.decode(encoded, Base64.NO_WRAP);
+        BitmapFactory.Options bounds = new BitmapFactory.Options(); bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.length, bounds);
+        if (bytes.length == 0 || bytes.length > 1_048_576 || !"image/jpeg".equals(bounds.outMimeType) || bounds.outWidth < 1 || bounds.outHeight < 1 || Math.max(bounds.outWidth, bounds.outHeight) > 1280) throw new SafeFailure("图片需为最长边1280像素、不超过1 MB的JPEG。");
+        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        if (bitmap == null) throw new SafeFailure("图片损坏，请重新选择。");
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 82, out) || out.size() > 1_048_576) throw new SafeFailure("图片压缩失败，请重新选择。");
+            images.put(Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP));
+        } finally { bitmap.recycle(); }
+        turn.remove("imageBase64"); turn.put("imageNumber", images.length());
     }
 
     private void test(JSONObject p) throws Exception {

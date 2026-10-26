@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { routeApkAssets } from './helpers/apk-assets';
+import sharp from 'sharp';
 test.beforeEach(async ({ page }) => { await routeApkAssets(page); });
 test.use({ timezoneId: 'Asia/Shanghai' });
 async function native(page: Page) {
@@ -15,7 +16,7 @@ async function native(page: Page) {
         const intent = /取消/.test(request.text) ? 'clear' : /问一下/.test(request.text) ? 'question' : 'update';
         // 模拟模型遵守输入餐次上下文；真实语言理解不由这个测试证明。
         const mealType = /早餐/.test(request.text) ? 'breakfast' : request.previous?.mealType ?? request.mealType;
-        const draft = { intent, date: request.date, mealType, foods: intent === 'update' ? [{ name: '肉包', amount, unit: '个' }, { name: '鸡蛋', amount: null, unit: '份' }] : [], message: '已整理这一餐草稿，请核对后保存。' };
+        const draft = { intent, date: request.date, mealType, foods: intent === 'update' ? [{ name: '肉包', amount, unit: '个' }, { name: '鸡蛋', amount: null, unit: '份' }] : [], message: intent === 'question' ? '这餐可以搭配蔬菜，份量仍需核对。' : '已整理这一餐草稿，请核对后保存。' };
         return { provider: 'qwen', model: 'qwen3.7-flash', data: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft) } }] }) };
       }
     } };
@@ -95,3 +96,44 @@ test('文字AI草稿可以单独存为常用，并从首页带原份量重新添
   await expect(page.getByTestId('food-name-0')).toHaveValue(/肉包/)
   await page.getByTestId('save-meal').click(); await expect(page.getByTestId('meal-record')).toContainText('160 g')
 })
+
+test('照片加描述发送后可连续追问，问答保留草稿；新对话清空图片和历史', async ({ page }) => {
+  await open(page);
+  const image = await sharp({ create: { width: 600, height: 400, channels: 3, background: '#bcd9aa' } }).png().toBuffer();
+  await page.getByTestId('assistant-image-input').setInputFiles({ name: '合成餐食.png', mimeType: 'image/png', buffer: image });
+  await expect(page.getByTestId('assistant-attachment')).toBeVisible();
+  await page.getByRole('button', { name: '查看待发送图片' }).click(); await expect(page.getByTestId('assistant-image-preview')).toBeVisible(); await page.keyboard.press('Escape');
+  await send(page, '早餐吃了两个肉包，这是照片');
+  await expect(page.getByTestId('assistant-attachment')).toHaveCount(0);
+  await expect(page.getByTestId('assistant-messages').locator('img')).toHaveCount(1);
+  let calls = await page.evaluate(() => (window as any).__assistantCalls.map((item: string) => JSON.parse(item)));
+  expect(calls[0].imageBase64).toMatch(/^\/9j\//); expect(calls[0].history).toEqual([]);
+  await send(page, '问一下刚才照片的搭配');
+  await expect(page.getByTestId('meal-assistant').getByTestId('close-sheet')).toBeInViewport();
+  await expect(page.getByRole('heading', { name: 'AI记餐助手' })).toBeInViewport();
+  await expect(page.getByTestId('assistant-messages').locator('.assistant-bubble.assistant').last()).toBeInViewport();
+  calls = await page.evaluate(() => (window as any).__assistantCalls.map((item: string) => JSON.parse(item)));
+  expect(calls[1].imageBase64).toBeUndefined(); expect(calls[1].history[0]).toMatchObject({ role: 'user', text: '早餐吃了两个肉包，这是照片', imageBase64: calls[0].imageBase64 });
+  await expect(page.getByTestId('assistant-food-0')).toContainText('160 g'); await expect(page.getByTestId('meal-record')).toHaveCount(0);
+  if (test.info().project.name === 'Chrome 手机') await page.screenshot({ path: 'docs/screenshots/meal-assistant-images-mobile.png' });
+  await page.getByTestId('assistant-new').click(); await expect(page.getByTestId('assistant-messages').locator('img')).toHaveCount(0); await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+  await send(page, '两个肉包');
+  expect(await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1)).history)).toEqual([]);
+});
+
+test('单独发图片可发送，失败保留图片和描述，移除附件与无效文件校验', async ({ page }) => {
+  await open(page);
+  const image = await sharp({ create: { width: 32, height: 32, channels: 3, background: '#ad5' } }).png().toBuffer();
+  await page.getByTestId('assistant-image-input').setInputFiles({ name: '合成图片.png', mimeType: 'image/png', buffer: image });
+  await expect(page.getByTestId('assistant-send')).toBeEnabled();
+  await page.evaluate(() => { (window as any).__assistantFail = true; });
+  await page.getByTestId('assistant-input').fill('这是我的午饭'); await page.getByTestId('assistant-send').click();
+  await expect(page.getByTestId('assistant-error')).toBeVisible(); await expect(page.getByTestId('assistant-attachment')).toBeVisible(); await expect(page.getByTestId('assistant-input')).toHaveValue('这是我的午饭');
+  await page.evaluate(() => { (window as any).__assistantFail = false; }); await page.getByTestId('assistant-input').fill(''); await page.getByTestId('assistant-send').click();
+  await expect(page.getByTestId('assistant-attachment')).toHaveCount(0); await expect(page.getByTestId('assistant-draft')).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1)).text)).toBe('');
+  await page.getByTestId('assistant-image-input').setInputFiles({ name: '伪装.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('not an image') });
+  await expect(page.getByTestId('assistant-error')).toContainText('无法读取'); await expect(page.getByTestId('assistant-attachment')).toHaveCount(0);
+  await page.getByTestId('assistant-image-input').setInputFiles({ name: '合成图片.png', mimeType: 'image/png', buffer: image });
+  await expect(page.getByTestId('assistant-attachment')).toBeVisible(); await page.getByTestId('assistant-remove-photo').click(); await expect(page.getByTestId('assistant-send')).toBeDisabled();
+});

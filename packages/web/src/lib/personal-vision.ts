@@ -89,5 +89,5 @@ export async function describePersonalMeal(input: AssistantRequest): Promise<Ass
   const response = await native.describeMeal({ id: profile.id, model: profile.model, prompt: ASSISTANT_PROMPT, request: JSON.stringify(request), schema: assistantJsonSchema })
   if (response.provider !== profile.provider || response.model !== profile.model || typeof response.data !== 'string' || response.data.length > 524288) throw new Error('助手响应与所选模型不一致，请重试。')
   let payload: unknown; try { payload = JSON.parse(response.data) } catch { throw new Error('助手接口返回无效JSON，当前草稿已保留。') }
-  return { mode: 'live', provider: profile.provider, model: profile.model, draft: parseAssistantDraft(profile.provider === 'gemini' ? geminiOutputText(payload) : chatCompletionOutputText(payload, true)) }
+  return { mode: 'live', provider: profile.provider, model: profile.model, draft: parseAssistantDraft(profile.provider === 'gemini' ? geminiOutputText(payload) : profile.provider === 'glm' ? glmOutputText(payload, profile.model) : chatCompletionOutputText(payload, true)) }
 }

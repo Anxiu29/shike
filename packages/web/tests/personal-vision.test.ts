@@ -21,6 +21,16 @@ beforeEach(() => { vi.stubEnv("VITE_ENABLE_SERVICE_CONNECTION", "true");
   vi.stubGlobal('fetch', vi.fn(() => { throw new Error('不应走网页网络') }))
 })
 describe('安卓个人多模型直连', () => {
+  it('图片和聊天上下文进入原生请求，GLM最终答案单独解析，不持久化照片', async () => {
+    const profile = { ...first, provider: 'glm', model: 'glm-4.1v-thinking-flash' };
+    bridge.getState.mockResolvedValue({ profiles: [profile], activeId: profile.id });
+    const draft = { intent: 'question', date: '2026-10-26', mealType: 'lunch', foods: [], message: '可以补充蔬菜。' };
+    bridge.describeMeal.mockResolvedValue({ provider: profile.provider, model: profile.model, data: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: `<think>内部分析</think><answer>${JSON.stringify(draft)}</answer>` } }] }) });
+    const input = { text: '这个搭配怎么样？', date: draft.date, mealType: 'lunch' as const, imageBase64: '/9j/AA==', history: [{ role: 'user' as const, text: '午饭' }, { role: 'assistant' as const, text: '请发图片。' }] };
+    expect((await describePersonalMeal(input)).draft).toEqual(draft);
+    expect(JSON.parse(bridge.describeMeal.mock.calls[0]![0].request)).toEqual(input);
+    expect(localStorage.length).toBe(0); expect(fetch).not.toHaveBeenCalled();
+  });
   it('GLM营养格式失败时保留基础食物并提示，单次调用且不保存坏数值', async () => {
     const profile = { ...first, provider: 'glm', model: 'glm-4.6v-flash' }
     bridge.getState.mockResolvedValue({ profiles: [profile], activeId: profile.id })

@@ -1,6 +1,16 @@
 export const MAX_ORIGINAL_BYTES = 20 * 1024 * 1024
 export const MAX_COMPRESSED_BYTES = 1024 * 1024
 
+export function compressedImageBase64(file: File): Promise<string> {
+  if (file.type !== 'image/jpeg' || !file.size || file.size > MAX_COMPRESSED_BYTES) return Promise.reject(new Error('请选择不超过1 MB的压缩JPEG图片。'))
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('照片读取失败，请重新选择。'))
+    reader.onload = () => typeof reader.result === 'string' && reader.result.startsWith('data:image/jpeg;base64,') ? resolve(reader.result.split(',')[1]!) : reject(new Error('图片编码失败。'))
+    reader.readAsDataURL(file)
+  })
+}
+
 export function validateOriginal(file: Pick<File, 'size' | 'type'>): void {
   if (file.size > MAX_ORIGINAL_BYTES) throw new Error('原图不能超过 20 MB，请选择更小的图片。')
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {

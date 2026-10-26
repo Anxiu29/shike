@@ -160,9 +160,9 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     } finally { release(); }
   });
 
-  app.post('/api/meal-assistant', { bodyLimit: 16384 }, async request => {
-    const parsed = assistantRequestSchema.extend({ modelId: z.string().max(100).optional() }).safeParse(request.body);
-    if (!parsed.success) throw new ApiError('ASSISTANT_INPUT_INVALID', '请输入1000字以内的饮食描述，并检查日期和餐次。');
+  app.post('/api/meal-assistant', { bodyLimit: 3 * 1_398_104 + 32768 }, async request => {
+    const parsed = assistantRequestSchema.safeExtend({ modelId: z.string().max(100).optional() }).safeParse(request.body);
+    if (!parsed.success) throw new ApiError('ASSISTANT_INPUT_INVALID', '请填写1000字以内的描述或选择图片，上下文最多6条消息、3张压缩图片。');
     const { modelId, ...input } = parsed.data;
     const profile = modelId && modelId !== 'default' ? config.modelProfiles?.find(profile => profile.id === modelId && selectable.has(modelId)) : undefined;
     if (modelId && modelId !== 'default' && !profile) throw new ApiError('MODEL_UNAVAILABLE', '请选择本机已配置的模型。');

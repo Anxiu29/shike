@@ -2,8 +2,27 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { existsSync } from 'node:fs';
+import sharp from 'sharp';
 const input = { text: '早餐两个肉包', date: '2026-10-20', mealType: 'breakfast' };
 describe('文字助手API', () => {
+  it('接收图片加描述和历史图片，解码去除EXIF后发送；伪造图片不调用模型', async () => {
+    const photo = await sharp({ create: { width: 64, height: 64, channels: 3, background: '#66aa55' } }).withExif({ IFD0: { Artist: 'private-location'.repeat(1400) } }).jpeg().toBuffer();
+    const draft = { intent: 'question', date: input.date, mealType: input.mealType, foods: [], message: '可适量搭配蔬菜。' };
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft) } }] })));
+    const app = await buildApp({ config: loadConfig({ AI_PROVIDER: 'deepseek', DEEPSEEK_API_KEY: 'test-only-key', AI_MODE: 'live' }), fetchImpl: fetcher as typeof fetch });
+    try {
+      const response = await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: { ...input, text: '和上一张相比呢？', imageBase64: photo.toString('base64'), history: [{ role: 'user', text: '上一餐', imageBase64: photo.toString('base64') }, { role: 'assistant', text: '这是一餐。' }] } });
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse((fetcher.mock.calls[0] as unknown as [string, RequestInit])[1].body as string), content = body.messages[1].content;
+      expect(content).toHaveLength(3); expect(content[0].text).toContain('上一餐'); expect(content[0].text).not.toContain('base64');
+      for (const item of content.slice(1)) { const data = Buffer.from(item.image_url.url.split(',')[1], 'base64'); expect((await sharp(data).metadata()).exif).toBeUndefined(); }
+      fetcher.mockClear();
+      for (const imageBase64 of [Buffer.from('not a jpeg').toString('base64'), (await sharp({ create: { width: 8, height: 8, channels: 3, background: '#fff' } }).png().toBuffer()).toString('base64')]) {
+        expect((await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: { ...input, imageBase64 } })).statusCode).toBe(415);
+      }
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally { await app.close(); }
+  });
   it.skipIf(!existsSync(new URL('../../web/dist/index.html', import.meta.url)))('开发环境同一地址可打开已构建页面，未知API仍返回JSON404', async () => {
     const app = await buildApp({ config: loadConfig({ AI_MODE: 'mock', NODE_ENV: 'development' }) });
     try { const page = await app.inject('/'); expect(page.statusCode).toBe(200); expect(page.headers['content-type']).toContain('text/html'); expect(page.body).toContain('食刻'); expect((await app.inject('/api/not-found')).statusCode).toBe(404); }

@@ -146,6 +146,16 @@ a { text-decoration: none; color: var(--green); }
 .assistant-bubble.user { align-self: flex-end; background: #367b62; color: white; border-bottom-right-radius: 4px; }
 .assistant-bubble.assistant { align-self: flex-start; background: #f1f5eb; border-bottom-left-radius: 4px; }
 .assistant-bubble svg { vertical-align: middle; }
+.assistant-image-button { display: block; padding: 0; background: transparent; border: 0; border-radius: 10px; overflow: hidden; }
+.assistant-image-button img { display: block; width: 120px; max-height: 140px; object-fit: cover; }
+.assistant-bubble .assistant-image-button { margin-bottom: 6px; }
+.assistant-attachment > span { flex: 1; font-size: 12px; }
+.assistant-attachment small { display: block; margin: 5px 0 0; }
+.assistant-attachment .assistant-image-button img { width: 56px; height: 56px; }
+.assistant-photo-tools { flex-wrap: wrap; }
+.assistant-photo-tools .text-button { min-height: 36px; }
+.assistant-photo-tools .assistant-new { margin-left: auto; }
+.assistant-full-image { width: 100%; max-height: 65dvh; object-fit: contain; }
 .assistant-draft { padding: 14px; border: 1px solid #e4ebdc; border-radius: 17px; margin: 4px 0 12px; }
 .assistant-draft-title { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; margin-bottom: 14px; }
 .assistant-draft-title > span:last-child { margin-left: auto; color: #367b62; }

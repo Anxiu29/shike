@@ -24,6 +24,23 @@ describe('文字记餐的结构边界与参考份量', () => {
     expect(assistantBody('openrouter', 'nvidia/nemotron-3.5-super-vl:free', input)).toMatchObject({ provider: { max_price: { prompt: 0, completion: 0, request: 0 } } });
     expect(assistantBody('gemini', 'gemini-3.5-flash-lite', input)).toMatchObject({ store: false, response_format: { mime_type: 'application/json' } });
   });
+  it('图片和历史描述保持编号对应，图片走视觉内容块而非文本JSON', () => {
+    const request = { ...input, text: '和上一张比较', imageBase64: '/9j/AA==', history: [{ role: 'user' as const, text: '昨天的午饭', imageBase64: '/9j/AQ==' }, { role: 'assistant' as const, text: '可以补充蔬菜' }] };
+    for (const [provider, model] of [['deepseek', 'deepseek-flash'], ['glm', 'glm-5.3-flash'], ['qwen', 'qwen3.7-flash'], ['siliconflow', 'Qwen/Qwen3.5-4B'], ['openrouter', 'nvidia/nemotron-3.5-super-vl:free']] as const) {
+      const body = assistantBody(provider, model, request) as any, content = body.messages[1].content;
+      expect(content).toHaveLength(3); expect(content[1].image_url.url).toBe('data:image/jpeg;base64,/9j/AQ=='); expect(content[2].image_url.url).toBe('data:image/jpeg;base64,/9j/AA==');
+      expect(JSON.parse(content[0].text)).toMatchObject({ imageNumber: 2, history: [{ role: 'user', text: '昨天的午饭', imageNumber: 1 }, { role: 'assistant', text: '可以补充蔬菜' }] });
+      expect(content[0].text).not.toContain('/9j/'); expect(body).not.toHaveProperty('tools');
+    }
+    const gemini = assistantBody('gemini', 'gemini-3.5-flash-lite', request) as any;
+    expect(gemini.input[1]).toEqual({ type: 'image', mime_type: 'image/jpeg', data: '/9j/AQ==' }); expect(gemini.store).toBe(false);
+  });
+  it('支持只发图片，拒绝空输入、系统角色、网址图片、超量图片与上下文；Mock不假装看图', () => {
+    expect(assistantRequestSchema.safeParse({ ...input, text: '', imageBase64: '/9j/AA==' }).success).toBe(true);
+    const turn = { role: 'user', text: '', imageBase64: '/9j/AA==' };
+    for (const value of [{ text: '' }, { imageBase64: 'https://evil.test/photo.jpg' }, { history: [{ ...turn, role: 'system' }] }, { history: [{ ...turn, role: 'assistant' }] }, { history: Array(7).fill({ role: 'user', text: '你好' }) }, { history: Array(3).fill(turn), imageBase64: '/9j/AA==' }]) expect(assistantRequestSchema.safeParse({ ...input, ...value }).success).toBe(false);
+    expect(mockAssistant({ ...input, imageBase64: '/9j/AA==' })).toMatchObject({ intent: 'question', foods: [], message: expect.stringContaining('不能分析照片') });
+  });
   it.each([['肉包', 80], ['米饭', 150], ['鸡蛋', 50], ['牛奶', 250], ['鸡蛋炒饭', 250], ['花生油', 10]])('%s的参考份量为不同食物类型，保留估算说明', (name, amount) => {
     const portion = typicalPortion(name as string); expect(portionAmount(portion)).toBe(amount); expect(portion.assumption).toContain('未称重');
   });
