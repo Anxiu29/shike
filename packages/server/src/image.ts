@@ -1,3 +1,8 @@
+/**
+ * 前端压缩不能代替服务端验证：HTTP调用者可以绕过网页直接上传任意字节。
+ * 同时检查体积、文件签名与声明MIME、解码像素和单帧，再用sharp重编码为JPEG。
+ * 内存里处理且不落上传目录；应用方向后移除EXIF/GPS，最终只把清洗后的数据交模型。
+ */
 import sharp from 'sharp';
 import { ApiError } from './errors.js';
 import type { VisionImage } from './vision/types.js';

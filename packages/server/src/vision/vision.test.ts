@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GeminiVisionService } from './gemini.js';
 import { GlmVisionService } from './glm.js';
+import { QwenVisionService } from './qwen.js';
 import { parseRecognition, geminiOutputText } from './parse.js';
 import { loadConfig } from '../config.js';
 import { createVisionService } from './index.js';
@@ -18,6 +19,16 @@ const result = { isFood: true, foods: [{ name: '米饭', estimatedWeightG: 120, 
 const image = { mimeType: 'image/jpeg' as const, data: Buffer.from('test-image') };
 
 describe('供应商适配器和 JSON 校验', () => {
+  it('包装标签走同一视觉接口，保留原始kJ，不要求三档粗估', async () => {
+    const content = { isFood: true, foods: [{ name: '测试饼干', estimatedWeightG: null, visibleIngredients: [], uncertainties: [],
+      packageLabel: { basis: '100g', energy: { value: 2092, unit: 'kJ' }, proteinG: 8, fatG: 20, carbsG: 65, servingSize: null, netContent: { amount: 100, unit: 'g' } } }], uncertainties: [] };
+    const fakeFetch = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(content) } }] })));
+    const result = await new QwenVisionService('test-not-a-real-key', 1000, fakeFetch).recognize(image);
+    expect(result.foods[0]!.packageLabel!.energy).toEqual({ value: 2092, unit: 'kJ' });
+    expect(result.foods[0]!.nutritionEstimateProfile).toBeNull();
+    const payload = JSON.parse(fakeFetch.mock.calls[0]![1]!.body as string);
+    expect(payload.messages[0].content).toContain('packageLabel'); expect(payload.messages[1].content[0].text).toContain('包装');
+  });
   it('多食物响应按各自条目保留重量，无法估重为 null，不把可见配料增加为记录', () => {
     const foods = [
       { ...result.foods[0]!, name: '米饭', estimatedWeightG: 165.5 },
@@ -69,7 +80,66 @@ describe('供应商适配器和 JSON 校验', () => {
     const payload = JSON.parse(fakeFetch.mock.calls[0]![1]!.body as string);
     expect(payload.model).toBe('glm-4.6v-flash');
     expect(payload.thinking.type).toBe('disabled');
+    expect(payload.temperature).toBe(0.2);
+    expect(payload.messages[0].content).toContain('输出格式复核');
+    expect(payload).not.toHaveProperty('response_format');
     expect(() => parseRecognition(JSON.stringify({ ...result, energyKcal: 100 }))).toThrow('结构');
+  });
+
+  it('百炼北京区发送内联图片，关闭思考、启用 JSON Object 并复用范围校验', async () => {
+    const fakeFetch = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(result), reasoning_content: '不能当作结果' } }] })));
+    const config = loadConfig({ AI_PROVIDER: 'qwen', DASHSCOPE_API_KEY: 'fake-dashscope-key', QWEN_MODEL: 'qwen3.8-flash', AI_MODE: 'live' });
+    const service = createVisionService(config, fakeFetch);
+    expect(service.provider).toBe('qwen');
+    expect(await service.recognize(image)).toEqual(result);
+    const [url, options] = fakeFetch.mock.calls[0]!;
+    const payload = JSON.parse(options!.body as string);
+    expect(url).toBe('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions');
+    expect(options!.headers).toMatchObject({ Authorization: 'Bearer fake-dashscope-key' });
+    expect(payload.model).toBe('qwen3.8-flash');
+    expect(payload.enable_thinking).toBe(false);
+    expect(payload.max_tokens).toBe(8192);
+    expect(payload.response_format).toEqual({ type: 'json_object' });
+    expect(payload.messages[1].content[1].image_url.url).toBe(`data:image/jpeg;base64,${image.data.toString('base64')}`);
+    expect(payload).not.toHaveProperty('tools');
+    expect(payload).not.toHaveProperty('api_key');
+  });
+
+  it.each(['length', 'tool_calls', 'content_filter', null, undefined])('百炼结束原因 %s 拒绝保存，即使 JSON 完整', async (finishReason) => {
+    const fakeFetch = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ choices: [{ finish_reason: finishReason, message: { content: JSON.stringify(result) } }] })));
+    await expect(new QwenVisionService('fake', 1000, fakeFetch).recognize(image)).rejects.toMatchObject({ code: 'AI_INVALID_RESULT' });
+  });
+
+  it('百炼有效 JSON 仍须符合食物及三档结构，不修复或偷偷重试', async () => {
+    const legacy = { ...result, foods: [{ ...result.foods[0], nutritionEstimateProfile: null }] };
+    const fakeFetch = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(legacy) } }] })));
+    await expect(new QwenVisionService('fake', 1000, fakeFetch).recognize(image)).rejects.toMatchObject({ code: 'AI_INVALID_RESULT' });
+    expect(fakeFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([[401, 'AI_UNAUTHORIZED'], [403, 'AI_FORBIDDEN'], [429, 'AI_RATE_LIMITED'], [503, 'AI_UPSTREAM_ERROR']])('百炼 HTTP %s 返回安全错误 %s，不切换付费模型', async (status, code) => {
+    const fakeFetch = vi.fn<typeof fetch>().mockResolvedValue(new Response('secret-provider-message', { status: status as number }));
+    const service = new QwenVisionService('fake', 1000, fakeFetch);
+    await expect(service.recognize(image)).rejects.toMatchObject({ code });
+    expect(fakeFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('百炼下载超时和网络错误都复用安全错误处理', async () => {
+    const stuck = vi.fn<typeof fetch>().mockImplementation(() => new Promise(() => {}));
+    await expect(new QwenVisionService('fake', 20, stuck).recognize(image)).rejects.toMatchObject({ code: 'AI_TIMEOUT' });
+    const badNetwork = vi.fn<typeof fetch>().mockRejectedValue(new Error('secret-network-error'));
+    await expect(new QwenVisionService('fake', 1000, badNetwork).recognize(image)).rejects.toMatchObject({ code: 'AI_NETWORK_ERROR' });
+  });
+
+  it('百炼只读取自己的 Key，模型只接受服务端白名单', () => {
+    const config = loadConfig({ AI_PROVIDER: 'qwen', GEMINI_API_KEY: 'other-provider-key' });
+    expect(config.apiKey).toBeUndefined();
+    expect(createVisionService(config).mode).toBe('mock');
+    expect(() => loadConfig({ AI_PROVIDER: 'qwen', AI_MODE: 'live', ZHIPU_API_KEY: 'other-provider-key' })).toThrow('API Key');
+    expect(() => loadConfig({ AI_PROVIDER: 'qwen', DASHSCOPE_API_KEY: 'fake', QWEN_MODEL: 'unapproved-model' })).toThrow('QWEN_MODEL');
+    for (const model of ['qwen3.7-flash', 'qwen3.8-flash', 'qwen3.7-plus']) {
+      expect(loadConfig({ AI_PROVIDER: 'qwen', QWEN_MODEL: model, DASHSCOPE_API_KEY: ' fake ' }).apiKey).toBe('fake');
+    }
   });
 
   it('AI 营养粗估支持缺失字段，但必须有假设并遵守每 100 g 物理范围', () => {
@@ -130,12 +200,15 @@ describe('供应商适配器和 JSON 校验', () => {
       .toEqual({ energyKcal: 2, proteinG: null, fatG: null, carbsG: null });
   });
 
-  it('新真实适配器有热量粗估时必须提供三档，无法估热量时可以为空', async () => {
+  it('缺三档不能保留热量单值，GLM保留基础识别并提示丢弃不完整估算', async () => {
     const legacy = { ...result, foods: [{ ...result.foods[0], nutritionEstimateProfile: null }] };
     const noRanges = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ status: 'completed', output_text: JSON.stringify(legacy) })));
     await expect(new GeminiVisionService('fake', 1000, noRanges).recognize(image)).rejects.toMatchObject({ code: 'AI_INVALID_RESULT' });
     const legacyGlm = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(legacy) } }] })));
-    await expect(new GlmVisionService('fake', 1000, legacyGlm).recognize(image)).rejects.toMatchObject({ code: 'AI_INVALID_RESULT' });
+    const partial = await new GlmVisionService('fake', 1000, legacyGlm).recognize(image);
+    expect(partial.foods[0]).toMatchObject({ name: '米饭', estimatedWeightG: 120, estimatedNutrientsPer100g: null, nutritionEstimateProfile: null, nutritionAssumptions: [] });
+    expect(partial.foods[0]!.uncertainties).toContainEqual(expect.stringContaining('已舍弃该项AI营养数值'));
+    expect(legacyGlm).toHaveBeenCalledTimes(1);
     const unknown = { ...legacy, foods: [{ ...legacy.foods[0], estimatedNutrientsPer100g: null, nutritionAssumptions: [] }] };
     expect(parseRecognition(JSON.stringify(unknown), { requireProfile: true }).foods[0]!.nutritionEstimateProfile).toBeNull();
   });

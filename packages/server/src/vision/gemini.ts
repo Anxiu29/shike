@@ -1,7 +1,7 @@
 import type { RecognitionResult } from '@shike/shared';
 import { postJson } from './http.js';
 import { geminiOutputText, parseRecognition } from './parse.js';
-import { FOOD_PROMPT, recognitionJsonSchema } from './prompt.js';
+import { FOOD_PROMPT, FOOD_REQUEST, recognitionJsonSchema } from './prompt.js';
 import type { FetchLike, VisionImage, VisionService } from './types.js';
 
 export class GeminiVisionService implements VisionService {
@@ -17,7 +17,7 @@ export class GeminiVisionService implements VisionService {
       store: false,
       system_instruction: FOOD_PROMPT,
       input: [
-        { type: 'text', text: '识别照片中的食物，并为能合理粗估的每项食物输出 nutritionEstimateProfile 的 low、medium、high 三档每100g范围和假设。默认单值取medium中值，不得给出热量单值却省略三档。无法合理估算时同时返回null，不能编造食物名称。' },
+        { type: 'text', text: FOOD_REQUEST },
         { type: 'image', mime_type: image.mimeType, data: image.data.toString('base64') },
       ],
       generation_config: { thinking_level: 'minimal', max_output_tokens: 8192 },

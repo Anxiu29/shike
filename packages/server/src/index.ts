@@ -1,3 +1,8 @@
+/**
+ * Node进程入口：加载并验证环境配置→buildApp装配依赖和路由→listen监听端口。
+ * app.ts不自行listen，测试可直接构建Fastify实例并inject请求，无需启动真实网络服务。
+ * import使用.js后缀，因为tsc输出ES模块JavaScript；编辑的源文件仍为.ts。
+ */
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 
