@@ -186,7 +186,9 @@ test('百炼估算兼容旧 Gemini 缓存，中值切档保存、历史保留及
   await expect(page.getByTestId('food-editor')).toHaveCount(0);
   await openTab(page, 'settings');
   await expect(page.getByTestId('estimated-food-count')).toHaveText('1 项');
+  await page.getByTestId('manage-estimates').click();
   await expect(page.getByTestId('estimated-food-0')).toContainText('杂粮粥');
+  await page.keyboard.press('Escape');
   await openTab(page, 'diary');
   await page.reload();
   await expect(page.getByTestId('daily-range')).toBeVisible();

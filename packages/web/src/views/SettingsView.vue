@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Download, Upload, ShieldCheck, Database, ArrowUpRight, Info, Check, LoaderCircle, HardDrive, Sparkles, BookOpen, Trash2, Bookmark, Package, ChevronRight, SlidersHorizontal } from '@lucide/vue'
+import { Download, Upload, ShieldCheck, Database, ArrowUpRight, Info, Check, LoaderCircle, HardDrive, Sparkles, BookOpen, Bookmark, Package, ChevronRight, SlidersHorizontal } from '@lucide/vue'
 import { foods, catalogFoods, recipes, personalProviderName, type Backup, type EstimatedFood } from '@shike/shared'
 import { db, exportBackup, parseBackup, restoreBackup } from '../lib/db'
 import type { Health } from '../lib/api'
-import { numberLabel } from '../lib/dates'
 import { personalVisionSupported } from '../lib/personal-vision'
 import { saveBackupFile } from '../lib/backup-file'
 import AIConnection from '../components/AIConnection.vue'
 import PackagedLibrary from '../components/PackagedLibrary.vue'
 import AppUpdates from '../components/AppUpdates.vue'
+import EstimatedFoodLibrary from '../components/EstimatedFoodLibrary.vue'
 const libraryOpen = ref(false)
 const props = defineProps<{ health: Health | null; healthError: string; estimatedFoods: EstimatedFood[]; checkingHealth?: boolean }>()
 const emit = defineEmits<{ changed: []; notify: [message: string]; checkHealth: []; openFoodLibrary: [] }>()
@@ -84,7 +84,7 @@ async function removeEstimate(food: EstimatedFood) {
         </article>
         <article class="card settings-card settings-food-tools"><div class="settings-card-title"><span class="settings-feature-icon"><Bookmark :size="22" stroke-width="1.6" /></span><div><h2>我的食物</h2><p>把常吃的留下，下次记录更快。</p></div></div><button type="button" class="settings-tool-row" data-testid="settings-food-library" @click="emit('openFoodLibrary')"><span class="settings-tool-icon"><Bookmark :size="19" /></span><span><strong>常用食物库</strong><small>管理个人食物与收藏，快速加入一餐</small></span><ChevronRight :size="18" /></button><button type="button" class="settings-tool-row" data-testid="manage-packaged-foods" @click="libraryOpen = true"><span class="settings-tool-icon"><Package :size="19" /></span><span><strong>包装食品库</strong><small>已存营养标签、商品条码与免费查询</small></span><ChevronRight :size="18" /></button></article>
       </div>
-      <article class="card settings-card personal-library settings-estimate-card"><div class="section-heading"><div><h2>个人估算库</h2><p class="small-text muted">你确认保存的 AI 营养估算，之后同名可复用。</p></div><span class="soft-tag" data-testid="estimated-food-count">{{ estimatedFoods.length }} 项</span></div><div v-if="!estimatedFoods.length" class="personal-empty settings-estimate-empty"><BookOpen :size="24" stroke-width="1.4" /><div><strong>还没有保存的估算</strong><p>库外食物的真实 AI 粗估，在确认保存后会出现在这里。模拟结果和未保存草稿不会加入。</p></div></div><div v-for="(food, index) in estimatedFoods" :key="food.id" class="personal-food-row" :data-testid="'estimated-food-' + index"><div><strong>{{ food.name }}</strong><p>{{ food.provider === 'mock' ? '导入的模拟估算 · 不参与真实匹配' : 'AI 粗估 · 未经测量' }} · {{ food.model }}</p><details><summary>查看假设</summary><p>{{ food.assumptions.join(' ') || '请核对用油、糖和含水量。' }}</p></details></div><span>{{ food.nutrientsPer100g.energyKcal === null ? '热量待补充' : '约 ' + numberLabel(food.nutrientsPer100g.energyKcal) + ' kcal / 100 g' }}</span><button class="icon-button small" data-testid="delete-estimated-food" :aria-label="'删除个人估算' + food.name" @click="removeEstimate(food)"><Trash2 :size="15" /></button></div><p v-if="estimatedFoods.length" class="tiny muted library-note">估算未经测量，不属于 USDA 数据。更新或删除条目不会改写已保存的历史记录。</p></article>
+      <EstimatedFoodLibrary :foods="estimatedFoods" @remove="removeEstimate" />
     </section>
 
     <section id="settings-about" class="settings-group" tabindex="-1" aria-labelledby="settings-about-title">

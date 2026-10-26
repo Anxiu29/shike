@@ -197,3 +197,13 @@
 .model-config-sheet .model-cost-note { overflow-wrap: anywhere; }
 .model-config-footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 10px; width: 100%; }
 .model-config-footer .button { min-width: 0; padding-inline: 8px; }
+.estimate-library-entry { width: 100%; }
+.estimate-library-entry .soft-tag { margin-left: 6px; font-size: 11px; }
+.estimate-search { display: flex; align-items: center; gap: 8px; }
+.estimate-search input { min-width: 0; flex: 1; }
+.estimate-result-count { margin: 12px 0; }
+.estimate-library-item { padding: 14px 0; border-bottom: 1px solid #e6ecdf; overflow-wrap: anywhere; }
+.estimate-library-item > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.estimate-library-item > p { margin: 6px 0; font-size: 13px; color: #367b62; }
+.estimate-library-item > small { font-size: 11px; }
+.estimate-load-more { width: 100%; margin-top: 16px; }

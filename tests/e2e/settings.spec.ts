@@ -123,3 +123,26 @@ test('重新分区后的备份可导出、预览和恢复，设置中的食物�
   await expect(page.getByRole('heading', { name: '我的包装食品' })).toBeVisible();
   await page.keyboard.press('Escape'); await expect(page.getByTestId('settings-page')).toBeVisible();
 });
+
+test('大量估算收起在管理入口内，支持搜索、分批查看、删除和返回焦点', async ({ page }) => {
+  await page.goto('/'); await expect(page.getByTestId('daily-summary')).toBeVisible();
+  await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => { const request = indexedDB.open('shike-local-v1'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+    try { await new Promise<void>((resolve, reject) => {
+      const tx = database.transaction('estimatedFoods', 'readwrite'); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error);
+      for (let index = 0; index < 35; index++) tx.objectStore('estimatedFoods').put({ id: `estimate-${index}`, name: `测试估算${String(index).padStart(2, '0')}`, model: 'test-model', provider: 'qwen', createdAt: '2026-10-26T00:00:00Z', updatedAt: '2026-10-26T00:00:00Z', nutrientsPer100g: { energyKcal: 100, proteinG: null, fatG: null, carbsG: null }, provenance: '合成测试', assumptions: ['用油待核对'] });
+    }); } finally { database.close(); }
+  });
+  await page.reload(); await tab(page, 'settings'); await expect(page.getByTestId('estimated-food-count')).toHaveText('35 项');
+  await expect(page.locator('.estimate-library-item')).toHaveCount(0);
+  expect((await page.getByTestId('settings-estimate-card').boundingBox())!.height).toBeLessThan(190);
+  await page.getByTestId('manage-estimates').click(); await expect(page.getByTestId('estimate-library')).toBeVisible(); await expect(page.locator('.estimate-library-item')).toHaveCount(10);
+  await page.getByTestId('estimate-load-more').click(); await expect(page.locator('.estimate-library-item')).toHaveCount(20);
+  await page.getByTestId('estimate-search').fill('估算34'); await expect(page.locator('.estimate-library-item')).toHaveCount(1);
+  await page.locator('.estimate-library-item summary').click(); await expect(page.locator('.estimate-library-item')).toContainText('用油待核对');
+  page.once('dialog', dialog => dialog.accept()); await page.getByTestId('delete-estimated-food').click(); await expect(page.locator('.estimate-library-item')).toHaveCount(0); await expect(page.getByTestId('estimate-library')).toContainText('没有找到');
+  await page.getByTestId('estimate-search').fill(''); await expect(page.locator('.estimate-library-item')).toHaveCount(10);
+  if (test.info().project.name === 'Chrome 手机') await page.screenshot({ path: 'docs/screenshots/estimate-library-mobile.png' });
+  await page.keyboard.press('Escape'); await expect(page.getByTestId('manage-estimates')).toBeFocused(); await expect(page.getByTestId('estimated-food-count')).toHaveText('34 项');
+  if (test.info().project.name === 'Chrome 手机') await page.screenshot({ path: 'docs/screenshots/settings-compact-estimates-mobile.png' });
+});
