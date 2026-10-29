@@ -4,7 +4,7 @@
 
 用户要求“更新一个版本”或“更新一版”时，默认包括递增版本、打包验签、发布Gitee国内源和GitHub备用源，以及匿名读取更新清单和下载校验；仅当用户明确要求“只打本地包”时才停在本地构建。不能以APK已生成或Release已创建作为完成依据。缺少登录、上传失败或更新源尚未公开时，要明确说明阻塞，不能回复“已更新完成”。验收时必须确认两端公开列表能选到同一versionCode，APK和更新JSON字节数、SHA-256一致，再告知手机检查更新。
 
-2026-10-29：已准备本地0.11.30-test（versionCode53）测试版，包含订单识别、离线文字手动准备和照片换模型重分析。`artifacts/android/`已生成固定名称及带版本名称的APK、更新JSON和SHA-256文件；安装包沿用0.11.29签名，最终资源与版本核对通过。当前尚未上传Gitee/GitHub，手机应用内检查更新不会因此自动获得该版本；可先使用本地APK覆盖安装。最终包验证见[安卓说明](android-app.md)。
+2026-10-29：已公开发布0.11.30-test（versionCode53），包含订单识别、离线文字手动准备和照片换模型重分析。[Gitee国内发行版](https://gitee.com/anxiu29/shike/releases/tag/v0.11.30-test)与[GitHub备用发行版](https://github.com/Anxiu29/shike/releases/tag/v0.11.30-test)均可匿名读取，应用相同的列表选择与更新契约校验已确认选中53。六个附件匿名下载成功，两端APK均为55,289,014字节，SHA-256为`cc02c975400236a3b5f992ee6fcf6272e261c3c0e0766906942427c6e25694c2`，与本地包一致；沿用0.11.29签名，可覆盖安装。GitHub发布标签对应完整源码提交`c9784b9029cd1708b1cb24e4c9fa37a5ce9a39a1`，位于独立发布分支，main未改动；Gitee提供同次构建的安装包与更新文件。验证报告位于`artifacts/android/release-0.11.30-test/published-verification.json`。本次排查确认此前双源都停在0.11.20，后续本地包未上传，导致手机检查不到新版；不是清除手机缓存可以解决的问题。最终包验证见[安卓说明](android-app.md)。
 
 0.11.15-test（versionCode 38）修复Gitee列表顺序：官方接口默认会把旧发行版放在前面，现请求显式设置`direction=desc`以读取最新10版，再按实际发布时间与ID倒序选择，避免镜像已更新却仍跳过国内新版。2026-10-26已用同仓库实际发行版核验升序/降序响应差异，并确认旧版在前时仍选中0.11.15。[Gitee国内源](https://gitee.com/anxiu29/shike/releases/tag/v0.11.15-test)及[GitHub备用源](https://github.com/Anxiu29/shike/releases/tag/v0.11.15-test)均已公开，六个附件匿名下载和哈希校验通过。GitHub大附件曾在CLI上传中停滞，最终经网页上传完成发布。旧版也可直接从Gitee覆盖安装获得修复，不要先卸载。
 
