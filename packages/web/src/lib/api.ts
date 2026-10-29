@@ -12,6 +12,8 @@ import { selectedLocalModel } from './model-selection'
 import { serviceConnectionsEnabled } from './features'
 import { assistantRequestSchema, assistantResponseSchema, type AssistantRequest, type AssistantResponse } from '@shike/shared'
 import { describePersonalMeal } from './personal-vision'
+import { describeOfflineMeal, offlineAssistantEnabled } from './offline-ai'
+import { offlinePhotoEnabled } from './offline-photo'
 
 // 前后端共用响应类型，提供商切换不会改变页面消费的接口。
 export type Health = HealthResponse
@@ -63,6 +65,7 @@ export async function connectService(baseUrl: string, accessCode: string): Promi
 }
 
 export async function recognizeImage(file: File): Promise<RecognitionResponse> {
+  if (offlinePhotoEnabled()) throw new Error('当前已选择本机离线识图，未上传照片。请使用本机食物识图，或主动切换在线方式。')
   if (aiRoute() === 'direct') return recognizePersonalImage(file)
   const form = new FormData()
   form.append('image', file)
@@ -93,6 +96,8 @@ export async function recognizeImage(file: File): Promise<RecognitionResponse> {
 
 export async function describeMeal(input: AssistantRequest): Promise<AssistantResponse> {
   const request = assistantRequestSchema.parse(input)
+  // 用户明确选用本机文字模型时，失败原样抛出，绝不自动转发描述/图片到在线API。
+  if (offlineAssistantEnabled()) return describeOfflineMeal(request)
   if (aiRoute() === 'direct') return describePersonalMeal(request)
   const connection = readConnection(), controller = new AbortController(), timer = window.setTimeout(() => controller.abort(), 70000)
   try {

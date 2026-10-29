@@ -15,4 +15,7 @@ export * from './food-catalog.js';
 export * from './packaged-catalog.js';
 export * from './barcode.js';
 export * from './meal-assistant.js';
+export * from './offline-assistant.js';
+export * from './offline-photo.js';
+export * from './offline-photo-details.js';
 export * from './app-updates.js';

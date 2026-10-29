@@ -30,7 +30,7 @@ function canTake(unit: 'serving' | 'package') { return packageFactor({ ...props.
 </script>
 <template>
   <section class="package-label-editor" :data-testid="`package-label-${index}`">
-    <div class="package-label-title"><PackageOpen :size="19" /><strong>包装营养表</strong><span>{{ snapshot.provider === 'mock' ? '模拟标签' : snapshot.manuallyEdited ? '已手动修改' : snapshot.source ? '公开商品参考 · 请核对' : 'AI 读取 · 请核对' }}</span></div>
+    <div class="package-label-title"><PackageOpen :size="19" /><strong>包装营养表</strong><span>{{ snapshot.provider === 'mock' ? '模拟标签' : snapshot.manuallyEdited ? '已手动修改' : snapshot.source ? '公开商品参考 · 请核对' : snapshot.provider === 'offline' ? '本机识读（试验）· 请核对' : 'AI 读取 · 请核对' }}</span></div>
     <p v-if="snapshot.source" class="tiny muted"><a :href="snapshot.source.url" target="_blank" rel="noopener noreferrer">Open Food Facts · ODbL-1.0 · 查看来源</a></p>
     <div class="package-label-values"><span>{{ basisNames[snapshot.label.basis] }}</span><strong>{{ snapshot.label.energy ? `${numberLabel(snapshot.label.energy.value)} ${snapshot.label.energy.unit}` : '能量待补充' }}</strong><small v-if="snapshot.label.energy?.unit === 'kJ'">折合约 {{ numberLabel(kcal) }} kcal</small></div>
     <p class="tiny muted">净含量 {{ snapshot.label.netContent ? `${numberLabel(snapshot.label.netContent.amount)} ${snapshot.label.netContent.unit === 'ml' ? 'mL' : 'g'}` : '待补充' }}<template v-if="snapshot.label.servingSize"> · 每份 {{ numberLabel(snapshot.label.servingSize.amount) }} {{ snapshot.label.servingSize.unit === 'ml' ? 'mL' : 'g' }}</template>。净含量不等于已吃份量。</p>

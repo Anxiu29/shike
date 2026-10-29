@@ -8,6 +8,9 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(PersonalVisionPlugin.class);
         registerPlugin(FoodCatalogPlugin.class);
         registerPlugin(AppUpdaterPlugin.class);
+        registerPlugin(OfflineAiPlugin.class);
+        registerPlugin(OfflineVisionPlugin.class);
+        registerPlugin(SystemPhotoPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

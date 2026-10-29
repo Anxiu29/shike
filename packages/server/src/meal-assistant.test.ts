@@ -5,6 +5,24 @@ import { existsSync } from 'node:fs';
 import sharp from 'sharp';
 const input = { text: '早餐两个肉包', date: '2026-10-20', mealType: 'breakfast' };
 describe('文字助手API', () => {
+  it('订单截图复用受保护接口和结构校验，任务类型传给上游，非法结果拒绝', async () => {
+    const imageBase64 = (await sharp({ create: { width: 300, height: 600, channels: 3, background: '#fff' } }).jpeg().toBuffer()).toString('base64');
+    const draft = { intent: 'update', date: input.date, mealType: input.mealType, foods: [{ name: '肉包', amount: 6, unit: '个' }], message: '下单数量不等于实际摄入，请核对。' };
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft) } }] })));
+    const app = await buildApp({ config: loadConfig({ AI_PROVIDER: 'qwen', DASHSCOPE_API_KEY: 'test-only-key', AI_MODE: 'live' }), fetchImpl: fetcher as typeof fetch });
+    try {
+      const payload = { ...input, text: '', inputKind: 'order', imageBase64 };
+      const response = await app.inject({ method: 'POST', url: '/api/meal-assistant', payload });
+      expect(response.statusCode).toBe(200); expect(response.json().draft).toEqual(draft);
+      const body = JSON.parse((fetcher.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+      expect(body.messages[0].content).toContain('本次inputKind=order');
+      expect(JSON.parse(body.messages[1].content[0].text).inputKind).toBe('order');
+      expect(body.messages[1].content[1].image_url.url).toMatch(/^data:image\/jpeg;base64,/);
+      fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ ...draft, foods: [{ name: '肉包', amount: -1, unit: '个' }] }) } }] })));
+      expect((await app.inject({ method: 'POST', url: '/api/meal-assistant', payload })).statusCode).toBe(502);
+      expect((await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: { ...payload, inputKind: 'other' } })).statusCode).toBe(400);
+    } finally { await app.close(); }
+  });
   it('接收图片加描述和历史图片，解码去除EXIF后发送；伪造图片不调用模型', async () => {
     const photo = await sharp({ create: { width: 64, height: 64, channels: 3, background: '#66aa55' } }).withExif({ IFD0: { Artist: 'private-location'.repeat(1400) } }).jpeg().toBuffer();
     const draft = { intent: 'question', date: input.date, mealType: input.mealType, foods: [], message: '可适量搭配蔬菜。' };

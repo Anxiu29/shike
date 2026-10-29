@@ -46,7 +46,7 @@ export function recognitionEstimate(name: string, nutrientsPer100g: Nutrients | 
 export function entryBasis(entry: FoodEntry): string {
   if (entry.volumeSnapshot) return '饮品营养 · 每100 mL'
   if (entry.packageSnapshot?.source) return entry.packageSnapshot.manuallyEdited ? 'Open Food Facts · 已手动修正' : 'Open Food Facts · 包装参考'
-  if (entry.kind === 'label') return entry.packageSnapshot?.provider === 'mock' ? '模拟包装标签' : entry.packageSnapshot?.manuallyEdited ? '包装标签 · 已手动修改' : '包装标签 · AI 读取'
+  if (entry.kind === 'label') return entry.packageSnapshot?.provider === 'mock' ? '模拟包装标签' : entry.packageSnapshot?.manuallyEdited ? '包装标签 · 已手动修改' : entry.packageSnapshot?.provider === 'offline' ? '包装标签 · 本机识读（试验）' : '包装标签 · AI 读取'
   if (entry.kind === 'ai') return entry.provenance.startsWith('个人估算库') ? '个人估算库 · AI 粗估' : entry.aiEstimateSnapshot?.provider === 'mock' ? '模拟 AI 估算' : 'AI 估算'
   return entry.kind === 'recipe' ? '参考配方估算' : entry.kind === 'database' ? entry.provenance.startsWith('USDA FNDDS') ? 'USDA 膳食参考' : 'USDA 基础食物' : entry.kind === 'manual' ? '手动营养数据' : '暂无法估算'
 }

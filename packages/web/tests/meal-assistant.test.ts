@@ -4,6 +4,18 @@ import { calculateNutrients, findRecipe, mealRecordSchema, createRecipeEntry, em
 import { assistantEntry, assistantMeal } from '../src/lib/meal-assistant';
 import { applyTypicalPortion } from '../src/lib/typical-portions';
 describe('助手草稿和普通份量', () => {
+  it('订单数量保留为待核对份量，来源提醒随快照保存；未知食品不编热量', () => {
+    const food = { name: '肉包', amount: 6, unit: '个' as const };
+    const entry = assistantEntry(food, [], [], 'order');
+    expect(entry.portionSnapshot?.quantity).toBe(6); expect(entry.weightG).toBe(480);
+    expect(entry.portionSnapshot?.assumption).toContain('未称重');
+    expect(entry.provenance).toContain('外卖订单草稿'); expect(entry.warnings.join('')).toContain('下单数量不等于实际摄入');
+    const record = assistantMeal({ intent: 'update', date: '2026-10-28', mealType: 'lunch', foods: [food], message: '核对订单' }, [entry], 'live');
+    expect(mealRecordSchema.parse(record).items[0]?.warnings).toEqual(entry.warnings);
+    const unknown = assistantEntry({ name: '神秘套餐甲', amount: 1, unit: '份' }, [], [], 'order');
+    expect(calculateNutrients(unknown).energyKcal).toBeNull();
+    expect(assistantEntry(food, [], []).warnings.join('')).not.toContain('订单');
+  });
   it('数量按食物换算；配方缩放只记整道菜，用户明确克数优先', () => {
     const bun = assistantEntry({ name: '肉包', amount: 2, unit: '个' }, [], []);
     expect(bun.weightG).toBe(160); expect(bun.portionSnapshot!.quantity).toBe(2);

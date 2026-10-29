@@ -2,6 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { assistantRequestSchema, assistantDraftSchema, parseAssistantDraft, assistantBody, mockAssistant, typicalPortion, portionAmount } from '../src/index.js';
 const input = { text: '早餐两个肉包', date: '2026-10-20', mealType: 'breakfast' as const };
 describe('文字记餐的结构边界与参考份量', () => {
+  it('订单支持图片或文字，旧请求兼容，Mock不能伪造识读结果', () => {
+    expect(assistantRequestSchema.parse(input)).toEqual(input);
+    const request = { ...input, inputKind: 'order' as const, text: '肉包（2个装）×3' };
+    expect(assistantRequestSchema.parse(request)).toEqual(request);
+    expect(assistantRequestSchema.safeParse({ ...request, text: '', imageBase64: '/9j/AA==' }).success).toBe(true);
+    expect(assistantRequestSchema.safeParse({ ...request, inputKind: 'https://invalid.test' }).success).toBe(false);
+    expect(mockAssistant(request)).toMatchObject({ intent: 'question', foods: [], message: expect.stringContaining('不能识别外卖订单') });
+    for (const provider of ['qwen', 'glm', 'gemini'] as const) {
+      const body = assistantBody(provider, provider === 'glm' ? 'glm-5.3-flash' : 'test-model', request) as any;
+      const prompt = provider === 'gemini' ? body.system_instruction : body.messages[0].content;
+      expect(prompt).toContain('本次inputKind=order');
+      const normal = assistantBody(provider, provider === 'glm' ? 'glm-5.3-flash' : 'test-model', input) as any;
+      expect(provider === 'gemini' ? normal.system_instruction : normal.messages[0].content).not.toContain('本次inputKind=order');
+    }
+  });
   it('未说餐次采用设备传入值，已有草稿优先，明确餐次可覆盖默认值', () => {
     const request = { ...input, text: '两个肉包', mealType: 'dinner' as const };
     expect(mockAssistant(request).mealType).toBe('dinner');

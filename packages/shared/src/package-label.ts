@@ -66,6 +66,6 @@ export function createPackageEntry(name: string, label: PackageLabel, provider: 
   const unit = label.basis === 'package' ? 'package' : label.basis === '100g' ? 'g' : label.basis === '100ml' ? 'ml' : label.servingSize?.unit ?? 'serving';
   return { id: createId(), name, kind: 'label', weightG: null, nutrientsPer100g: packageNutrientsPer100g(label),
     packageSnapshot: { label: JSON.parse(JSON.stringify(label)), consumedAmount: null, consumedUnit: unit, provider, model, manuallyEdited: provider === 'manual' },
-    provenance: provider === 'manual' ? '用户填写包装营养表，按实际摄入量换算，非实测。' : '包装营养表 · AI 读取，需核对原标签；按实际摄入量换算，非实测。',
+    provenance: provider === 'manual' ? '用户填写包装营养表，按实际摄入量换算，非实测。' : `包装营养表 · ${provider === 'offline' ? '本机离线 AI 读取（试验）' : 'AI 读取'}，需核对原标签；按实际摄入量换算，非实测。`,
     warnings: ['请核对标签数字、计量基准与实际摄入量；净含量不是已吃份量。'] };
 }

@@ -74,7 +74,7 @@ export const packageSnapshotSchema = z.object({
   label: packageLabelSchema,
   consumedAmount: z.number().finite().min(0).max(20000).nullable(),
   consumedUnit: z.enum(['g', 'ml', 'serving', 'package']),
-  provider: z.union([providerSchema, z.literal('manual')]), model: shortText, manuallyEdited: z.boolean(),
+  provider: z.union([providerSchema, z.literal('manual'), z.literal('offline')]), model: shortText, manuallyEdited: z.boolean(),
   source: catalogSourceSchema.optional(), brand: z.string().max(200).optional(), barcode: barcodeSchema.optional(),
 }).strict().superRefine((snapshot, context) => {
   if (snapshot.source && snapshot.barcode !== snapshot.source.barcode) context.addIssue({ code: 'custom', message: '标签条码与公开来源不一致' });
@@ -86,7 +86,7 @@ export const packageSnapshotSchema = z.object({
 export type PackageSnapshot = z.infer<typeof packageSnapshotSchema>;
 export const packagedFoodSchema = z.object({
   id: shortText, name: shortText, brand: z.string().trim().max(200), barcode: barcodeSchema.nullable(), label: packageLabelSchema,
-  provider: z.enum(['gemini', 'glm', 'qwen', 'siliconflow', 'openrouter', 'deepseek', 'manual']), model: shortText, manuallyEdited: z.boolean(),
+  provider: z.enum(['gemini', 'glm', 'qwen', 'siliconflow', 'openrouter', 'deepseek', 'manual', 'offline']), model: shortText, manuallyEdited: z.boolean(),
   source: catalogSourceSchema.optional(), createdAt: timestampSchema, updatedAt: timestampSchema,
 }).strict().refine(food => !food.source || food.barcode === food.source.barcode, '包装条码与公开来源不一致');
 export type PackagedFood = z.infer<typeof packagedFoodSchema>;

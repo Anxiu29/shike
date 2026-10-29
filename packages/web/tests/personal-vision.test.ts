@@ -21,6 +21,15 @@ beforeEach(() => { vi.stubEnv("VITE_ENABLE_SERVICE_CONNECTION", "true");
   vi.stubGlobal('fetch', vi.fn(() => { throw new Error('不应走网页网络') }))
 })
 describe('安卓个人多模型直连', () => {
+  it('订单模式携带共享订单规则与图片，不把订单转成普通照片任务', async () => {
+    const draft = { intent: 'update', date: '2026-10-28', mealType: 'lunch', foods: [{ name: '肉包', amount: 6, unit: '个' }], message: '请核对实际食用量。' };
+    bridge.describeMeal.mockResolvedValue({ provider: first.provider, model: first.model, data: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft) } }] }) });
+    const request = { text: '', inputKind: 'order' as const, date: draft.date, mealType: 'lunch' as const, imageBase64: '/9j/AA==' };
+    expect((await describePersonalMeal(request)).draft).toEqual(draft);
+    const call = bridge.describeMeal.mock.calls[0]![0];
+    expect(JSON.parse(call.request)).toEqual(request); expect(call.prompt).toContain('本次inputKind=order');
+    expect(fetch).not.toHaveBeenCalled(); expect(localStorage.length).toBe(0);
+  });
   it('图片和聊天上下文进入原生请求，GLM最终答案单独解析，不持久化照片', async () => {
     const profile = { ...first, provider: 'glm', model: 'glm-4.1v-thinking-flash' };
     bridge.getState.mockResolvedValue({ profiles: [profile], activeId: profile.id });

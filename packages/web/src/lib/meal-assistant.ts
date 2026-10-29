@@ -3,8 +3,14 @@ import { matchedEntry, manualEntry, resizeEntry } from './entries'
 import { applyTypicalPortion } from './typical-portions'
 export type AssistantFood = AssistantDraft['foods'][number]
 /** 模型只解析语言；营养仍查本地库。未知值不填0，不假定mL与g密度相同。 */
-export function assistantEntry(food: AssistantFood, personal: EstimatedFood[], packages: PackagedFood[]): FoodEntry {
-  const parsed = foodEntrySchema.safeParse(buildAssistantEntry(food, personal, packages))
+export function assistantEntry(food: AssistantFood, personal: EstimatedFood[], packages: PackagedFood[], inputKind: 'meal' | 'order' = 'meal'): FoodEntry {
+  const entry = buildAssistantEntry(food, personal, packages)
+  if (inputKind === 'order') {
+    // 保留原食品库来源和份量假设；转详细编辑、保存后仍能看见订单来源的限制。
+    entry.provenance += ' · 来源：外卖订单草稿'
+    entry.warnings = [...new Set([...entry.warnings, '订单下单数量不等于实际摄入；份量与食品库匹配需按实际食用情况核对。'])]
+  }
+  const parsed = foodEntrySchema.safeParse(entry)
   if (!parsed.success) throw new Error('份量换算超出范围或资料不完整，请修改数量；总量不能超过20000g或mL。')
   return parsed.data
 }

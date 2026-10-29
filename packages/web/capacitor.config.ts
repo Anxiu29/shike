@@ -17,6 +17,10 @@ const config: CapacitorConfig = {
     ...(preview ? { url: preview, cleartext: preview.startsWith('http:') } : {}),
     errorPath: 'app-connection-error.html',
   },
-  android: { backgroundColor: '#f5f8f0', allowMixedContent: false, webContentsDebuggingEnabled: false },
+  android: {
+    backgroundColor: '#f5f8f0', allowMixedContent: false, webContentsDebuggingEnabled: false,
+    // Android改用系统相机，不把CameraPreview/CameraX及其权限装入APK。
+    includePlugins: ['@capacitor/app', '@capacitor/filesystem', '@capacitor/share'],
+  },
 }
 export default config
