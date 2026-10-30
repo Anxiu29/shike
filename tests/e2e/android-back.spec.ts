@@ -21,7 +21,8 @@ test('安卓返回先关闭食物库，保留手填内容和餐食草稿，保�
   await page.getByTestId('save-meal').click(); await expect(page.getByTestId('food-editor')).toHaveCount(0)
   await page.reload(); await expect(page.getByTestId('meal-record')).toContainText('168.25 g')
   expect(await page.evaluate(() => (window as any).__appCalls)).not.toContain('minimizeApp')
-  await page.getByTestId('edit-meal').click(); await androidBack(page); await expect(page.getByTestId('food-editor')).toHaveCount(0)
+  // 原生事件注入不会等待懒加载组件；先确认编辑器已挂载，才能验证它消费返回键。
+  await page.getByTestId('edit-meal').click(); await expect(page.getByTestId('food-editor')).toBeVisible(); await androidBack(page); await expect(page.getByTestId('food-editor')).toHaveCount(0)
   expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden')
 })
 

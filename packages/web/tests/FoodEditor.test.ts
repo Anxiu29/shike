@@ -33,6 +33,20 @@ async function savedRecord(form: VueWrapper): Promise<MealRecord> {
 }
 
 describe('食物选择弹窗', () => {
+  it('提交后锁住所有编辑入口，存储失败后恢复原草稿供继续编辑', async () => {
+    const form = openAIEditor({ profile: porridgeProfile })
+    await form.get('[data-testid="save-meal"]').trigger('click')
+    const mutableControls = ['[data-testid="food-name-0"]', '[aria-label="删除食物 1"]', '[data-testid="editor-meal-type"]', '[data-testid="add-package"]', '[data-testid="estimate-low-0"]', '.capture-buttons button']
+    // happy-dom 的 :disabled 尚不计算 fieldset 继承；这里只补足本表单无 legend 的原生禁用规则。
+    const disabled = (selector: string) => { const element = form.get(selector).element; return element.matches(':disabled') || !!element.closest('fieldset[disabled]') }
+    for (const selector of mutableControls) expect(disabled(selector), selector).toBe(true)
+    expect((form.emitted('save')![0]![0] as MealRecord).items[0]!.weightG).toBe(200)
+    ;(form.vm as unknown as { saveFailed: (message: string) => void }).saveFailed('本机空间不足')
+    await form.vm.$nextTick()
+    for (const selector of mutableControls) expect(disabled(selector), selector).toBe(false)
+    expect(form.get('[data-testid="editor-error"]').text()).toContain('本机空间不足')
+    expect(form.get('[data-testid="food-weight-0"]').element).toHaveProperty('value', '200')
+  })
   it('AI 记录可以直接保存，不再要求勾选核对，仍保留估算与来源标识', async () => {
     const form = openAIEditor()
     expect(form.find('[data-testid="confirm-ai"]').exists()).toBe(false)

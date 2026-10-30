@@ -4,6 +4,8 @@
 
 新增功能实践：[外卖订单识别代码教学](takeaway-order.md)，按任务类型、共享提示词、网页/安卓调用、食品库换算、核对与保存逐步阅读。
 
+详细阅读路线：[网页数据与编辑](web-data-walkthrough.md)、[服务端请求与资源边界](server-code-walkthrough.md)、[安卓线程与生命周期](android-code-walkthrough.md)。源码注释重点解释输入输出、调用顺序、设计原因和失败边界；生成的食品数据不逐行加注释，其来源与更新方法在生成脚本和许可文件中。
+
 ## 1. 项目结构与分工
 
 食刻是中文饮食记录应用：支持拍照识别、文字记餐、手动选食物、体重、饮水和运动。确认后的记录保存在设备的 IndexedDB。网页由 Node 服务调用模型；独立安卓 APK 还可通过原生插件保存用户 Key 并直接请求模型。离线记餐与联网 AI 是两种能力。
@@ -32,7 +34,9 @@
 │  │  └─ limiter.ts              进程内限频与并发
 │  └─ shared/
 │     ├─ src/schemas.ts         数据契约及备份迁移
-│     ├─ src/nutrition.ts       营养计算与条目快照工厂
+│     ├─ src/nutrition.ts       保持兼容的营养模块导出入口
+│     ├─ src/nutrition-snapshot.ts 仅按历史快照计算，不依赖整库
+│     ├─ src/nutrition-catalog.ts  查库、配方与新记录工厂
 │     ├─ src/wellness.ts        预算、体重选择、运动和手环差额
 │     ├─ src/*.generated.ts    脚本生成的食品与译名数据
 │     ├─ data/                 来源、筛选清单、报告、许可
@@ -76,6 +80,16 @@ createApp(App).mount('#app')
 ```
 
 `App.vue` 用 ref 保存 meals、weights、settings 等当前界面数据。挂载时先 `refresh()`，通过 `loadData()` 读 IndexedDB；读完本地数据再异步 `checkHealth()`，打开已有记录不必等待联网。
+
+`loadData()` 在同一个只读事务内读取各张业务表，避免另一个标签页保存或恢复备份时拼出旧餐食、新体重等混合状态。连续触发 `refresh()` 时，仅最新一次读取可以更新页面和存储错误提示；过时的成功或失败都不会覆盖新状态。
+
+`MealAssistantLauncher.vue` 只在首次点击“AI记餐”后动态加载助手及其包装食品匹配依赖，启动时保留轻量入口。载入后实例一直保留，关闭和切页不会清掉内存草稿。等待超过20秒或下载失败时显示可关闭的提示，不自动刷新；加载期间切换主页面或打开相机、编辑器会取消旧的打开意图，即使随后返回也不自动弹窗。
+
+共享营养层现在按依赖拆分：`nutrition-snapshot.ts`只使用记录快照，`nutrition-catalog.ts`才读取完整食品库；旧`nutrition.ts`与`@shike/shared`导出保持兼容。网页的`entries.ts`同样只承载快照工具，名称匹配移到`entry-matching.ts`。仅检查本机识图开关时读`offline-photo-settings.ts`，不顺便加载识别工厂。`personal-food-display.ts`用于首页排序和图标，点常用食物添加时才加载份量工厂。
+
+动态加载完成不能直接打开编辑器：用户可能已经切换日期，或打开另一餐、助手、饮水弹窗。`PersonalFoodShelf.vue`在点击时捕获日期/可用性版本及`BackLayers.revision`，版本改变后丢弃迟到的添加意图；先离开再回来也算改变。`App.quickAdd`在切页等待前后再次检查编辑上下文，避免覆盖已有草稿的记录ID。实际竞态案例见`tests/e2e/data-consistency.spec.ts`。
+
+`shared/package.json`的`sideEffects: false`表示该包导入不会注册全局行为或执行I/O，打包器可删除未使用的模块。它不改变函数执行时的校验，也不是“所有函数没有作用”的意思；以后若加入必须执行的全局注册，应重新检查此声明。学习加载优化时看入口和全部预加载资源之和，不能只看单个入口文件的大小。
 
 模板通过 props 向下传数据，例如 `:meals="meals"`；编辑器通过事件上报保存意图，例如 `@save="persist"`。父层 persist 调用 saveMeal，事务成功后 refresh 并关闭编辑器。响应式数据变化会更新界面，但改一个 ref 不会自动写数据库。
 
@@ -125,6 +139,8 @@ form.append('image', file)
 浏览器生成 multipart boundary，不能手动设置 Content-Type。客户端用 AbortController 限时，服务端上游也有限时；都需要 finally 清理定时器或并发令牌。
 
 前端压缩目标为最长边1280px、文件不超过1MB；服务端另限上传2MB、解码1000万像素，核对签名和MIME，拒绝动画后重编码。两个限制属于不同阶段。照片压缩后由用户确认保存餐次，进入独立 mealPhotos 表和 v11 JSON 备份；服务端仍仅在内存处理图片。
+
+服务端在解码前占用图片/文字请求共享的并发槽位，全部图片验证通过后才预留每日调用次数，失败路径在 finally 释放。助手的最多三张图片逐张清洗，避免其中一张失败后其它解码仍在后台运行。上游响应经 http-body.ts 按实际字节流式限量：模型正文1MiB、GLM错误正文16KiB、商品查询256KiB；超限、读取异常或超时取消响应流，取消失败不会覆盖原有业务错误。
 
 prepareRecognition 对 foods 做 map：每项保留自己的估重，不能平均整盘重量，也不能把一道菜的可见配料再次记成摄入。包装标签优先；普通条目在 matchedEntry 中先配方，再基础库，再同名个人估算和本次AI候选。旧个人单值没有有效热量三档时，本次有效三档可以优先。
 
@@ -276,7 +292,7 @@ Vitest找packages/**/*.test.ts，组件按需用模拟DOM，存储用fake-indexe
 
 建议依次练习：
 
-1. 在calculateNutrients旁设断点，比较150g、0g、未知重量，再看 [nutrition.test.ts](../packages/shared/tests/nutrition.test.ts)。
+1. 在`nutrition-snapshot.ts`的calculateNutrients旁设断点，比较150g、0g、未知重量，再看 [nutrition.test.ts](../packages/shared/tests/nutrition.test.ts)。
 2. 跟随FoodEditor → api → mock → prepareRecognition，比较模型响应与本地条目结构。
 3. 用“本页改身高/另一页改目标”代入rebaseDraft，对照 [profile-sync.test.ts](../packages/web/tests/profile-sync.test.ts)。
 4. 看 [watch-budget.test.ts](../packages/shared/tests/watch-budget.test.ts) 的门槛两侧案例，再回calorieBudget区分读数与可计预算。

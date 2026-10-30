@@ -9,17 +9,24 @@
 export class BackLayers {
   private layers: Array<{ run: () => void | Promise<void>; active: boolean }> = []
   private pending = false
+  private version = 0
 
   constructor(private readonly settle: () => Promise<unknown> = () => Promise.resolve()) {}
 
   get hasActive() { return this.layers.some(layer => layer.active) }
+  /** 延迟操作捕获此版本；期间打开再关闭任意面板也会改变版本，旧意图不能自动恢复。 */
+  get revision() { return this.version }
 
   add(run: () => void | Promise<void>) {
     const layer = { run, active: true }
     this.layers.push(layer)
+    this.version++
     return {
-      setActive: (active: boolean) => { layer.active = active },
-      remove: () => { this.layers = this.layers.filter(item => item !== layer) },
+      setActive: (active: boolean) => { if (layer.active !== active) { layer.active = active; this.version++ } },
+      remove: () => {
+        if (!this.layers.includes(layer)) return
+        this.layers = this.layers.filter(item => item !== layer); this.version++
+      },
     }
   }
 

@@ -1,7 +1,8 @@
 import { parseRecognition as parse, validateRecognition as validate, geminiOutputText as gemini, chatCompletionOutputText as chat, glmOutputText as glm, VisionValidationError, type RecognitionValidationOptions } from '@shike/shared';
 import { ApiError } from '../errors.js';
 export type { RecognitionValidationOptions } from '@shike/shared';
-// 服务端保留 ApiError，由统一错误处理器转换 HTTP 状态。
+// shared承担平台无关的格式/营养约束，Node层只把它的验证错误映射成HTTP可公开的ApiError。
+// 不把所有未知异常都转成“格式不对”，这样内部缺陷仍会由app.ts隐藏成统一500。
 function mapped<T>(fn: () => T): T {
   try { return fn(); } catch (error) {
     if (error instanceof VisionValidationError) throw new ApiError(error.code, error.message, error.statusCode);

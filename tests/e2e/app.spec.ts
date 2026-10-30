@@ -93,6 +93,25 @@ test('未知营养可保存并持续提示，历史日期独立查看', async ({
   await expect(page.getByTestId('meal-record')).toHaveCount(1);
 });
 
+test('取消包含照片后导出记录，原餐次照片仍保留', async ({ page }) => {
+  await openPhotoEditor(page);
+  const picture = await sharp({ create: { width: 300, height: 200, channels: 3, background: '#e5efe8' } }).png().toBuffer();
+  await page.getByTestId('gallery-input').setInputFiles({ name: '餐食.png', mimeType: 'image/png', buffer: picture });
+  await expect(page.getByTestId('food-item-2')).toBeVisible();
+  await page.getByTestId('save-meal').click();
+  await expect(page.getByTestId('meal-record')).toHaveCount(1);
+  await openTab(page, 'settings'); await openSettingsPanel(page, 'backup');
+  await page.getByTestId('backup-include-photos').uncheck();
+  const downloaded = page.waitForEvent('download');
+  await page.getByTestId('export-backup').click();
+  const download = await downloaded;
+  expect(download.suggestedFilename()).toContain('不含照片');
+  const backup = JSON.parse(await readFile((await download.path())!, 'utf8'));
+  expect(backup.meals).toHaveLength(1); expect(backup.mealPhotos).toEqual([]);
+  await openTab(page, 'diary');
+  await expect(page.getByTestId('meal-record').locator('img')).toHaveCount(1);
+});
+
 test('体重、目标和JSON备份能导出并完整恢复', async ({ page }, testInfo) => {
   await manualMeal(page, '米饭', findFood('米饭')!.id);
   await openTab(page, 'weight');
@@ -110,7 +129,7 @@ test('体重、目标和JSON备份能导出并完整恢复', async ({ page }, te
   await download.saveAs(path);
   const content = await readFile(path, 'utf8');
   const backup = JSON.parse(content);
-  expect(Object.keys(backup).sort()).toEqual(['dailyPlans', 'estimatedFoods', 'exercises', 'exportedAt', 'meals', 'packagedFoods', 'schemaVersion', 'settings', 'water', 'weights']);
+  expect(Object.keys(backup).sort()).toEqual(['dailyPlans', 'estimatedFoods', 'exercises', 'exportedAt', 'libraryFoods', 'mealPhotos', 'meals', 'packagedFoods', 'schemaVersion', 'settings', 'water', 'weights']);
   expect(backup.schemaVersion).toBe(11);
   expect(backup.meals).toHaveLength(1);
   expect(backup.weights[0].weightKg).toBe(65.5);
@@ -454,17 +473,20 @@ test('一张照片逐项匹配多个食物和对应重量，混合菜不拆重�
   await expect(summary).toContainText('3 项已带入示例重量');
   await expect(page.getByTestId('food-item-4')).toHaveCount(0);
   const sources = [findFood('米饭')!.id, findRecipe('番茄炒蛋')!.id, findFood('香蕉')!.id, findRecipe('冬瓜豆腐汤')!.id];
+  // 前三项保留识别重量；第四项缺重时按已接受的常见份量规则补一碗250g，明确提示未称重。
+  const initialWeights = ['165.5', '240.25', '90', '250'];
   for (let index = 0; index < detected.length; index++) {
     await expect(page.getByTestId(`food-source-${index}`)).toHaveAttribute('data-source-id', sources[index]!);
-    await expect(page.getByTestId(`food-weight-${index}`)).toHaveValue(detected[index]!.estimatedWeightG === null ? '' : String(detected[index]!.estimatedWeightG));
+    await expect(page.getByTestId(`food-weight-${index}`)).toHaveValue(initialWeights[index]!);
     await expect(page.getByTestId(`recognition-match-${index}`)).toContainText(detected[index]!.name);
   }
   await expect(page.getByTestId('recognition-weight-1')).toContainText('240.25 g');
-  await expect(page.getByTestId('food-calories-3')).toHaveText('待补充');
-  await expect(page.getByTestId('recognition-weight-3')).toContainText('请填写');
+  await expect(page.getByTestId('food-calories-3')).toContainText('kcal');
+  await expect(page.getByTestId('recognition-weight-3')).toContainText('常见份量估算');
+  await expect(page.getByTestId('recognition-weight-3')).toContainText('未称重');
   await expect(page.getByTestId('recognized-row-0')).toContainText('165.5 g');
   await expect(page.getByTestId('recognized-row-1')).toContainText('240.25 g');
-  await expect(page.getByTestId('recognized-row-3')).toContainText('重量待补充');
+  await expect(page.getByTestId('recognized-row-3')).toContainText('250 g');
   await summary.scrollIntoViewIfNeeded();
   const imageName = testInfo.project.name === 'Chrome 手机' ? 'mobile' : testInfo.project.name === 'Chrome 桌面' ? 'desktop' : 'edge';
   await page.screenshot({ path: fileURLToPath(new URL(`../../docs/screenshots/multi-food-${imageName}.png`, import.meta.url)) });

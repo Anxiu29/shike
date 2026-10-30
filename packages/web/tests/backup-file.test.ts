@@ -12,6 +12,12 @@ vi.mock('@capacitor/share', () => ({ Share: { share: vi.fn() } }))
 const backup: Backup = { schemaVersion: 11, mealPhotos: [], libraryFoods: [], packagedFoods: [], exportedAt: '2026-10-15T03:00:00.000Z', meals: [], weights: [], estimatedFoods: [], water: [], exercises: [], dailyPlans: [], settings: { targetWeightKg: null } }
 beforeEach(() => vi.clearAllMocks())
 describe('安卓备份导出', () => {
+  it('不含照片的备份文件名明确区分，避免与完整备份混淆', async () => {
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true)
+    vi.mocked(Filesystem.writeFile).mockResolvedValue({ uri: 'file:///cache/backup.json' })
+    await saveBackupFile(backup, false)
+    expect(Filesystem.writeFile).toHaveBeenCalledWith(expect.objectContaining({ path: 'backups/食刻备份-2026-10-15-不含照片.json' }))
+  })
   it('把完整 JSON 写入 App 缓存并用系统分享，不依赖 WebView 的 blob 下载', async () => {
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true)
     vi.mocked(Filesystem.writeFile).mockResolvedValue({ uri: 'file:///cache/backup.json' })

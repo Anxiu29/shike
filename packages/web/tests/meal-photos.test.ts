@@ -11,6 +11,20 @@ let database: ShikeDatabase
 beforeEach(() => { database = new ShikeDatabase(`meal-photos-${crypto.randomUUID()}`) })
 afterEach(async () => { await database.delete() })
 describe('餐次照片持久化', () => {
+  it('不含照片备份保留完整餐食且不读取或删除本地照片，默认导出仍含照片', async () => {
+    await saveMeal(meal(), database, [photo, second])
+    const failRead = () => { throw new Error('不含照片时不应读取照片数据') }
+    database.mealPhotos.hook('reading', failRead)
+    let backup
+    try { backup = await exportBackup(database, { includePhotos: false }) }
+    finally { database.mealPhotos.hook('reading').unsubscribe(failRead) }
+    expect(backup.meals).toHaveLength(1)
+    expect(backup.meals[0]!.items[0]!.weightG).toBe(150)
+    expect(backup.mealPhotos).toEqual([])
+    expect(parseBackup(JSON.stringify(backup)).schemaVersion).toBe(11)
+    expect(await database.mealPhotos.count()).toBe(2)
+    expect((await exportBackup(database)).mealPhotos).toHaveLength(2)
+  })
   it('照片单独保存；编辑保持照片，显式替换或移除才更改图片', async () => {
     await saveMeal(meal(), database, [photo])
     const original = await database.mealPhotos.toArray()

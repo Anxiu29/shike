@@ -22,7 +22,8 @@ test('内置包装按分类、品牌和条码离线选用，容量换算和来�
   const milk = page.getByTestId('food-option-package:off-6923644266066'); await expect(milk).toContainText('每100 mL');
   if (info.project.name === 'Chrome 手机') await page.getByTestId('food-picker').screenshot({ path: 'docs/screenshots/packaged-catalog-mobile.png' });
   await page.getByTestId('food-picker-search').fill('6923644266066'); await milk.click();
-  await expect(page.getByTestId('package-amount-0')).toHaveValue(''); await page.getByTestId('package-unit-0').selectOption('ml'); await page.getByTestId('package-amount-0').fill('250');
+  // 首次选择已知mL基准标签会补参考杯量，不能再期待空值，也不能当成整包净含量。
+  await expect(page.getByTestId('package-amount-0')).toHaveValue('250'); await expect(page.getByTestId('package-unit-0')).toHaveValue('ml');
   await page.getByTestId('confirm-manual-food').click(); await expect(page.getByTestId('food-calories-0')).toContainText('184.63'); await page.getByTestId('save-meal').click();
   await expect(page.getByTestId('food-editor')).toHaveCount(0); await page.reload(); await expect(page.getByTestId('daily-calories')).toContainText('184.63');
   const data = await backup(page); expect(data.packagedFoods).toHaveLength(0);

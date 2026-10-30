@@ -45,6 +45,8 @@ export class ShikeDatabase extends Dexie {
 }
 
 export const db = new ShikeDatabase()
+// IndexedDB 使用结构化克隆，不能直接接收 Vue Proxy；本项目持久化模型仅含 JSON 数据。
+// schema 校验仍不可省：JSON 克隆只消除代理，不保证字段、单位或取值范围有效。
 const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 /** 模拟来源以条目快照为准，避免导入文件的 mode 误写为 live 而隐藏模拟提示。 */
 function normalizeMockMode(record: MealRecord): MealRecord {
@@ -54,12 +56,15 @@ function normalizeMockMode(record: MealRecord): MealRecord {
 }
 
 export async function loadData(database = db) {
-  const [meals, weights, preferences, estimatedFoods, water, exercises, dailyPlans, packagedFoods, libraryFoods] = await Promise.all([
-    database.meals.toArray(), database.weights.orderBy('date').toArray(), database.preferences.get('preferences'), database.estimatedFoods.orderBy('name').toArray(),
-    database.water.toArray(), database.exercises.toArray(), database.dailyPlans.toArray(), database.packagedFoods.toArray(),
-    database.libraryFoods.toArray(),
-  ])
-  return { meals, weights, estimatedFoods, water, exercises, dailyPlans, packagedFoods, libraryFoods, settings: preferences?.value ?? { targetWeightKg: null } }
+  // 多个标签页或恢复备份可同时写库；同一只读事务防止拼出更新前后的混合数据。
+  return database.transaction('r', [database.meals, database.weights, database.preferences, database.estimatedFoods, database.water, database.exercises, database.dailyPlans, database.packagedFoods, database.libraryFoods], async () => {
+    const [meals, weights, preferences, estimatedFoods, water, exercises, dailyPlans, packagedFoods, libraryFoods] = await Promise.all([
+      database.meals.toArray(), database.weights.orderBy('date').toArray(), database.preferences.get('preferences'), database.estimatedFoods.orderBy('name').toArray(),
+      database.water.toArray(), database.exercises.toArray(), database.dailyPlans.toArray(), database.packagedFoods.toArray(),
+      database.libraryFoods.toArray(),
+    ])
+    return { meals, weights, estimatedFoods, water, exercises, dailyPlans, packagedFoods, libraryFoods, settings: preferences?.value ?? { targetWeightKg: null } }
+  })
 }
 
 /** 在记录事务内冻结当日目标。编辑旧记录不会覆盖已经保存的历史预算。 */
@@ -69,6 +74,12 @@ async function capturePlan(date: string, database: ShikeDatabase) {
   await database.dailyPlans.put(makeDailyPlan(date, preferences?.value ?? { targetWeightKg: null }, await database.weights.toArray()))
 }
 
+/**
+ * 输入是一餐完整快照，验证和克隆在事务前完成；不会把回填 referenceId 写回编辑器草稿。
+ * photos=undefined 保留已有照片，[] 明确删除，非空数组整组替换；三者含义不能合并。
+ * 餐食、照片、个人估算、每日预算互相依赖，必须在同一个读写事务里提交。
+ * 事务中只等待 IndexedDB 操作，不能混入 fetch/图片压缩等外部异步，避免事务提前结束。
+ */
 export async function saveMeal(record: MealRecord, database = db, photos?: string[]): Promise<void> {
   const validated = normalizeMockMode(mealRecordSchema.parse(plain(record)))
   const images = photos?.map(photo => mealPhotoDataSchema.parse(photo))
@@ -113,6 +124,7 @@ export async function deleteMeal(id: string, database = db): Promise<void> {
   })
 }
 
+/** 体重以日期为主键。同日更正会重算该日及今天的已有预算，沿用各自保存的设置快照。 */
 export async function saveWeight(record: WeightRecord, database = db): Promise<void> {
   const validated = weightRecordSchema.parse(plain(record))
   await database.transaction('rw', [database.weights, database.dailyPlans], async () => {
@@ -167,18 +179,30 @@ export async function saveExercise(record: ExerciseRecord, database = db): Promi
   })
 }
 
-export async function exportBackup(database = db): Promise<Backup> {
-  const data = await database.transaction('r', [database.meals, database.weights, database.preferences, database.estimatedFoods, database.water, database.exercises, database.dailyPlans, database.packagedFoods, database.libraryFoods, database.mealPhotos], async () => ({ ...await loadData(database), mealPhotos: await database.mealPhotos.toArray() }))
+/**
+ * 在一个只读事务中读齐所有表，得到同一时间点的数据，避免备份混入恢复前后的两套记录。
+ * 不含照片只改变导出结果，绝不删除本地照片。输出再走备份 schema，统一版本并验证关联。
+ * 当前格式一次在内存生成完整 JSON；100 MB 是文件上限，并非峰值内存保证。
+ */
+export async function exportBackup(database = db, options: { includePhotos?: boolean } = {}): Promise<Backup> {
+  // 大量照片时仍能导出文字记录；跳过照片读取，避免先加载完整相册才丢弃。
+  const data = await database.transaction('r', [database.meals, database.weights, database.preferences, database.estimatedFoods, database.water, database.exercises, database.dailyPlans, database.packagedFoods, database.libraryFoods, database.mealPhotos], async () => ({ ...await loadData(database), mealPhotos: options.includePhotos === false ? [] : await database.mealPhotos.toArray() }))
   return backupSchema.parse({ schemaVersion: 11, exportedAt: new Date().toISOString(), ...data })
 }
 
 export const MAX_BACKUP_BYTES = 100 * 1024 * 1024
+/** 文件选择处先按字节数拦截；此入口再检查 UTF-8 字节数，避免直接传入文本绕过限制。 */
 export function parseBackup(text: string): Backup {
   if (text.length > MAX_BACKUP_BYTES || new TextEncoder().encode(text).length > MAX_BACKUP_BYTES) throw new Error('备份文件不能超过 100 MB。')
   try { return backupSchema.parse(JSON.parse(text)) }
   catch { throw new Error('备份内容无效：请使用食刻导出的版本1～11 JSON 文件，检查数据格式、照片与重复记录。') }
 }
 
+/**
+ * 这是整体替换，不是合并：旧格式缺少的表经 schema 升级为 []，恢复时也会清空对应本地表。
+ * 先验证、后清空，且所有清空/写入属于同一事务；任一表因空间或约束失败都回滚。
+ * 界面的“恢复成功”只能在此 Promise 完成后显示，不能在 clear()/bulkPut() 中途显示。
+ */
 export async function restoreBackup(backup: Backup, database = db): Promise<void> {
   const validated = backupSchema.parse(plain(backup))
   // 清空与恢复放在同一事务中；任一步失败都会回滚，保留原来的本地数据。

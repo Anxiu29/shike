@@ -4,12 +4,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+/** 自由文本的粗粒度停机策略与编码预检查；不负责证明识图内容正确，也不自动修饰错误答案。 */
 final class OfflineVisionPolicy {
     private static final Pattern ITEM = Pattern.compile("(?m)^[ \\t]*(?:[0-9]{1,3}[.、．)）]|[-*•])[ \\t]*\\S");
     private static final Pattern PREFIX = Pattern.compile("^[ \\t]*(?:[0-9]{1,3}[.、．)）]|[-*•])[ \\t]*");
     private static final Pattern SEPARATORS = Pattern.compile("[\\s\\p{P}\\p{N}]+");
 
-    /** 保留原始输出，只在明显循环/过长时停止；不靠去重把异常答案伪装成成功。 */
+    /**
+     * 分别识别尾部连续重复、跨行重复与清单过长；先去掉标点/数字，避免编号变化掩盖循环。
+     * 这是启发式停止条件，可能误判，故调用方保留原始片段并标为 limited，不直接写入记录。
+     */
     static String outputIssue(String output) {
         String compact = SEPARATORS.matcher(output).replaceAll("");
         for (int size = 2; size <= Math.min(80, compact.length() / 4); size++) {
@@ -34,7 +38,10 @@ final class OfflineVisionPolicy {
         return reason.equals("repetition") ? "检测到循环重复，已停止生成。以下为停止前的原始片段，不能作为完整识别结果。"
             : "清单超过6项，已停止生成。回答可能含推测内容，请核对后重新选图或简化问题。";
     }
-    /** 使用线性扫描，避免对兆字节图片使用重复分组正则引发栈溢出。 */
+    /**
+     * 使用线性扫描，避免对兆字节图片使用重复分组正则引发栈溢出。
+     * 这里只检查字符表、四字符分组与尾部 padding；真正解码、JPEG 类型和像素边界由插件检查。
+     */
     static boolean validImageBase64(String value) {
         int length = value.length();
         if (length == 0 || length > 1_398_104 || length % 4 != 0) return false;

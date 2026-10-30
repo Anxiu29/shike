@@ -34,6 +34,8 @@ import type { PortionSnapshot } from '@shike/shared'
 
 const props = defineProps<{ date: string; mealType: MealType; record?: MealRecord; health: Health | null; estimatedFoods: EstimatedFood[]; start: 'photo' | 'manual' | 'edit'; initialItems?: FoodEntry[]; initialMode?: MealRecord['mode']; reuseSource?: string; initialPhoto?: File; initialPhotos?: string[]; photoKind?: 'food' | 'label'; initialBarcode?: string }>()
 const emit = defineEmits<{ close: []; save: [record: MealRecord, photos?: string[]] }>()
+// undefined 表示“未改照片”，保存时让数据库保留旧值；[] 表示用户明确移除。
+// storedPhotos 仅供预览，不能加载完就回填 retainedPhotos，否则普通编辑也会重写照片。
 const retainedPhotos = ref<string[] | undefined>(props.initialPhotos)
 const storedPhotos = ref<string[]>([])
 const previewPhotos = computed(() => retainedPhotos.value ?? storedPhotos.value)
@@ -48,6 +50,7 @@ async function reloadPackages() { try { packagedFoods.value = await db.packagedF
 function closeLibrary() { libraryOpen.value = false; void reloadPackages() }
 function openLibrary(entry?: FoodEntry) { libraryCandidate.value = entry; libraryOpen.value = true }
 function usePackage(entry: FoodEntry) { if (items.value.length === 1 && !items.value[0]!.name.trim()) items.value = []; items.value.push(entry); previousNames.value[entry.id] = entry.name }
+// 深拷贝隔开父组件/历史记录与当前草稿；取消编辑不需要撤回数据库或父组件上的修改。
 const items = ref<FoodEntry[]>(JSON.parse(JSON.stringify(props.record?.items ?? props.initialItems ?? [])))
 const previousNames = ref<Record<string, string>>(Object.fromEntries(items.value.map(item => [item.id, item.name])))
 // 候选仅留在面板内存。可靠库优先，用户仍可主动改选本次模型粗估。
@@ -58,6 +61,7 @@ const personalFoods = computed(() => props.estimatedFoods.filter(food => food.pr
 const mealType = ref<MealType>(props.record?.mealType ?? props.mealType)
 const date = ref(props.record?.date ?? props.date)
 const mode = ref<MealRecord['mode']>(props.record?.mode ?? props.initialMode ?? 'manual')
+// phase 管照片处理，saveBusy 管持久化确认；识图完成不等于这餐已经保存。
 const phase = ref<'idle' | 'compressing' | 'recognizing' | 'done' | 'error'>('idle')
 const error = ref('')
 const notice = ref('')
@@ -70,6 +74,7 @@ async function loadSavedPhotos() {
   try {
     const photos = await db.mealPhotos.where('mealId').equals(props.record.id).sortBy('position')
     storedPhotos.value = photos.map(photo => photo.dataUrl)
+    // 读取可能晚于“移除/换图”；只在用户尚未修改照片时填充预览，避免旧照片回跳。
     if (retainedPhotos.value === undefined) imageUrl.value = storedPhotos.value[0] ?? ''
   } catch { notice.value = '原照片暂时无法读取，修改餐食仍会保留原照片。' }
 }
@@ -118,7 +123,8 @@ onBeforeUnmount(() => { offlineController?.abort(); window.visualViewport?.remov
 
 function keydown(event: KeyboardEvent) {
   if (childDialogOpen.value) return
-  if (event.key === 'Escape') { close(); return }
+  // 关闭后可能立即恢复助手的原生 dialog，阻止同一次 Escape 再触发其 cancel。
+  if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return }
   if (event.key !== 'Tab') return
   const focusable = [...document.querySelectorAll<HTMLElement>('.editor-modal button:not(:disabled), .editor-modal input:not(.sr-only):not(:disabled), .editor-modal select, .editor-modal summary')].filter(element => element.getClientRects().length > 0)
   const first = focusable[0], last = focusable.at(-1)
@@ -174,6 +180,7 @@ async function processFile(file: File) {
   error.value = ''; phase.value = 'compressing'
   try {
     const compressed = await compressImage(file)
+    // 同一压缩结果用于预览、推理与保存；原始照片只在解码过程中短暂使用。
     const dataUrl = `data:image/jpeg;base64,${await compressedImageBase64(compressed)}`
     photoFile.value = compressed
     retainedPhotos.value = [dataUrl]
@@ -196,6 +203,8 @@ async function runRecognition() {
     const offlineResult = local ? await recognizeOfflineImage(photoFile.value, photoKind.value === 'label' ? 'label' : 'food', { signal: controller!.signal, onProgress: value => { recognitionProgress.value = value } }) : null
     if (controller?.signal.aborted) throw new Error('本机识图已停止，原草稿保留。')
     if (response && photoKind.value === 'label' && !response.result.foods.some(food => food.packageLabel)) throw new Error('没有读清包装营养表。请拍清单位和数值后重试，或手动填写标签。')
+    // 完整转换成功后才替换 items；请求失败、停止或响应无效时，原清单仍可手动编辑。
+    // 纯转换负责匹配/快照，组件只维护草稿与界面状态，不另写营养换算公式。
     const drafts = response ? prepareRecognition(response, personalFoods.value) : prepareOfflineImage(offlineResult!, personalFoods.value)
     mode.value = response?.mode ?? 'live'
     recognitionOffline.value = local
@@ -339,7 +348,9 @@ async function submit() {
   if (items.value.some(item => item.packageSnapshot && !packageSnapshotSchema.safeParse(item.packageSnapshot).success)) { error.value = '请核对包装标签：营养表单位、每份大小和净含量需匹配；实际摄入最多100份／包或20000g／mL。'; return }
   const parsed = mealRecordSchema.safeParse(record)
   if (!parsed.success) { error.value = '请填写食物名称并检查数值：食物重量 0–20,000 g，每 100 g 热量 0–1,000 kcal，蛋白质、脂肪与碳水各 0–100 g。不确定的数据可留空。'; return }
-  // 父组件在 IndexedDB 事务成功后关闭面板；失败时原草稿仍在。
+  // emit 不是 awaitable 的数据库写入：先锁住表单，父组件事务成功后卸载面板，
+  // 失败则调用暴露的 saveFailed 解锁。不能在 emit 后立即解锁/显示“已保存”。
+  // record.items 已独立克隆，保存库中的历史快照不会再跟随 Vue 草稿变化。
   saveBusy.value = true
   emit('save', parsed.data, retainedPhotos.value)
 }
@@ -354,7 +365,11 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
           <div><span class="eyebrow">记录每一口的美好</span><h2 id="editor-title">{{ record ? '编辑饮食记录' : reuseSource ? '复用这一餐' : '记录这一餐' }}</h2></div>
           <button class="icon-button" aria-label="关闭记录面板" :disabled="busy || saveBusy" @click="close"><X :size="22" /></button>
         </header>
-        <div class="editor-scroll"><div v-if="reuseSource" class="reuse-source-note" data-testid="reuse-source-note"><Copy :size="19" /><div><strong>来自 {{ reuseSource }}</strong><p>已带入完整清单。这是一份新记录，核对日期和份量后保存。</p></div></div>
+        <!-- 保存交给父组件异步事务：fieldset 统一冻结全部原生表单控件，
+             防止已提交快照与用户随后删改的清单不同；失败时 saveFailed 解锁原草稿。 -->
+        <!-- 滚动留给普通div：fieldset有浏览器内部内容盒，直接作为flex滚动区时，
+             长配方可能越过底边并遮挡保存按钮。内层仅承担原生禁用和表单分组。 -->
+        <div class="editor-scroll"><fieldset class="editor-fields" :disabled="saveBusy" aria-label="餐食编辑内容" style="border: 0; margin: 0; padding: 0; min-inline-size: 0"><div v-if="reuseSource" class="reuse-source-note" data-testid="reuse-source-note"><Copy :size="19" /><div><strong>来自 {{ reuseSource }}</strong><p>已带入完整清单。这是一份新记录，核对日期和份量后保存。</p></div></div>
           <div v-if="mode === 'mock' || containsMockEstimate || (!record && selectedAiMode === 'mock')" class="notice warning" data-testid="mock-editor"><Info :size="17" /><span>{{ mode === 'mock' || containsMockEstimate ? '当前餐食包含模拟数据，保存后也会保留模拟标识。' : 'AI 当前为模拟模式：拍照识别使用示例食物，手动添加仍按你填写的数据记录。' }}</span></div>
           <PhotoModelPicker collapsible :kind="photoKind" :busy="busy || saveBusy" @switching="modelChanging = $event" @mode="selectedAiMode = $event" />
           <div v-if="!initialItems?.length || imageUrl" class="capture-area" :class="{ 'has-photo': imageUrl }">
@@ -405,7 +420,7 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
             <div class="food-estimate"><span>{{ entryBasis(entry) }}</span><strong :data-testid="`food-calories-${index}`">{{ calculateNutrients(entry).energyKcal === null ? '待补充' : `约 ${numberLabel(calculateNutrients(entry).energyKcal)} kcal` }}</strong></div>
           </article>
           <p class="editor-footnote">照片无法准确判断份量、烹饪方式和隐藏配料。称重与包装营养表能帮助你记录得更准确。</p>
-        </div>
+        </fieldset></div>
         <div v-if="items.length > 1" class="editor-store-all"><BookHeart :size="18" /><div><strong>这几样，经常吃？</strong><span>存下当前份量和营养，下次直接选</span></div><button type="button" class="button secondary compact" data-testid="save-all-library-foods" :disabled="busy || saveBusy || storingFood || mode === 'mock' || containsMockEstimate" @click="storeAllFoods">{{ storingFood ? '存入中…' : '全部存为常用' }}</button></div>
         <footer class="editor-footer"><div><span class="tiny muted">{{ !items.length ? '添加食物后汇总' : totals.incompleteEntries ? '已知部分估算' : '这一餐估算' }}</span><div class="footer-calories">{{ items.length ? "约 " + numberLabel(totals.energyKcal.known) : "—" }} <span>kcal</span></div><span v-if="totals.incompleteEntries" class="tiny amber-text">{{ totals.incompleteEntries }} 项营养待补充</span></div><button class="button primary" data-testid="save-meal" :disabled="busy || saveBusy || !items.length" @click="submit"><LoaderCircle v-if="saveBusy" class="spin" :size="18" /><Check v-else :size="18" /> {{ saveBusy ? '保存中' : '保存记录' }}</button></footer>
       </section>

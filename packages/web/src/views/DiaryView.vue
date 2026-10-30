@@ -12,7 +12,7 @@ import type { ToastAction } from '../lib/toast'
 import { dateLabel, localDate, numberLabel, rangeLabel, shiftDate, portionLabel, suggestedMealType } from '../lib/dates'
 import { entryBasis } from '../lib/entries'
 
-const props = defineProps<{ date: string; meals: MealRecord[]; settings: Settings; weights: WeightRecord[]; water: WaterRecord[]; exercises: ExerciseRecord[]; dailyPlans: DailyPlan[]; libraryFoods: LibraryFood[]; photoMealIds?: string[]; deletingMeal?: string | null }>()
+const props = defineProps<{ date: string; meals: MealRecord[]; settings: Settings; weights: WeightRecord[]; water: WaterRecord[]; exercises: ExerciseRecord[]; dailyPlans: DailyPlan[]; libraryFoods: LibraryFood[]; photoMealIds?: string[]; deletingMeal?: string | null; quickAddAvailable?: boolean }>()
 const emit = defineEmits<{ date: [value: string]; add: [type: MealType, start: 'photo' | 'manual']; edit: [record: MealRecord]; reuse: [record: MealRecord, date: string]; remove: [record: MealRecord]; changed: []; notify: [message: string, action?: ToastAction]; goals: []; library: []; quickAdd: [entry: FoodEntry] }>()
 const wellnessRef = ref<InstanceType<typeof DailyWellness> | null>(null)
 const calendarRef = ref<InstanceType<typeof DiaryWeek> | null>(null)
@@ -71,7 +71,7 @@ const recordedGroups = computed(() => new Set(todayMeals.value.map(meal => meal.
     <div class="diary-dashboard">
       <EnergySummary class="diary-energy" :date="date" :meals="todayMeals" :settings="settings" :weights="weights" :exercises="exercises" :daily-plans="dailyPlans" @goals="emit('goals')" @extra-exercise="wellnessRef?.openExtraExercise()" @changed="emit('changed')" @notify="emit('notify', $event)" />
       <div class="diary-quick-actions"><button class="button primary" data-testid="hero-camera" @click="emit('add', suggestedMealType(), 'photo')"><Camera :size="20" /><span>拍照识别</span><ArrowUpRight :size="16" /></button><button class="button secondary" data-testid="manual-add" @click="emit('add', suggestedMealType(), 'manual')"><Plus :size="20" /><span>添加食物</span><ArrowUpRight :size="16" /></button></div>
-      <PersonalFoodShelf class="diary-shortcuts" :foods="libraryFoods" :meals="meals" :date="date" @open="emit('library')" @add="emit('quickAdd', $event)" />
+      <PersonalFoodShelf class="diary-shortcuts" :foods="libraryFoods" :meals="meals" :date="date" :available="quickAddAvailable ?? true" @open="emit('library')" @add="emit('quickAdd', $event)" />
       <aside class="diary-wellness" aria-label="日常健康记录">
         <DailyWellness ref="wellnessRef" :date="date" :settings="settings" :weights="weights" :water="water" :exercises="exercises" :daily-plans="dailyPlans" @changed="emit('changed')" @notify="(message, action) => emit('notify', message, action)" @goals="emit('goals')" />
         <div class="diary-record-overview card"><div class="diary-overview-heading"><span>当日记录</span><small>{{ recordedGroups }} / 4 个餐次</small></div><div class="diary-overview-meals"><div v-for="group in groups" :key="group.type" :class="{ recorded: groupRecords(group.type).length }"><span><Check v-if="groupRecords(group.type).length" :size="15" /><component :is="group.icon" v-else :size="15" /></span>{{ group.label }}</div></div><p>已记录 {{ foodCount }} 项食物。<br />重复的一餐可直接复用，再核对本次份量。</p></div>

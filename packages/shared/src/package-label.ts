@@ -22,6 +22,10 @@ export function labelBasis(label: PackageLabel): { amount: number; unit: 'g' | '
   if (label.basis === 'package') return label.netContent;
   return null;
 }
+/**
+ * 求本次摄入相当于多少个“标签基准”。只有单位兼容或有明确份大小/净含量才换算。
+ * 例如每100mL标注、实际喝250mL，factor=2.5；若只有克数而标签按mL，保持未知。
+ */
 export function packageFactor(snapshot: PackageSnapshot): number | null {
   const { label, consumedAmount: amount, consumedUnit: unit } = snapshot;
   if (amount === null || !Number.isFinite(amount) || amount < 0) return null;
@@ -57,6 +61,7 @@ export function packageWeight(snapshot: PackageSnapshot): number | null {
     : snapshot.consumedUnit === 'serving' ? snapshot.label.servingSize : null;
   return measure?.unit === 'g' ? snapshot.consumedAmount * measure.amount : null;
 }
+/** 包装修改后同步供普通列表展示的字段；计算仍以packageSnapshot为准，不能丢弃原单位。 */
 export function syncPackageEntry(entry: FoodEntry): void {
   if (!entry.packageSnapshot) return;
   entry.weightG = packageWeight(entry.packageSnapshot);

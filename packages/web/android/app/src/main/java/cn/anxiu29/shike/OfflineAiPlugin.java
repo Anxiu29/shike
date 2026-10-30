@@ -16,14 +16,22 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-/** 独立的文字试验入口，不把未经验证的小模型输出写入饮食记录，不自动回退到收费 API。 */
+/**
+ * 离线模型的 Capacitor 入口：页面发命令并轮询状态，耗时的下载、校验、加载和推理由 worker 串行执行。
+ * downloadModel/loadModel/generate 的 resolve 仅确认任务被接受；最终结果要看 stage/error。
+ * prepareAssistant/describeMeal 则等任务结束才 resolve，供正式记餐流程等待。
+ * 模型输出仍是待共享层校验的草稿，本类不写饮食记录，也不自动回退到收费 API。
+ */
 @CapacitorPlugin(name = "OfflineAi")
 public class OfflineAiPlugin extends Plugin {
+    // 文字与视觉插件各有 worker，但共享原生运行时配额；此锁保护跨插件的引擎所有权。
     private static final Object RUNTIME_LOCK = new Object();
     private static OfflineAiPlugin runtimeOwner;
     protected OfflineModelSpec spec() { return OfflineModelSpec.TEXT; }
     protected final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
+    // busy 拒绝重入，避免两个页面命令同时修改同一模型文件或原生会话。
+    // volatile 字段用于跨线程发布状态；output 等相关快照还由 lock 一起读写。
     private final AtomicBoolean busy = new AtomicBoolean();
     protected final AtomicBoolean cancelled = new AtomicBoolean();
     private final Object lock = new Object();
@@ -46,6 +54,7 @@ public class OfflineAiPlugin extends Plugin {
     private File directory() { File dir = new File(getContext().getNoBackupFilesDir(), spec().directory); dir.mkdirs(); return dir; }
     private File model() { return new File(directory(), spec().file); }
     private File partial() { return new File(directory(), "model.part"); }
+    // ready 是廉价的存在/长度检查；完整 SHA-256 在下载或导入提交前执行，轮询时不重复扫描 GB 文件。
     private boolean ready() { return model().isFile() && model().length() == spec().bytes; }
     private boolean allowed(PluginCall call) {
         if (getBridge().getServerUrl() != null) { call.reject("离线 AI 测试仅支持内置页面的独立 APK。"); return false; }
@@ -53,6 +62,7 @@ public class OfflineAiPlugin extends Plugin {
         if (!Arrays.asList(Build.SUPPORTED_ABIS).contains("arm64-v8a")) { call.reject("此测试模型需要 64 位 ARM 安卓手机。"); return false; }
         return true;
     }
+    /** 在桥接入口抢占本插件任务槽，取消空闲释放并清理上次错误；抢占失败不改变正在执行的任务。 */
     protected boolean begin(PluginCall call, String next) {
         if (!allowed(call)) return false;
         if (!busy.compareAndSet(false, true)) { call.reject("已有离线模型操作，请等待完成或先停止。"); return false; }
@@ -100,6 +110,11 @@ public class OfflineAiPlugin extends Plugin {
             finally { HttpURLConnection request = connection; connection = null; if (request != null) request.disconnect(); busy.set(false); }
         });
     }
+    /**
+     * 手动处理有限次跳转，每跳重验下载域名；续传必须得到精确的 Content-Range。
+     * 不能把服务器忽略 Range 后返回的完整文件追加到旧片段，否则会生成损坏文件。
+     * connection 保留给取消/销毁入口断开；正常路径由下载任务 finally 释放。
+     */
     private HttpURLConnection openDownload(long offset) throws Exception {
         URL url = new URL(spec().url);
         for (int redirects = 0; redirects < 6; redirects++) {
@@ -128,6 +143,7 @@ public class OfflineAiPlugin extends Plugin {
     private void checkSpace(long needed) throws IOException {
         if (directory().getUsableSpace() < needed + 128L * 1024 * 1024) throw new IOException("手机剩余空间不足，请清理空间后再试。");
     }
+    /** 临时文件校验通过且未取消，才替换正式模型；失败片段不会被 ready() 当成可用模型。 */
     private void verifyAndCommit(File file) throws Exception {
         stage = "verifying"; progress = 0;
         OfflineModelPolicy.verify(file, spec().bytes, spec().sha256, cancelled::get, value -> progress = value);
@@ -204,6 +220,11 @@ public class OfflineAiPlugin extends Plugin {
             } catch (Exception | LinkageError cause) { fail(cause, "本机模型未返回完整的记餐JSON，原草稿已保留；可缩短描述后重试。"); finishTask(); call.reject(error); }
         });
     }
+    /**
+     * 仅在 worker 调用。跨插件切换前先借用对方 busy 槽，确保不会关闭正在推理的引擎。
+     * initialize 返回前不发布 next；加载期间退后台/取消也会关闭刚建好的引擎。
+     * reuse 只允许同后端的已准备引擎；视觉任务传 false，每个独立对话重新初始化。
+     */
     protected void ensureEngine(String chosen, boolean reuse) throws Exception {
       synchronized (RUNTIME_LOCK) {
         if (spec().vision && !chosen.equals("cpu")) throw new IOException("此视觉模型本轮仅允许CPU文字与图像计算。");
@@ -249,6 +270,12 @@ public class OfflineAiPlugin extends Plugin {
     private String runInference(String system, String prompt, String schema, int limit) throws Exception {
         return runContents(system, Contents.Companion.of(prompt), schema, limit);
     }
+    /**
+     * 把原生异步回调适配为 worker 上的同步任务；CountDownLatch 只阻塞 worker，不阻塞页面线程。
+     * onMessage 由原生线程回调，必须用 lock 更新输出快照，不能假定与 worker 同线程。
+     * conversationLock 单独保护取消/关闭，避免 JNI 等待回调时持有回调也需要的 lock。
+     * schema 只约束输出结构，不能证明名称、估重或营养语义正确，结果仍需后续校验。
+     */
     protected String runContents(String system, Contents contents, String schema, int limit) throws Exception {
         maxOutputTokens = limit;
         synchronized (lock) { output = ""; stopReason = ""; firstTextMs = -1; responseMs = -1; started = SystemClock.elapsedRealtime(); }
@@ -295,6 +322,7 @@ public class OfflineAiPlugin extends Plugin {
             }
         }
     }
+    /** 释放任务槽；后台立即卸载，前台文字引擎保留五分钟供下一次手动发送复用。 */
     protected void finishTask() {
         try { if (background) closeEngine(); }
         finally {
@@ -332,6 +360,7 @@ public class OfflineAiPlugin extends Plugin {
             finally { busy.set(false); }
         });
     }
+    /** 所有引擎销毁集中于此；先清除可见引用，再释放 JNI 资源，跨插件所有权同步撤销。 */
     protected void closeEngine() {
       synchronized (RUNTIME_LOCK) {
         Engine old = engine; engine = null; backend = "";
@@ -344,6 +373,7 @@ public class OfflineAiPlugin extends Plugin {
         error = cancelled.get() ? "已停止本机模型操作；已下载部分及原有记餐草稿会保留。" : cause instanceof IOException ? cause.getMessage() : fallback;
     }
     @Override protected void handleOnStart() { background = false; }
+    /** Activity 暂停不等于销毁：文件选择器也会触发此处，所以导入仍可继续。 */
     @Override protected void handleOnStop() {
         background = true;
         // 文件选择器也会让Activity停止，不取消模型导入。正在生成则取消，随后释放引擎。
@@ -351,6 +381,7 @@ public class OfflineAiPlugin extends Plugin {
         cancelGeneration();
         worker.execute(() -> { closeEngine(); if (!busy.get() && !stage.equals("error")) stage = ready() ? "ready" : "idle"; });
     }
+    /** 先发取消与断连接，再将引擎释放排到串行队尾；shutdown 保留该清理任务。 */
     @Override protected void handleOnDestroy() {
         background = true;
         cancelled.set(true); cancelGeneration();

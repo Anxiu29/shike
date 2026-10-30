@@ -1,4 +1,5 @@
 import { glmBusinessErrorMessage } from '@shike/shared';
+/** 可公开的业务错误；仅此类message允许被app.ts原样转换成JSON，禁止塞入供应商原文。 */
 export class ApiError extends Error {
   constructor(public readonly code: string, message: string, public readonly statusCode = 400, public readonly retryAfterSeconds?: number) {
     super(message);
@@ -6,6 +7,7 @@ export class ApiError extends Error {
   }
 }
 
+/** 将外部状态映射成本服务的稳定错误；模型认证失败映射502，避免误认为App令牌失效。 */
 export function upstreamError(status: number, retryAfter: string | null, glmCode?: string): ApiError {
   const glmMessage = glmCode ? glmBusinessErrorMessage(status, glmCode) : null;
   if (glmMessage && status !== 429) return new ApiError('AI_MODEL_UNAVAILABLE', glmMessage, 502);

@@ -22,7 +22,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Gitee 优先，GitHub 备用；只读公开发布，校验通过后仍由系统与用户确认安装。 */
+/**
+ * Gitee 优先、GitHub 备用的更新桥：公开列表 → 检查清单 → 下载临时包 → 校验 APK → 系统安装。
+ * 网络/哈希/包信息读取都在单线程 worker 执行；只有打开系统设置与安装器切回 UI 线程。
+ * checked 是本次检查的候选，ready 是已下载并校验的候选，两者不能互相替代。
+ * busy 防止任务交错；取消通过原子标志配合断开当前连接，finally 统一释放任务槽与临时包。
+ */
 @CapacitorPlugin(name = "AppUpdater")
 public class AppUpdaterPlugin extends Plugin {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
@@ -67,6 +72,11 @@ public class AppUpdaterPlugin extends Plugin {
         } catch (Exception error) { call.reject(message(error, "更新仓库保存失败。")); }
     }
     private boolean begin(PluginCall call) { if (!busy.compareAndSet(false, true)) { call.reject("已有更新任务进行中。"); return false; } cancelled.set(false); return true; }
+    /**
+     * Gitee 有更高版本时直接采用；否则检查备用源，避免国内源同步较慢时误报“已是最新”。
+     * SourceUnavailable 是连接/限流等可用性问题，可在此显示 partial 或尝试备用源；
+     * 格式/身份校验失败则直接拒绝，不能把无效更新伪装成“没有新版本”。
+     */
     @PluginMethod public void check(PluginCall call) {
         if (!begin(call)) return;
         final String github = repository(), gitee = giteeRepository();
@@ -95,6 +105,10 @@ public class AppUpdaterPlugin extends Plugin {
             finally { close(); busy.set(false); }
         });
     }
+    /**
+     * 只读取有界列表和固定命名的两个附件；Gitee 按真实时间排序后选择首个有效发行版。
+     * 清单与 APK 必须位于同一发行目录，清单通过本地契约检查后才成为候选。
+     */
     private Release fetchRelease(String source, String repository) throws Exception {
         boolean gitee = source.equals("gitee");
         String listUrl = gitee ? "https://gitee.com/api/v5/repos/" + UpdatePolicy.repository(repository, source) + "/releases?page=1&per_page=10&direction=desc" : "https://api.github.com/repos/" + UpdatePolicy.repository(repository) + "/releases?per_page=10";
@@ -126,6 +140,7 @@ public class AppUpdaterPlugin extends Plugin {
         }
         return null;
     }
+    /** 清单是网络输入：限定字段数、整数、大小、说明长度；后续还要读取真实 APK 再核对。 */
     private void validateManifest(JSONObject value) throws Exception {
         if (value.length() != 9 || integer(value, "schemaVersion") != 1 || !getContext().getPackageName().equals(value.getString("appId"))) throw new IOException("更新说明格式或应用标识不匹配。");
         long code = integer(value, "versionCode"), size = integer(value, "bytes"), sdk = integer(value, "minSdk");
@@ -135,6 +150,10 @@ public class AppUpdaterPlugin extends Plugin {
         for (int index = 0; index < notes.length(); index++) if (!(notes.get(index) instanceof String) || notes.getString(index).trim().isEmpty() || notes.getString(index).length() > 200) throw new IOException("更新说明格式无效。");
     }
     private long integer(JSONObject value, String key) throws Exception { Object number = value.get(key); if (!(number instanceof Number) || !Double.isFinite(((Number) number).doubleValue()) || ((Number) number).doubleValue() != Math.floor(((Number) number).doubleValue())) throw new IOException("更新说明中的数字格式无效。"); return ((Number) number).longValue(); }
+    /**
+     * 禁止连接自动跟随跳转：每一跳先由 UpdatePolicy 检查来源，且最多允许有限次跳转。
+     * connection 是取消入口可见的当前请求；read/download 的 finally 最终关闭它。
+     */
     private HttpsURLConnection open(String address, String source) throws Exception {
         String target = address;
         for (int redirects = 0; redirects <= 4; redirects++) {
@@ -165,6 +184,11 @@ public class AppUpdaterPlugin extends Plugin {
             return output.toString(StandardCharsets.UTF_8.name());
         } catch (java.net.SocketTimeoutException | java.net.SocketException error) { throw new SourceUnavailable("读取更新信息连接失败或超时。"); } finally { current.disconnect(); }
     }
+    /**
+     * 捕获 checked 快照后才排队，下载期间不跟随页面另一次选版。
+     * Gitee 连接失败允许换源，但备用清单必须与已选版本名/版本号/长度/哈希全部一致。
+     * pending.apk 不暴露给安装器；完整内容与真实签名通过后才改名并设置 ready。
+     */
     @PluginMethod public void download(PluginCall call) {
         final Release selected = checked;
         if (selected == null) { call.reject("请先检查更新。"); return; }
@@ -209,6 +233,7 @@ public class AppUpdaterPlugin extends Plugin {
         if (values == null) return new String[0]; String[] result = new String[values.length];
         for (int index = 0; index < values.length; index++) result[index] = UpdatePolicy.hex(MessageDigest.getInstance("SHA-256").digest(values[index].toByteArray())); return result;
     }
+    /** 从 APK 读取包名、版本、最低系统与签名，与已安装应用及清单交叉核对，不能信任文件名。 */
     private void verifyArchive(File apk, Release release) throws Exception {
         PackageInfo archive = getContext().getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), signatureFlags());
         if (archive == null || archive.applicationInfo == null) throw new IOException("文件不是有效Android安装包。");
@@ -216,6 +241,11 @@ public class AppUpdaterPlugin extends Plugin {
         UpdatePolicy.archive(app.packageName, archive.packageName, version(app), release.manifest.getLong("versionCode"), version(archive), release.manifest.getString("versionName"), archive.versionName, release.manifest.getInt("minSdk"), archive.applicationInfo.minSdkVersion, Build.VERSION.SDK_INT, signers(app), signers(archive));
     }
     @PluginMethod public void cancelDownload(PluginCall call) { cancelled.set(true); close(); call.resolve(); }
+    /**
+     * 安装前重新读文件校验哈希和 APK 元数据，防止下载完成后缓存被改动或系统版本状态变化。
+     * 缺少未知来源授权时只打开系统设置，页面收到 permission_required 后由用户再次点击继续。
+     * installer_opened 只表示已打开系统安装器，不能视为升级成功。
+     */
     @PluginMethod public void install(PluginCall call) {
         final Release release = ready;
         if (release == null || busy.get()) { call.reject("请先下载并校验更新包。"); return; }

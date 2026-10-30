@@ -6,6 +6,38 @@ import type { FastifyInstance } from 'fastify';
 const apps: FastifyInstance[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map(app => app.close())); });
 describe('Gitee公开更新元数据接口', () => {
+  it.each(['http-error', 'oversized'] as const)('取消%s响应永不完成也不会卡住业务错误', async scenario => {
+    const cleanup = Promise.withResolvers<void>();
+    let cancelled = false;
+    const response = new Response(new ReadableStream<Uint8Array>({
+      start(controller) { if (scenario === 'oversized') controller.enqueue(new Uint8Array(65537)); },
+      cancel() { cancelled = true; return cleanup.promise; },
+    }), { status: scenario === 'http-error' ? 404 : 200 });
+    const pending = readGiteeUpdate('a/b', 'v-next', async () => response).then(() => 'unexpected-success', error => error.code);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const outcome = await Promise.race([pending, new Promise<string>(resolve => { timer = setTimeout(() => resolve('blocked-by-cleanup'), 50); })]);
+      expect(outcome).toBe(scenario === 'http-error' ? 'UPDATE_SOURCE_UNAVAILABLE' : 'UPDATE_METADATA_INVALID');
+      expect(cancelled).toBe(true);
+      expect(response.body!.locked).toBe(false);
+    } finally { if (timer) clearTimeout(timer); cleanup.resolve(); await pending; }
+  });
+  it('下载中的响应忽略fetch信号时仍会在截止时取消并结束读取', async () => {
+    const controller = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+    let cancelled = false;
+    let streamController: ReadableStreamDefaultController | undefined;
+    const response = new Response(new ReadableStream({ start(value) { streamController = value; }, cancel() { cancelled = true; } }));
+    const pending = readGiteeUpdate('a/b', 'v-next', async () => response).then(() => 'unexpected-success', error => error.code);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await vi.waitFor(() => expect(response.body!.locked).toBe(true));
+      controller.abort();
+      const outcome = await Promise.race([pending, new Promise<string>(resolve => { timer = setTimeout(() => resolve('still-reading'), 50); })]);
+      expect(outcome).toBe('UPDATE_SOURCE_UNAVAILABLE');
+      expect(cancelled).toBe(true); expect(response.body!.locked).toBe(false);
+    } finally { if (timer) clearTimeout(timer); timeout.mockRestore(); if (!cancelled) streamController?.close(); await pending; }
+  });
   it('固定公开列表/JSON路径，不发送凭据或模型Key，允许官方附件CDN跳转', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response('[]')).mockResolvedValueOnce(new Response('', { status: 302, headers: { location: '/anxiu29/shike/attach_files/123/download' } })).mockResolvedValueOnce(new Response('', { status: 302, headers: { location: 'https://foruda.gitee.com/attach/example.json?signature=temporary' } })).mockResolvedValueOnce(new Response('{"schemaVersion":1}'));
     expect(await readGiteeUpdate('anxiu29/shike', undefined, fetcher)).toEqual([]);

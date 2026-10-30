@@ -15,6 +15,11 @@ public class OfflineVisionPlugin extends OfflineAiPlugin {
     @Override protected OfflineModelSpec spec() { return OfflineModelSpec.VISION; }
     @Override protected RepetitionPenaltyConfig repetitionPenalty() { return OfflineVisionTasks.structured(activeTask) ? null : new RepetitionPenaltyConfig(1.15f, 0.0f, 0.15f, 128); }
     @Override protected String outputIssue(String text) { return OfflineVisionTasks.outputIssue(activeTask, text); }
+    /**
+     * 先限制编码长度，再只解码图片边界验证 JPEG/尺寸，避免直接分配未受限的 Bitmap。
+     * 输入通过后交给父类串行 worker；resolve 表示已接受，页面继续轮询 stage/stopReason。
+     * 每次独立视觉会话都创建并关闭 CPU 引擎，finally 保证异常路径也归还原生资源。
+     */
     @PluginMethod public void generateImage(PluginCall call) {
         boolean namesOnly = call.getBoolean("namesOnly", false);
         String task = call.getString("task", namesOnly ? "names" : "test");

@@ -1,37 +1,10 @@
-import { createId, findFood, findRecipe, findEstimatedFood, normalizeFoodName, selectedEstimateOption, rangesToMidpoints, applyEstimateLevel, calculateEnergyRange, calculateNutrients, createEstimatedFoodEntry, createFoodEntry, createRecipeEntry, emptyNutrients, nutrientKeys, type FoodEntry, type EstimatedFood, type Nutrients, type NutritionEstimateProfile } from '@shike/shared'
+/**
+ * 编辑和展示已有条目的快照工具。这里不做整库查找，避免首页为展示来源或热量加载食品库。
+ * 名称匹配、新建未知条目在entry-matching.ts；底部重导出保留原调用接口。
+ */
+import { createId, selectedEstimateOption, rangesToMidpoints, applyEstimateLevel, calculateEnergyRange, calculateNutrients, emptyNutrients, nutrientKeys, type FoodEntry, type EstimatedFood, type Nutrients, type NutritionEstimateProfile } from "@shike/shared";
 
-export function manualEntry(name = '', weightG: number | null = null): FoodEntry {
-  return { id: createId(), name, weightG, nutrientsPer100g: emptyNutrients(), provenance: '未匹配营养数据，请选择基础食物、参考配方或手动补充。', kind: 'unknown', warnings: [] }
-}
-
-export function matchedEntry(name: string, weightG: number | null, personalFoods: EstimatedFood[] = [], currentEstimate?: EstimatedFood): FoodEntry {
-  // 可靠来源先匹配：已有数据库和参考配方不能被模型粗估静默替换。
-  const recipe = findRecipe(name)
-  if (recipe) {
-    // 菜名确定但照片无法估重时也能匹配配方；整份营养仍待补重量，不套默认份量。
-    const entry = createRecipeEntry(recipe, weightG !== null && weightG > 0 ? weightG : recipe.referenceWeightG)
-    entry.weightG = weightG
-    return entry
-  }
-  const food = findFood(name)
-  if (food) return createFoodEntry(food, weightG)
-  const personal = findEstimatedFood(name, personalFoods.filter(item => item.provider !== 'mock' && Object.values(item.nutrientsPer100g).some(value => value !== null)))
-  const currentHasEnergyRange = currentEstimate?.estimateProfile
-    ? selectedEstimateOption(currentEstimate.estimateProfile, 'medium').rangesPer100g.energyKcal !== null
-    : false
-  const personalHasEnergyRange = personal?.estimateProfile
-    ? selectedEstimateOption(personal.estimateProfile, 'medium').rangesPer100g.energyKcal !== null
-    : false
-  // 旧个人单值不能挡住新模型提供的有效三档；只在确认保存后升级原有库条目。
-  if (personal && currentEstimate && currentHasEnergyRange && !personalHasEnergyRange) return createEstimatedFoodEntry(currentEstimate, weightG)
-  // 新的一餐总是从中档开始；上次少糖／少油不能自动套用到下一份。
-  if (personal) {
-    const entry = createEstimatedFoodEntry({ ...personal, provenance: `个人估算库 · ${personal.provenance}` }, weightG)
-    return personal.estimateProfile ? applyEstimateLevel(entry, 'medium') : entry
-  }
-  return currentEstimate ? createEstimatedFoodEntry(currentEstimate, weightG) : manualEntry(name, weightG)
-}
-
+/** 只构造本次待核对的模型候选；本函数不写个人库，是否持久化由确认保存的数据库事务决定。 */
 export function recognitionEstimate(name: string, nutrientsPer100g: Nutrients | null, assumptions: string[], provider: EstimatedFood['provider'], model: string, profile?: NutritionEstimateProfile | null): EstimatedFood | undefined {
   if (profile) {
     const option = selectedEstimateOption(profile, 'medium')
@@ -51,17 +24,7 @@ export function entryBasis(entry: FoodEntry): string {
   return entry.kind === 'recipe' ? '参考配方估算' : entry.kind === 'database' ? entry.provenance.startsWith('USDA FNDDS') ? 'USDA 膳食参考' : 'USDA 基础食物' : entry.kind === 'manual' ? '手动营养数据' : '暂无法估算'
 }
 
-/** 名称纠正代表另一种食物时，旧模型的数值不能冒充新食物的估算。 */
-export function rematchRenamedEntry(entry: FoodEntry, previousName: string, personalFoods: EstimatedFood[]): { entry: FoodEntry; changed: boolean } {
-  if (normalizeFoodName(entry.name) === normalizeFoodName(previousName)) return { entry, changed: false }
-  // 手动营养值由用户填写，允许用改名修正标签，不替用户改写这些数值。
-  if (entry.kind === 'manual' || entry.kind === 'label' || entry.volumeSnapshot) return { entry, changed: true }
-  const next = matchedEntry(entry.name, entry.weightG, personalFoods)
-  next.id = entry.id
-  return { entry: next, changed: true }
-}
-
-/** 单值视作退化区间；缺失保持缺失，仅把可计算部分相加。 */
+/** 单值视作上下界相同的区间；只累计已知项，同时返回缺失数供页面显示“已知部分”。 */
 export function aggregateEnergyRanges(entries: FoodEntry[]): { min: number; max: number; missing: number; hasProfile: boolean } {
   return entries.reduce<{ min: number; max: number; missing: number; hasProfile: boolean }>((total, entry) => {
     const energy = calculateNutrients(entry).energyKcal
@@ -114,3 +77,6 @@ export function inputNumber(event: Event): number | null {
   // 只约束用户输入；配方缩放和营养中值继续保留完整计算精度。
   return input.value === '' ? null : Math.round((Number(input.value) + Number.EPSILON) * 100) / 100
 }
+
+// 旧调用点保留相同入口；展示层只导入快照函数时不会引入查库工厂。
+export { manualEntry, matchedEntry, rematchRenamedEntry } from "./entry-matching";

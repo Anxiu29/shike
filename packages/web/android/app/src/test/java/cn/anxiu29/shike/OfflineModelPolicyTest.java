@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class OfflineModelPolicyTest {
     @Test public void redirectsOnlyUseOfficialHttpsHosts() throws Exception {
@@ -25,6 +26,20 @@ public class OfflineModelPolicyTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try { OfflineModelPolicy.copy(new ByteArrayInputStream(new byte[]{1, 2}), out, 0, 2, () -> true, value -> {}); fail(); }
         catch (InterruptedIOException expected) { assertEquals(0, out.size()); }
+    }
+    @Test public void cancellationWhileReadingDoesNotWriteTheReturnedChunk() throws Exception {
+        AtomicBoolean cancelled = new AtomicBoolean(false);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // 模拟网络读取期间用户点击停止；已返回的字节仍不得追加到续传文件。
+        InputStream source = new ByteArrayInputStream(new byte[]{1, 2}) {
+            @Override public synchronized int read(byte[] buffer, int offset, int length) {
+                int count = super.read(buffer, offset, length);
+                cancelled.set(true);
+                return count;
+            }
+        };
+        assertThrows(InterruptedIOException.class, () -> OfflineModelPolicy.copy(source, out, 0, 2, cancelled::get, value -> {}));
+        assertEquals(0, out.size());
     }
     @Test public void importedFileMustMatchSizeAndSha256() throws Exception {
         File file = File.createTempFile("offline-model", ".bin");

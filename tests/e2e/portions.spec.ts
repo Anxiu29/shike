@@ -1,4 +1,4 @@
-import { openSettingsPanel } from './helpers/settings';
+import { openSettingsPanel, closeSettingsPanel } from './helpers/settings';
 import { test, expect } from '@playwright/test'
 import { routeApkAssets } from './helpers/apk-assets'
 
@@ -22,6 +22,7 @@ test('一个包子估重，多次编辑数量和单个大小，刷新与v9备份
   expect(backup.schemaVersion).toBe(11); expect(backup.meals[0].items[0]).toMatchObject({ weightG: 47.5, portionSnapshot: { quantity: .5, unit: '个', amountPerUnit: 95 } })
   await openSettingsPanel(page, 'backup'); await page.getByTestId('backup-input').setInputFiles({ name: 'portion.json', mimeType: 'application/json', buffer: bytes }); await page.getByTestId('confirm-restore').click()
   await expect(page.getByTestId('toast')).toContainText('备份已完整恢复')
+  await closeSettingsPanel(page)
   const diary = page.getByTestId('tab-diary'); await (await diary.isVisible() ? diary : page.getByTestId('desktop-tab-diary')).click()
   await page.getByTestId('edit-meal').click(); await expect(page.getByTestId('food-portion-0-quantity')).toHaveValue('0.5'); await expect(page.getByTestId('food-portion-0-per-unit')).toHaveValue('95')
 })

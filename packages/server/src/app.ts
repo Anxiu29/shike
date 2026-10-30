@@ -38,11 +38,19 @@ export interface AppOptions {
   dailyQuota?: DailyQuota;
 }
 
+/**
+ * 装配应用而不监听端口：真实进程由index.ts调用listen，测试使用Fastify.inject。
+ * 配置、时钟、模型和fetch均可注入，测试不必连接真实模型或改变系统时间。
+ * 这里创建的limiter/access/quota由所有路由闭包共享，不能放进单次请求里新建，
+ * 否则每次请求都会得到一份空计数，访问保护和成本上限也就失去作用。
+ */
 export async function buildApp(options: AppOptions = {}): Promise<FastifyInstance> {
   const config = options.config ?? loadConfig();
   const service = options.service ?? createVisionService(config, options.fetchImpl);
   // 只开放已在本机配置的固定白名单，客户端不能提交Key、提示词或上游URL。
   const selectable = new Map((!config.publicMode && config.aiMode !== 'mock' ? config.modelProfiles ?? [] : []).map(profile => [profile.id, createVisionService({ ...config, provider: profile.provider, model: profile.model, apiKey: profile.apiKey }, options.fetchImpl)]));
+  // 图片识别与文字助手共用处理槽位和日额度，防止切换接口绕过资源限制。
+  // 登录、条码和更新有各自分钟窗口，查询更新不应挤占AI调用预算。
   const limiter = new RecognitionLimiter(config, options.now);
   const sessionLimiter = new RecognitionLimiter({ ...config, requestsPerMinute: 5 }, options.now);
   const catalogLimiter = new RecognitionLimiter({ ...config, requestsPerMinute: 10 }, options.now);
@@ -50,6 +58,8 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
   let activeUpdateChecks = 0;
   const access = new AppAccess(config, options.now);
   const quota = options.dailyQuota ?? createDailyQuota(config);
+  // 不信任客户端可伪造的X-Forwarded-For；request.ip取直接连接地址。
+  // requestTimeout约束入站接收，模型下载的截止时间仍由vision/http.ts单独执行。
   const app = Fastify({ logger: false, trustProxy: false, bodyLimit: MAX_IMAGE_BYTES + 64 * 1024, requestTimeout: 60000 });
   // 在任何await插件启动之前设置，使静态页面和API路由都使用统一安全错误格式。
   app.setErrorHandler((error, _request, reply) => {
@@ -76,6 +86,8 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
   });
   await app.register(multipart, { limits: { fileSize: MAX_IMAGE_BYTES, files: 1, fields: 1, parts: 2 } });
 
+  // onRequest在解析正文前运行：非法来源/令牌尽早失败，不先为其解码图片或调用模型。
+  // Origin是浏览器来源边界，不是身份凭证；没有Origin的原生App也必须通过Bearer校验。
   app.addHook('onRequest', async (request, reply) => {
     if (request.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
     if (!request.url.startsWith('/api/')) return;
@@ -106,6 +118,7 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     limiter.checkIp(request.ip);
   });
 
+  // 健康检查只报告当前装配状态，不发送试探性的付费模型请求，也不证明上游可达。
   app.get('/api/health', async (): Promise<HealthResponse> => ({
     status: 'ok', mode: service.mode, provider: service.provider, model: service.model,
     ...(access.required ? { authRequired: true } : {}),
@@ -121,6 +134,8 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     if (!query.success) throw new ApiError('UPDATE_SOURCE_INVALID', '更新仓库或标签格式无效。');
     try { normalizeUpdateRepository(query.data.repository, 'gitee'); } catch { throw new ApiError('UPDATE_SOURCE_INVALID', '请填写公开Gitee仓库，格式为 用户名/仓库名。'); }
     if (activeUpdateChecks >= 2) throw new ApiError('UPDATE_BUSY', '更新检查繁忙，请稍后重试。', 429);
+    // 检查和加一之间没有await，在单个JS事件循环里不会有另一个请求插入抢占。
+    // 外部网络可能抛错，必须在finally减回，不能只写在成功return之后。
     activeUpdateChecks++;
     try { return await readGiteeUpdate(query.data.repository, query.data.tag, options.fetchImpl); } finally { activeUpdateChecks--; }
   });
@@ -137,6 +152,8 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     let buffer: Buffer | undefined;
     let mime = '';
     let selected: string | undefined;
+    // multipart是流式迭代；先完整验证字段和文件数，再进入昂贵的图片/模型处理。
+    // toBuffer由multipart的2MiB文件限制兜底，不能把客户端声明MIME当成内容验证。
     for await (const part of request.parts()) {
       if (part.type === 'field') {
         if (part.fieldname !== 'modelId') throw new ApiError('IMAGE_REQUIRED', '不接受模型或图片以外的字段。');
@@ -149,25 +166,36 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
       if (part.file.truncated) throw new ApiError('IMAGE_TOO_LARGE', '压缩后的照片不能超过 2 MB。', 413);
     }
     if (!buffer) throw new ApiError('IMAGE_REQUIRED', '请选择一张照片。');
-    const image = await sanitizeImage(buffer, mime);
     const currentService = selected && selected !== 'default' ? selectable.get(selected)! : service;
-    const release = limiter.acquire();
+    // 槽位从图片解码开始占用，因为解压后的像素内存比原始上传体积更大。
+    // 顺序是“占槽→清洗→扣日额→调用模型”，无效图片不会消耗日调用次数。
+    const release = limiter.acquireSlot();
     try {
+      const image = await sanitizeImage(buffer, mime);
+      // 内存检查负责本进程的立即拒绝，OSS负责多实例竞争的最终成本边界。
+      // 扣额采取预留语义：请求上游后即使超时，也不能假定供应商没有计费而退款。
+      limiter.consumeDaily();
       await quota?.consume((options.now ?? Date.now)(), config.requestsPerDay);
       // 对所有适配器再次校验，未来更换供应商也不能绕过统一数据边界。
       const result = validateRecognition(await currentService.recognize(image));
       return { result, mode: currentService.mode, provider: currentService.provider, model: currentService.model };
-    } finally { release(); }
+    } finally { release(); } // await任一步骤失败都要释放；不能放在成功路径的return后。
   });
 
   app.post('/api/meal-assistant', { bodyLimit: 3 * 1_398_104 + 32768 }, async request => {
+    // JSON里的base64约为原始字节的4/3；先限制正文和消息数量，再解码每张图片。
+    // strict输入契约由共享schema维护；modelId只能引用服务器已配置且可选的条目。
     const parsed = assistantRequestSchema.safeExtend({ modelId: z.string().max(100).optional() }).safeParse(request.body);
     if (!parsed.success) throw new ApiError('ASSISTANT_INPUT_INVALID', '请填写1000字以内的描述或选择图片，上下文最多6条消息、3张压缩图片。');
     const { modelId, ...input } = parsed.data;
     const profile = modelId && modelId !== 'default' ? config.modelProfiles?.find(profile => profile.id === modelId && selectable.has(modelId)) : undefined;
     if (modelId && modelId !== 'default' && !profile) throw new ApiError('MODEL_UNAVAILABLE', '请选择本机已配置的模型。');
-    const release = limiter.acquire();
-    try { await quota?.consume((options.now ?? Date.now)(), config.requestsPerDay); return await describeMeal(profile ? { ...config, ...profile } : config, input, options.fetchImpl); }
+    const release = limiter.acquireSlot();
+    // beforeRequest由describeMeal在所有历史图片清洗完成后执行，以免坏图提前扣额。
+    // 必须return await：若直接return Promise，finally会在模型尚未完成时提前释放槽位。
+    try { return await describeMeal(profile ? { ...config, ...profile } : config, input, options.fetchImpl, async () => {
+      limiter.consumeDaily(); await quota?.consume((options.now ?? Date.now)(), config.requestsPerDay);
+    }); }
     finally { release(); }
   });
 

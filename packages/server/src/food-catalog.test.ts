@@ -9,6 +9,28 @@ const product = { status: 1, product: { code, product_name: 'Test', quantity: '1
 const apps: FastifyInstance[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map(app => app.close())); });
 describe('OFF只读适配器与本机模型白名单', () => {
+  it('超出256KiB时中止分块商品响应，不等待后续正文', async () => {
+    let pulls = 0, cancelled = false;
+    const response = new Response(new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls++;
+        if (pulls <= 2) controller.enqueue(new Uint8Array(140000));
+        else controller.error(new Error('不应读到超限后的正文'));
+      },
+      cancel() { cancelled = true; },
+    }, { highWaterMark: 0 }));
+    await expect(lookupPackagedFood(code, vi.fn().mockResolvedValue(response))).rejects.toMatchObject({ code: 'CATALOG_UNAVAILABLE' });
+    expect(pulls).toBe(2); expect(cancelled).toBe(true);
+    expect(response.body!.locked).toBe(false);
+  });
+  it('UTF-8商品响应按字节限量，错误HTTP响应及时取消正文', async () => {
+    const oversized = new Response(JSON.stringify({ ...product, padding: '餐'.repeat(90000) }));
+    await expect(lookupPackagedFood(code, vi.fn().mockResolvedValue(oversized))).rejects.toMatchObject({ code: 'CATALOG_UNAVAILABLE' });
+    let cancelled = false;
+    const rejected = new Response(new ReadableStream({ cancel() { cancelled = true; } }), { status: 503 });
+    await expect(lookupPackagedFood(code, vi.fn().mockResolvedValue(rejected))).rejects.toMatchObject({ code: 'CATALOG_UNAVAILABLE' });
+    expect(cancelled).toBe(true);
+  });
   it('只访问固定URL、发送应用标识；无Authorization或模型Key', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify(product)));
     expect((await lookupPackagedFood(code, fetchImpl))!.label.basis).toBe('100g');

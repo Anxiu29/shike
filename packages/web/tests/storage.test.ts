@@ -12,6 +12,36 @@ beforeEach(() => { database = new ShikeDatabase(`shike-test-${crypto.randomUUID(
 afterEach(async () => { await database.delete() })
 
 describe('本地记录与备份', () => {
+  it('另一标签页在读取餐食后整体更新时，餐食和体重仍来自同一份快照', async () => {
+    const meal = sample()
+    const weight = { date: meal.date, weightKg: 70, updatedAt: meal.updatedAt }
+    await database.meals.put(meal); await database.weights.put(weight)
+    let competingWrite: Promise<void> | undefined
+    // 在第一笔读取事务建立后，插入另一标签页的原生事务；不替换任何读取结果。
+    database.use({ stack: 'dbcore', name: 'concurrent-tab', create: down => ({
+      ...down,
+      transaction(stores, mode, options) {
+        const transaction = down.transaction(stores, mode, options)
+        if (!competingWrite && mode === 'readonly' && stores.includes('meals')) {
+          competingWrite = new Promise<void>((resolve, reject) => {
+            const write = database.backendDB().transaction(['meals', 'weights'], 'readwrite')
+            write.oncomplete = () => resolve()
+            write.onabort = () => reject(write.error)
+            write.objectStore('meals').put({ ...meal, items: [{ ...meal.items[0], weightG: 200 }] })
+            write.objectStore('weights').put({ ...weight, weightKg: 68 })
+          })
+        }
+        return transaction
+      },
+    }) })
+    database.close(); await database.open()
+    const data = await loadData(database)
+    await competingWrite
+    expect(data.meals[0]!.items[0]!.weightG).toBe(150)
+    expect(data.weights[0]!.weightKg).toBe(70)
+    expect((await database.weights.get(meal.date))!.weightKg).toBe(68)
+  })
+
   it('包装标签快照事务保存和恢复，模拟来源不能隐藏，也不进入AI个人库', async () => {
     const entry = createPackageEntry('测试包装', { ...emptyPackageLabel(), basis: '100ml', energy: { value: 250, unit: 'kJ' }, netContent: { amount: 250, unit: 'ml' } }, 'mock', 'label-test')
     entry.packageSnapshot!.consumedUnit = 'package'; entry.packageSnapshot!.consumedAmount = 0.5; syncPackageEntry(entry)

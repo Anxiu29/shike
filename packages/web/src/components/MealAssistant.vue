@@ -24,6 +24,7 @@ const draftPhotos = ref<string[]>([])
 const open = ref(false), input = ref(''), error = ref(''), busy = ref(false), saving = ref(false), modelChanging = ref(false)
 const log = ref<HTMLElement | null>(null), draftPanel = ref<HTMLElement | null>(null), messages = ref<AssistantTurn[]>([]), history = ref<AssistantTurn[]>([])
 const photo = ref(''), photoBusy = ref(false), gallery = ref<HTMLInputElement | null>(null), camera = ref<HTMLInputElement | null>(null), preview = ref('')
+const launcher = ref<HTMLButtonElement | null>(null)
 const draft = ref<AssistantDraft | null>(null), entries = ref<FoodEntry[]>([]), packages = ref<PackagedFood[]>([]), mode = ref<'live' | 'mock'>('live')
 // 一个对话只处理一种输入，避免订单截图被后续当成餐食照片存入餐次。
 const inputKind = ref<'meal' | 'order'>('meal'), orderReviewed = ref(false)
@@ -32,7 +33,13 @@ const usingOffline = ref(offlineAssistantEnabled()), localRequest = ref(false), 
 let progressTimer: ReturnType<typeof setInterval> | undefined
 function updateOfflineProgress() { void offlineAi.getState().then(state => { offlineProgress.value = state.stage === 'loading' ? '正在加载本机模型，首次可能需要较久…' : '正在本机整理并检查记餐草稿…' }).catch(() => {}) }
 async function stopOffline() { try { await offlineAi.cancel(); offlineProgress.value = '正在停止本机操作，原草稿会保留…' } catch { error.value = '暂时无法停止，请稍后重试。' } }
-watch(open, value => { if (!value && localRequest.value) void stopOffline() })
+watch(open, async value => {
+  if (!value) {
+    if (localRequest.value) void stopOffline()
+    // 先等入口重新渲染，再等AppSheet关闭dialog解除背景inert，才能聚焦新按钮。
+    await nextTick(); await nextTick(); launcher.value?.focus({ preventScroll: true })
+  }
+})
 onBeforeUnmount(() => { clearInterval(progressTimer); if (localRequest.value) void stopOffline() })
 const total = computed(() => aggregateNutrients(entries.value)), pending = computed(() => busy.value || saving.value || modelChanging.value || libraryBusy.value || photoBusy.value)
 const imageUrl = (data: string) => `data:image/jpeg;base64,${data}`
@@ -121,22 +128,30 @@ function changeAmount(index: number, event: Event) {
   try { const entry = assistantEntry(next, props.personalFoods, packages.value, inputKind.value); entries.value[index] = entry; draft.value!.foods[index] = next; orderReviewed.value = false; error.value = '' } catch (cause) { error.value = (cause as Error).message }
 }
 function record(): MealRecord { if (!draft.value) throw new Error('请先描述这一餐。'); assistantDraftSchema.parse(draft.value); return mealRecordSchema.parse(assistantMeal(draft.value, entries.value, mode.value)) }
+function completeReview(meal: MealRecord) {
+  draft.value = null; entries.value = []; draftPhotos.value = []; orderReviewed.value = false
+  if (inputKind.value === 'order') history.value = []
+  message('assistant', `${mealNames[meal.mealType]}已保存。继续描述会创建新记录。`)
+}
+function resumeReview() { open.value = true }
+defineExpose({ completeReview, resumeReview, show })
 async function confirm() {
   if (pending.value || !entries.value.length) return
   if (inputKind.value === 'order' && !orderReviewed.value) { error.value = '请先按实际食用量核对订单，或进入详细编辑。'; return }
   error.value = ''; saving.value = true
-  try { const meal = record(); await saveMeal(meal, db, draftPhotos.value); draft.value = null; entries.value = []; draftPhotos.value = []; orderReviewed.value = false; if (inputKind.value === 'order') history.value = []; message('assistant', `${mealNames[meal.mealType]}已保存。继续描述会创建新记录。`); emit('saved', meal) }
+  try { const meal = record(); await saveMeal(meal, db, draftPhotos.value); completeReview(meal); emit('saved', meal) }
   catch { error.value = '保存未成功，草稿已保留。请检查份量和本地存储。' }
   finally { saving.value = false }
 }
 async function review() {
   if (pending.value) return
-  try { const meal = record(), photos = [...draftPhotos.value]; open.value = false; await nextTick(); await nextTick(); draft.value = null; entries.value = []; draftPhotos.value = []; orderReviewed.value = false; if (inputKind.value === 'order') history.value = []; emit('review', meal, photos) }
+  // 原草稿保留到详细编辑真正保存成功；取消或保存失败都不会丢失。
+  try { const meal = record(), photos = [...draftPhotos.value]; open.value = false; await nextTick(); await nextTick(); emit('review', meal, photos) }
   catch { error.value = '草稿格式不完整，请检查份量。' }
 }
 </script>
 <template>
-  <button v-if="available && !open" class="assistant-fab" data-testid="assistant-open" aria-label="打开AI记餐助手" @click="show"><LoaderCircle v-if="busy" class="spin" :size="21"/><MessageCircle v-else :size="21"/><span>AI记餐</span></button>
+  <button v-if="available && !open" ref="launcher" class="assistant-fab" data-testid="assistant-open" aria-label="打开AI记餐助手" @click="show"><LoaderCircle v-if="busy" class="spin" :size="21"/><MessageCircle v-else :size="21"/><span>AI记餐</span></button>
   <AppSheet :open="open" title="AI记餐助手" :subtitle="usingOffline ? '本机离线文字记餐 · 核对后保存' : '发照片、补充描述，也能聊聊这一餐'" :busy="saving" test-id="meal-assistant" class-name="meal-assistant-sheet" @close="open = false">
     <AssistantModelPicker :busy="busy || saving || libraryBusy || photoBusy" @switching="modelChanging = $event" @offline="usingOffline = $event"/>
     <label class="assistant-purpose">本次用途<select v-model="inputKind" :disabled="pending || !!messages.length || !!draft" data-testid="assistant-input-kind"><option value="meal">餐食聊天 / 记餐</option><option value="order" :disabled="usingOffline">外卖订单识别</option></select><small class="muted">更换用途请点击“新对话”</small></label>

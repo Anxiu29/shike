@@ -5,6 +5,10 @@ final class OfflineVisionTasks {
     static boolean valid(String task) { return task.equals("test") || task.equals("names") || structured(task); }
     static boolean structured(String task) { return task.equals("food_estimate") || task.equals("package_label"); }
     static int limit(String task) { return structured(task) ? 512 : 128; }
+    /**
+     * 固定 schema 把任务限制在名称/估重或标签抄录；null 表示未知，不能用 0 代替缺失。
+     * JSON 结构约束不能核实照片事实，返回后共享层还会检查数量、基准、单位和业务上限。
+     */
     static String schema(String task) {
         if (task.equals("food_estimate")) return """
             {"type":"object","additionalProperties":false,"properties":{"foods":{"type":"array","maxItems":6,"items":{"type":"object","additionalProperties":false,"properties":{"name":{"type":"string","minLength":1,"maxLength":40},"estimatedWeightG":{"type":["number","null"],"exclusiveMinimum":0,"maximum":20000}},"required":["name","estimatedWeightG"]}}},"required":["foods"]}

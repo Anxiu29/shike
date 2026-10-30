@@ -23,6 +23,7 @@ final class VisionPolicy {
         return result;
     }
 
+    /** 地址与型号组成成对的白名单；只验证型号或只验证 host 都不足以限制实际请求目标。 */
     static String endpoint(String provider, String model) {
         if (provider.equals("qwen") && (model.equals("qwen3.7-flash") || model.equals("qwen3.8-flash") || model.equals("qwen3.7-plus") || model.equals("qwen3-vl-plus")))
             return "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
@@ -73,6 +74,10 @@ final class VisionPolicy {
     static boolean removedOpenRouterModel(String model) {
         return "google/gemma-4-26b-a4b-it:free".equals(model) || "google/gemma-4-31b-it:free".equals(model);
     }
+    /**
+     * 特定思考模型可能用标签包装最终答案；仅接受成对且不嵌套的已知包装。
+     * 不完整时拒绝，不能猜测截断位置并把思考片段作为业务答案；返回后还要解析业务 JSON。
+     */
     static String finalContent(String model, String text) {
         if (!"glm-4.1v-thinking-flash".equals(model)) return text;
         String value = text.trim();

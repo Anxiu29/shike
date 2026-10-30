@@ -1,21 +1,11 @@
+import { offlinePhotoEnabled, offlinePhotoEstimates } from "./offline-photo-settings";
+export { offlinePhotoEnabled, offlinePhotoEstimates, configureOfflinePhoto } from "./offline-photo-settings";
 import { offlinePhotoPrompt, parseOfflinePhotoNames, offlineWeightPrompt, offlineLabelPrompt, parseOfflineWeights, parseOfflineLabel, createPackageEntry, type OfflineImageResult, type EstimatedFood } from '@shike/shared'
 import { offlineVision, offlineVisionImage, offlineVisionModel, offlineVisionSupported } from './offline-vision'
 import type { OfflineAiState } from './offline-ai'
 import { matchedEntry } from './entries'
 import { recognitionMatchName, type RecognizedFoodDraft } from './recognition'
 
-const preferenceKey = 'shike-offline-photo-v1'
-export function offlinePhotoEnabled(): boolean {
-  if (!offlineVisionSupported()) return false
-  try { return JSON.parse(localStorage.getItem(preferenceKey) ?? '{}').enabled === true } catch { return false }
-}
-export function offlinePhotoEstimates(): boolean {
-  try { return JSON.parse(localStorage.getItem(preferenceKey) ?? '{}').estimateWeights !== false } catch { return true }
-}
-export function configureOfflinePhoto(enabled: boolean, estimateWeights = offlinePhotoEstimates()) {
-  if (enabled && !offlineVisionSupported()) throw new Error('本机识图需要新版安卓独立APK。')
-  localStorage.setItem(preferenceKey, JSON.stringify({ enabled, estimateWeights }))
-}
 export function prepareOfflineImage(result: OfflineImageResult, personalFoods: EstimatedFood[] = []): RecognizedFoodDraft[] {
   if (result.kind === 'label') {
     const entry = createPackageEntry(result.name, result.label, 'offline', offlineVisionModel.name)

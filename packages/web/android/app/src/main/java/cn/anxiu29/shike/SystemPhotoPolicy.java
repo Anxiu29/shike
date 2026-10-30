@@ -7,6 +7,7 @@ import java.io.InputStream;
 /** 系统相机结果只接受有界JPEG；原图不写入餐次或长期保留。 */
 final class SystemPhotoPolicy {
     static final int MAX_BYTES = 20 * 1024 * 1024;
+    /** 有界读取后检查 JPEG 起始标记；这不是完整图片解码或 EXIF 校验，流由调用方关闭。 */
     static byte[] readJpeg(InputStream source) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192]; int count;

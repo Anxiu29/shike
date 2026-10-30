@@ -3,8 +3,37 @@ import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { existsSync } from 'node:fs';
 import sharp from 'sharp';
+import * as imageProcessing from './image.js';
 const input = { text: '早餐两个肉包', date: '2026-10-20', mealType: 'breakfast' };
 describe('文字助手API', () => {
+  it('多张上下文图片逐张验证，失败时没有仍占资源的解码任务', async () => {
+    const entered = Promise.withResolvers<void>(), resume = Promise.withResolvers<void>();
+    const original = imageProcessing.sanitizeImage;
+    const decode = vi.spyOn(imageProcessing, 'sanitizeImage').mockImplementationOnce(async (...args) => {
+      entered.resolve(); await resume.promise; return original(...args);
+    });
+    const photo = (await sharp({ create: { width: 32, height: 32, channels: 3, background: '#fff' } }).jpeg().toBuffer()).toString('base64');
+    const app = await buildApp({ config: loadConfig({ AI_MODE: 'mock', AI_REQUESTS_PER_DAY: '1', AI_REQUESTS_PER_MINUTE: '100' }) });
+    const pending = app.inject({ method: 'POST', url: '/api/meal-assistant', payload: { ...input, history: [
+      { role: 'user', text: '上一张', imageBase64: photo }, { role: 'user', text: '另一张', imageBase64: Buffer.from('not a jpeg').toString('base64') },
+    ] } }).then(response => response);
+    try {
+      await entered.promise;
+      expect(decode).toHaveBeenCalledTimes(1);
+      expect((await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: input })).json().error.code).toBe('AI_BUSY');
+      resume.resolve(); expect((await pending).statusCode).toBe(415);
+      expect((await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: input })).statusCode).toBe(200);
+    } finally { resume.resolve(); await pending; decode.mockRestore(); await app.close(); }
+  });
+  it('助手的损坏图片不消耗每日额度，之后的有效请求仍可用', async () => {
+    const app = await buildApp({ config: loadConfig({ AI_MODE: 'mock', AI_REQUESTS_PER_DAY: '1', AI_REQUESTS_PER_MINUTE: '100' }) });
+    try {
+      const invalid = await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: { ...input, imageBase64: Buffer.from('not a jpeg').toString('base64') } });
+      expect(invalid.statusCode).toBe(415);
+      expect((await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: input })).statusCode).toBe(200);
+      expect((await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: input })).json().error.code).toBe('DAILY_LIMIT_REACHED');
+    } finally { await app.close(); }
+  });
   it('订单截图复用受保护接口和结构校验，任务类型传给上游，非法结果拒绝', async () => {
     const imageBase64 = (await sharp({ create: { width: 300, height: 600, channels: 3, background: '#fff' } }).jpeg().toBuffer()).toString('base64');
     const draft = { intent: 'update', date: input.date, mealType: input.mealType, foods: [{ name: '肉包', amount: 6, unit: '个' }], message: '下单数量不等于实际摄入，请核对。' };

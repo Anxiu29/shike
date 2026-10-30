@@ -1,5 +1,9 @@
 # 安卓测试 APK：构建、安装与真机检查
 
+**0.11.31-test（versionCode54）：启动性能与稳定性优化。** 分离首页历史快照与整库查找依赖，修复迟到快捷添加覆盖草稿、保存期间误改和长配方遮挡保存按钮；改进网络与下载取消边界，补充各层中文学习注释。沿用原包名、模型、记录与调试签名。
+
+0.11.31本地验证（2026-10-30）：生产构建与完整Gradle编译通过，611项单元/接口、40项Gradle原生策略测试通过；APK内68份页面资源逐项哈希一致，Chrome手机/桌面与Edge共57项禁网页面回归通过，3项仅适用H5的用例跳过。APK为55,330,931字节，SHA-256为`f8ab6c9f905aa97424b47e71e89e19a3b8c8424cffda9448681fadb141abb9bc`，签名与0.11.30相同。包内无开发服务地址，不声明CAMERA权限。尚未执行真机覆盖安装或真实模型验收；报告见`artifacts/android/shike-0.11.31-test-verification.json`。
+
 **0.11.30-test（versionCode53）：外卖订单与模型分析流程更新。** AI记餐新增在线订单截图、小票和文字识读，核对实际摄入后保存；本机文字模型不再因打开助手或切CPU/GPU而加载，需手动准备。拍照后可切换模型重新分析同一张图，聊天可重分析上一图。保留原模型、记录及签名，不自动转在线。[订单教学](takeaway-order.md) · [助手说明](meal-assistant.md)。
 
 0.11.30验证（2026-10-29）：H5、独立页面及APK构建与验签通过；最终APK版本53，55,289,014字节，SHA-256为`cc02c975400236a3b5f992ee6fcf6272e261c3c0e0766906942427c6e25694c2`，与0.11.29签名一致。包内15份页面资源与独立构建哈希匹配；实际APK页面禁外网、模拟原生桥后，Chrome手机／桌面及Edge共30项专项场景通过，3项仅适用H5的Mock场景跳过。此前源码578项单元／接口、78项浏览器及38项原生测试通过；打包时原生测试任务复用通过缓存。构建工具遇到Windows用户信息探测失败，临时使用其终端环境回退后完成同步，依赖源码已还原。[Gitee国内源](https://gitee.com/anxiu29/shike/releases/tag/v0.11.30-test)与[GitHub备用源](https://github.com/Anxiu29/shike/releases/tag/v0.11.30-test)已公开，匿名更新列表均选中53，六个附件下载及SHA-256核验通过。尚未做真机覆盖安装或真实订单识读验收。安装包与校验报告见`artifacts/android/shike-0.11.30-test.apk`、`shike-0.11.30-test-verification.json`及`release-0.11.30-test/published-verification.json`。
