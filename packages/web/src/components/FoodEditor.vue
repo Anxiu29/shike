@@ -94,7 +94,8 @@ let pickerReturnFocus: HTMLElement | null = null
 let previousFocus: HTMLElement | null = null
 let manualReturnFocus: HTMLElement | null = null
 const totals = computed(() => aggregateNutrients(items.value))
-const busy = computed(() => modelChanging.value || ['compressing', 'recognizing'].includes(phase.value))
+const portionEstimating = ref<Record<string, boolean>>({})
+const busy = computed(() => Object.values(portionEstimating.value).some(Boolean) || modelChanging.value || ['compressing', 'recognizing'].includes(phase.value))
 const containsMockEstimate = computed(() => items.value.some(item => item.aiEstimateSnapshot?.provider === 'mock' || item.packageSnapshot?.provider === 'mock'))
 const mealTypes: { value: MealType; label: string }[] = [{ value: 'breakfast', label: '早餐' }, { value: 'lunch', label: '午餐' }, { value: 'dinner', label: '晚餐' }, { value: 'snack', label: '加餐' }]
 const nutrientFields: { key: keyof Nutrients; label: string; unit: string }[] = [{ key: 'energyKcal', label: '热量', unit: 'kcal' }, { key: 'proteinG', label: '蛋白质', unit: 'g' }, { key: 'fatG', label: '脂肪', unit: 'g' }, { key: 'carbsG', label: '碳水', unit: 'g' }]
@@ -125,6 +126,7 @@ function close() { if (pickerEntry.value) closeFoodPicker(); else if (manualFood
 useBackLayer(() => true, close)
 function addItem() { if (!busy.value && !saveBusy.value) { manualReturnFocus = document.activeElement as HTMLElement; manualFoodOpen.value = true } }
 function changeAmount(entry: FoodEntry, value: { amount: number | null; basis: 'g' | 'ml'; portion?: PortionSnapshot }) {
+  if (value.basis !== (entry.volumeSnapshot ? 'ml' : 'g')) { error.value = '估重单位不符，不能把mL当g；原重量已保留，请填写对应的重量或容量。'; return }
   if (entry.volumeSnapshot) entry.volumeSnapshot.amountMl = value.amount
   else resizeEntry(entry, value.amount)
   if (value.portion) entry.portionSnapshot = value.portion
@@ -366,12 +368,12 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
           <article v-for="(entry, index) in items" :key="entry.id" class="food-edit-card" :data-testid="`food-item-${index}`">
             <div class="food-edit-heading"><span class="number-dot">{{ String(index + 1).padStart(2, '0') }}</span><label class="name-field"><span class="sr-only">食物名称</span><input v-model="entry.name" :data-testid="`food-name-${index}`" placeholder="食物名称，如：米饭" maxlength="200" @blur="matchManualName(entry)" /></label><button class="icon-button small" :aria-label="`删除食物 ${index + 1}`" @click="removeItem(entry)"><Trash2 :size="17" /></button></div>
             <div v-if="recognitionContexts[entry.id]" class="recognition-item-match" :data-testid="`recognition-match-${index}`"><span>{{ mode === 'mock' ? '示例' : '识别' }}：{{ recognitionContexts[entry.id]!.name }}</span><strong>{{ entry.kind === 'database' ? '已匹配食物库' : entry.kind === 'recipe' ? '已匹配参考配方' : entry.kind === 'label' ? '已读取包装 · 请填摄入量' : entry.kind === 'ai' ? entry.provenance.startsWith('个人估算库') ? '已匹配个人食物' : mode === 'mock' ? '模拟 AI 估算' : '采用 AI 估算' : entry.kind === 'manual' ? '手动营养数据' : '营养待补充' }}</strong></div>
-            <PortionAmountInput v-if="!entry.packageSnapshot" :name="entry.name" :amount="entry.volumeSnapshot ? entry.volumeSnapshot.amountMl : entry.weightG" :basis="entry.volumeSnapshot ? 'ml' : 'g'" :portion="entry.portionSnapshot" :prefix="`food-portion-${index}`" :amount-test-id="entry.volumeSnapshot ? `food-volume-${index}` : `food-weight-${index}`" :disabled="busy || saveBusy" @change="changeAmount(entry, $event)" />
+            <PortionAmountInput v-if="!entry.packageSnapshot" :name="entry.name" :amount="entry.volumeSnapshot ? entry.volumeSnapshot.amountMl : entry.weightG" :basis="entry.volumeSnapshot ? 'ml' : 'g'" :portion="entry.portionSnapshot" :prefix="`food-portion-${index}`" :amount-test-id="entry.volumeSnapshot ? `food-volume-${index}` : `food-weight-${index}`" :disabled="busy || saveBusy" @change="changeAmount(entry, $event)" @estimating="portionEstimating[entry.id] = $event" />
             <div class="food-picker-field"><span>选择食物</span><button type="button" :data-testid="`food-source-${index}`" :data-source-id="selectedSource(entry)" :value="selectedSource(entry)" aria-haspopup="dialog" :disabled="busy || saveBusy" @click="openFoodPicker(entry, $event)"><span>{{ entry.name || '打开食物库' }}<small>{{ entryBasis(entry) }} · 点击更换</small></span><ChevronRight :size="17" /></button></div>
             <p v-if="recognitionContexts[entry.id]" class="recognition-weight-note" :data-testid="`recognition-weight-${index}`"><Scale :size="13" /><span>{{ photoWeightLabel(entry) }}</span></p>
             <div class="basis-row"><span class="basis-tag" :class="{ 'basis-ai': entry.kind === 'ai' }" :data-testid="`food-basis-${index}`"><Sparkles v-if="entry.kind === 'ai'" :size="12" />{{ entryBasis(entry) }}</span><span v-if="entry.kind === 'ai'" class="tiny muted">非实测 · 可能有较大误差</span></div>
             <div class="food-store-action"><button type="button" class="food-store-button" :data-testid="`save-library-food-${index}`" :disabled="busy || saveBusy || storingFood || !entry.name.trim() || mode === 'mock' || containsMockEstimate" @click="storeFood(entry)"><BookHeart :size="16" /> 存为常用</button><span v-if="mode === 'mock' || containsMockEstimate" class="tiny muted">模拟识别不能存入个人库</span><span v-if="storedFoodMessages[entry.id]" class="tiny" role="status" :data-testid="`stored-food-message-${index}`">{{ storedFoodMessages[entry.id] }}</span></div>
-            <PackageLabelEditor v-if="entry.packageSnapshot" :snapshot="entry.packageSnapshot" :index="index" @change="updatePackage(entry, $event)" />
+            <PackageLabelEditor v-if="entry.packageSnapshot" :snapshot="entry.packageSnapshot" :name="entry.name" :index="index" :auto-estimate="!record && !recognitionContexts[entry.id]" :disabled="busy || saveBusy" @change="updatePackage(entry, $event)" @estimating="portionEstimating[entry.id] = $event" />
             <button v-if="entry.packageSnapshot" class="text-button" :data-testid="`save-package-library-${index}`" :disabled="busy || saveBusy || entry.packageSnapshot.provider === 'mock'" @click="openLibrary(entry)">保存标签到我的包装库</button>
             <div v-if="entry.estimateProfile" class="estimate-profile">
               <div class="estimate-profile-heading"><span>{{ entry.estimateProfile.factor === 'sweetness' ? '按甜度与稠度调整' : entry.estimateProfile.factor === 'oil' ? '按用油量调整' : '选择估算档位' }}</span><span>默认中档 · 中值记账</span></div>

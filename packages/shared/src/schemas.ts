@@ -49,6 +49,12 @@ const weightSchema = z.number().finite().min(0).max(20000);
 const providerSchema = z.enum(['gemini', 'glm', 'qwen', 'siliconflow', 'openrouter', 'deepseek', 'mock']);
 
 const packageMeasureSchema = z.object({ amount: z.number().finite().positive().max(20000), unit: z.enum(['g', 'ml']) }).strict();
+export const portionSnapshotSchema = z.object({
+  unit: z.enum(['个', '根', '块', '碗', '片', '勺', '杯', '份', '盒', '包', '袋', '瓶', '罐']),
+  quantity: weightSchema.nullable(), amountPerUnit: weightSchema.positive().nullable(),
+  basis: z.enum(['g', 'ml']), assumption: z.string().min(1).max(500),
+}).strict();
+export type PortionSnapshot = z.infer<typeof portionSnapshotSchema>;
 /** 模型只抄标签原数值；未知单位／基准不猜，营养百分比不进数值字段。 */
 export const packageLabelSchema = z.object({
   basis: z.enum(['100g', '100ml', 'serving', 'package', 'unknown']),
@@ -74,11 +80,16 @@ export const packageSnapshotSchema = z.object({
   label: packageLabelSchema,
   consumedAmount: z.number().finite().min(0).max(20000).nullable(),
   consumedUnit: z.enum(['g', 'ml', 'serving', 'package']),
+  consumptionPortion: portionSnapshotSchema.optional(),
   provider: z.union([providerSchema, z.literal('manual')]), model: shortText, manuallyEdited: z.boolean(),
   source: catalogSourceSchema.optional(), brand: z.string().max(200).optional(), barcode: barcodeSchema.optional(),
 }).strict().superRefine((snapshot, context) => {
   if (snapshot.source && snapshot.barcode !== snapshot.source.barcode) context.addIssue({ code: 'custom', message: '标签条码与公开来源不一致' });
   const amount = snapshot.consumedAmount;
+  if (snapshot.consumptionPortion) {
+    const portion = snapshot.consumptionPortion, expected = portion.quantity === null || portion.amountPerUnit === null ? null : Math.round((portion.quantity * portion.amountPerUnit + Number.EPSILON) * 100) / 100;
+    if (snapshot.consumedUnit !== portion.basis || (expected === null) !== (amount === null) || (expected !== null && (expected > 20000 || Math.abs(expected - amount!) > 1e-7))) context.addIssue({ code: 'custom', message: '单个包装估重必须与实际摄入量一致' });
+  }
   const measure = snapshot.consumedUnit === 'package' ? snapshot.label.netContent : snapshot.consumedUnit === 'serving' ? snapshot.label.servingSize : null;
   if (amount !== null && (((snapshot.consumedUnit === 'package' || snapshot.consumedUnit === 'serving') && amount > 100) || (measure && measure.amount * amount > 20000)))
     context.addIssue({ code: 'custom', message: '实际摄入不能超过100份／包或20000g／mL' });
@@ -188,14 +199,6 @@ export const volumeSnapshotSchema = z.object({
   amountMl: weightSchema.nullable(),
   nutrientsPer100ml: z.object({ energyKcal: z.number().finite().min(0).max(2000).nullable(), proteinG: z.number().finite().min(0).max(200).nullable(), fatG: z.number().finite().min(0).max(200).nullable(), carbsG: z.number().finite().min(0).max(200).nullable() }).strict(),
 }).strict();
-export const portionSnapshotSchema = z.object({
-  unit: z.enum(['个', '根', '块', '碗', '片', '勺', '杯', '份']),
-  quantity: weightSchema.nullable(),
-  amountPerUnit: weightSchema.positive().nullable(),
-  basis: z.enum(['g', 'ml']),
-  assumption: z.string().min(1).max(500),
-}).strict();
-export type PortionSnapshot = z.infer<typeof portionSnapshotSchema>;
 export const foodEntrySchema = z.object({
   id: shortText,
   name: shortText,

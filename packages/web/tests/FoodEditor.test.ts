@@ -4,6 +4,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { calculateNutrients, applyEstimateLevel, createRecipeEntry, findRecipe, createEstimatedFoodEntry, createFoodEntry, findFood, recipes, type MealRecord, type NutritionEstimateProfile, type EstimateLevel } from '@shike/shared'
 import FoodEditor from '../src/components/FoodEditor.vue'
+import PortionAmountInput from '../src/components/PortionAmountInput.vue'
 import { recognitionEstimate, matchedEntry } from '../src/lib/entries'
 import { ShikeDatabase, saveMeal } from '../src/lib/db'
 import { porridgeProfile } from './range-fixture'
@@ -33,6 +34,13 @@ async function savedRecord(form: VueWrapper): Promise<MealRecord> {
 }
 
 describe('食物选择弹窗', () => {
+  it('编辑质量记录拒绝容量结果，不把250mL记成250g且仍可保存原值', async () => {
+    const form = openAIEditor({ weight: 200 });
+    form.findComponent(PortionAmountInput).vm.$emit('change', { amount: 250, basis: 'ml', portion: { unit: '杯', quantity: 1, amountPerUnit: 250, basis: 'ml', assumption: 'AI容量估计' } });
+    await form.vm.$nextTick();
+    expect(form.get('[data-testid="food-weight-0"]').element).toHaveProperty('value', '200');
+    expect((await savedRecord(form)).items[0]!.weightG).toBe(200);
+  });
   it('AI 记录可以直接保存，不再要求勾选核对，仍保留估算与来源标识', async () => {
     const form = openAIEditor()
     expect(form.find('[data-testid="confirm-ai"]').exists()).toBe(false)

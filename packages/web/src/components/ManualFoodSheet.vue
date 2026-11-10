@@ -28,6 +28,7 @@ const stage = ref<'form' | 'foods' | 'packages'>(props.initialStage), choice = r
 const nameInput = ref<HTMLInputElement | null>(null), error = ref(''), submitted = ref(false)
 const fields = [{ key: 'energyKcal', label: '热量', unit: 'kcal' }, { key: 'proteinG', label: '蛋白质', unit: 'g' }, { key: 'fatG', label: '脂肪', unit: 'g' }, { key: 'carbsG', label: '碳水化合物', unit: 'g' }] as const
 const portion = ref<PortionSnapshot>()
+const estimating = ref(false)
 const hasNutrition = computed(() => Object.values(nutrients.value).some(value => value !== null))
 const maximum = (key: keyof Nutrients) => (key === 'energyKcal' ? 1000 : 100) * (unit.value === 'ml' ? 2 : 1)
 const baseDraft = computed<FoodEntry | null>(() => {
@@ -67,13 +68,13 @@ function updatePackage(snapshot: PackageSnapshot) { if (choice.value) { choice.v
 function renamed() { error.value = ''; if (portion.value?.assumption.startsWith('常见份量估算')) weight.value = null; portion.value = undefined; if (choice.value && normalizeFoodName(name.value) !== normalizeFoodName(choice.value.name) && !choice.value.packageSnapshot) { choice.value = null; selectedId.value = '' } }
 function fillCommon(event: FocusEvent) {
   // 用户正要填写重量或选择单位时不抢先改输入，避免焦点切换把“150”和新输入拼接。
-  if ((event.relatedTarget as HTMLElement | null)?.closest('.portion-input')) return
+  if ((event.relatedTarget as HTMLElement | null)?.closest('.portion-input, .manual-food-nutrition')) return
   if (name.value.trim() && weight.value === null && !choice.value?.packageSnapshot) { const guess = typicalPortion(name.value, unit.value); weight.value = portionAmount(guess); portion.value = guess }
 }
 function changeUnit() { weight.value = null; portion.value = undefined; nutrients.value = emptyNutrients(); choice.value = null; selectedId.value = ''; error.value = '' }
 function closePackages() { stage.value = 'form'; emit('changed') }
 function submit() {
-  if (submitted.value) return
+  if (submitted.value || estimating.value) return
   error.value = ''
   if (!name.value.trim()) { error.value = '请先填写食物名称。'; nameInput.value?.focus(); return }
   if (weight.value !== null && (!Number.isFinite(weight.value) || weight.value < 0 || weight.value > 20000)) { error.value = `份量请填0～20,000 ${unit.value === 'ml' ? 'mL' : 'g'}，不确定可以留空。`; return }
@@ -91,15 +92,15 @@ defineExpose({ saveFailed: (message: string) => { submitted.value = false; error
       <button type="button" class="button secondary full" data-testid="manual-food-choose" @click="stage = 'foods'"><Search :size="18" />选择食物 · 含包装食品</button>
       <label>食物名称 <span class="muted">必填</span><input ref="nameInput" v-model="name" data-testid="manual-food-name" placeholder="例如：米饭、香蕉、自制沙拉" maxlength="200" autocomplete="off" :aria-invalid="!name.trim() && !!error" @input="renamed" @blur="fillCommon" /></label>
       <template v-if="!choice?.packageSnapshot">
-        <PortionAmountInput :name="name" :amount="weight" :basis="unit" :portion="portion" allow-volume prefix="manual-food" amount-test-id="manual-food-weight" @change="changeAmount" />
+        <PortionAmountInput :name="name" :amount="weight" :basis="unit" :portion="portion" allow-volume prefix="manual-food" amount-test-id="manual-food-weight" @change="changeAmount" @estimating="estimating = $event" />
         <p class="tiny muted">{{ unit === 'ml' ? '请按每100 mL填写饮品营养。没有密度时，食物库的每100 g数据不能直接换算。' : '重量不确定可以稍后补充，未填时不会按100 g计入热量。' }}</p>
       </template>
-      <PackageLabelEditor v-if="choice?.packageSnapshot" :snapshot="choice.packageSnapshot" :index="0" @change="updatePackage" />
+      <PackageLabelEditor v-if="choice?.packageSnapshot" :snapshot="choice.packageSnapshot" :name="name" :index="0" auto-estimate @change="updatePackage" @estimating="estimating = $event" />
       <div v-if="draft" class="manual-food-preview" data-testid="manual-food-preview"><Utensils :size="19" /><div><strong>{{ hasNutrition ? '使用手动填写的营养值' : draft.kind === 'unknown' ? '营养数据待补充' : `已匹配：${draft.name}` }}</strong><p>{{ entryBasis(draft) }}</p><p>{{ energy === null ? '热量待补充' : `这一项约 ${numberLabel(energy)} kcal` }}</p></div></div>
       <details v-if="!choice?.packageSnapshot" class="manual-food-nutrition"><summary>手填每100 {{ unit === 'ml' ? 'mL' : 'g' }}营养 <span>可选</span><ChevronDown :size="15" /></summary><p class="tiny muted">有确定数值时再填。填入后使用这些数值，不自动补齐其他项目。</p><div class="manual-food-nutrient-grid"><label v-for="field in fields" :key="field.key">{{ field.label }} <span class="muted">{{ field.unit }}</span><input :value="inputNumberLabel(nutrients[field.key])" :data-testid="`manual-food-${field.key}`" type="number" min="0" :max="maximum(field.key)" step="0.01" inputmode="decimal" placeholder="未知可留空" @input="nutrients[field.key] = inputNumber($event); error = ''" /></label></div></details>
       <p v-if="error" class="notice danger" role="alert" data-testid="manual-food-error">{{ error }}</p>
     </form>
-    <template #footer><div class="manual-food-footer-wrap"><div class="manual-food-footer"><button type="button" class="button secondary" data-testid="cancel-manual-food" :disabled="purpose === 'library' && submitted" @click="emit('close')">取消</button><button type="submit" :form="formId" class="button primary" data-testid="confirm-manual-food" :disabled="submitted"><Check :size="17" />{{ purpose === 'library' ? submitted ? '保存中…' : '保存到食物库' : '加入清单' }}</button></div><p class="tiny muted manual-food-save-note">{{ purpose === 'library' ? '保存为常用食物，之后可从首页快速添加到任意一餐。' : '加入后还可修改，保存这一餐才会记入历史。' }}</p></div></template>
+    <template #footer><div class="manual-food-footer-wrap"><div class="manual-food-footer"><button type="button" class="button secondary" data-testid="cancel-manual-food" :disabled="purpose === 'library' && submitted" @click="emit('close')">取消</button><button type="submit" :form="formId" class="button primary" data-testid="confirm-manual-food" :disabled="submitted || estimating"><Check :size="17" />{{ purpose === 'library' ? submitted ? '保存中…' : '保存到食物库' : '加入清单' }}</button></div><p class="tiny muted manual-food-save-note">{{ purpose === 'library' ? '保存为常用食物，之后可从首页快速添加到任意一餐。' : '加入后还可修改，保存这一餐才会记入历史。' }}</p></div></template>
   </AppSheet>
   <FoodPicker v-if="stage === 'foods'" :entry="pickerDraft" :selected-id="selectedId" :personal-foods="personalFoods" :packaged-foods="packagedFoods" @close="closeFoods" @select="choose" @packages="stage = 'packages'" />
   <PackagedLibrary v-if="stage === 'packages'" @select="usePackage" @close="closePackages" />

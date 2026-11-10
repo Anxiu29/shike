@@ -2,6 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { assistantRequestSchema, assistantDraftSchema, parseAssistantDraft, assistantBody, mockAssistant, typicalPortion, portionAmount } from '../src/index.js';
 const input = { text: '早餐两个肉包', date: '2026-10-20', mealType: 'breakfast' as const };
 describe('文字记餐的结构边界与参考份量', () => {
+  it('保留盒包量词及用户说明或AI估计的每单位大小，不允许在g上再乘单份大小', () => {
+    const draft = { intent: 'estimate', date: input.date, mealType: input.mealType, message: '单包大小为AI估计，请核对。', foods: [{ name: '好丽友派', amount: 2, unit: '包', portionEstimate: { amountPerUnit: 34, basis: 'g', source: 'ai', assumption: '按单独小包估计，规格未知' } }] };
+    expect(assistantDraftSchema.safeParse(draft).success).toBe(true);
+    expect(assistantDraftSchema.safeParse({ ...draft, foods: [{ ...draft.foods[0], unit: 'g' }] }).success).toBe(false);
+  });
+  it('热量查询允许estimate返回食物，普通问答和清空仍不能夹带食物', () => {
+    const draft = { ...input, intent: 'estimate', message: '按本地食品库估算，不会记录。', foods: [{ name: '米饭', amount: 150, unit: 'g' }] };
+    const { text, ...result } = draft;
+    expect(assistantDraftSchema.safeParse(result).success).toBe(true);
+    for (const intent of ['question', 'clear']) expect(assistantDraftSchema.safeParse({ ...result, intent }).success).toBe(false);
+    expect(mockAssistant({ ...input, text: '两个包子多少热量' }).intent).toBe('estimate');
+  });
+  it('最新本地热量快照进入各平台上下文，未知热量不填0，拒绝非法或无界快照', () => {
+    const snapshot = { scope: 'draft', date: input.date, mealType: input.mealType, mode: 'live', knownEnergyKcal: 195, missingEnergyItems: 1, items: [
+      { name: '米饭', portion: '150 g', energyKcal: 195, source: '测试食品库', assumptions: [] },
+      { name: '未知菜', portion: '1份 · 约200g', energyKcal: null, source: '待补充', assumptions: ['参考份量，未称重'] },
+    ] };
+    const request = { ...input, text: '这餐热量多少', nutrition: [snapshot] };
+    expect(assistantRequestSchema.safeParse(request).success).toBe(true);
+    const body = assistantBody('qwen', 'qwen3.7-flash', request as any) as any;
+    expect(JSON.parse(body.messages[1].content).nutrition).toEqual([snapshot]);
+    expect(JSON.parse((assistantBody('gemini', 'gemini-3.5-flash-lite', request as any) as any).input[0].text).nutrition).toEqual([snapshot]);
+    for (const nutrition of [Array(3).fill(snapshot), [{ ...snapshot, items: Array(11).fill(snapshot.items[0]) }], [{ ...snapshot, items: [{ ...snapshot.items[0], energyKcal: -1 }] }], [{ ...snapshot, knownEnergyKcal: 0 }], [{ ...snapshot, missingEnergyItems: 0 }]]) {
+      expect(assistantRequestSchema.safeParse({ ...input, nutrition }).success).toBe(false);
+    }
+  });
   it('未说餐次采用设备传入值，已有草稿优先，明确餐次可覆盖默认值', () => {
     const request = { ...input, text: '两个肉包', mealType: 'dinner' as const };
     expect(mockAssistant(request).mealType).toBe('dinner');

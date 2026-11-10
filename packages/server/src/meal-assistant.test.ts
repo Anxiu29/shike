@@ -5,6 +5,21 @@ import { existsSync } from 'node:fs';
 import sharp from 'sharp';
 const input = { text: '早餐两个肉包', date: '2026-10-20', mealType: 'breakfast' };
 describe('文字助手API', () => {
+  it('热量追问把已知部分和缺失资料发送模型，estimate结果经接口保留', async () => {
+    const nutrition = [{ scope: 'draft', date: input.date, mealType: input.mealType, mode: 'live', knownEnergyKcal: 195, missingEnergyItems: 1, items: [
+      { name: '米饭', portion: '150 g', energyKcal: 195, source: '测试食品库', assumptions: [] },
+      { name: '未收录饮品', portion: '250 mL', energyKcal: null, source: '营养待补充', assumptions: [] },
+    ] }];
+    const draft = { intent: 'estimate', date: input.date, mealType: input.mealType, foods: [{ name: '米饭', amount: 200, unit: 'g' }], message: '按200g重新估算，不会记录。' };
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft) } }] })));
+    const app = await buildApp({ config: loadConfig({ AI_PROVIDER: 'qwen', DASHSCOPE_API_KEY: 'test-only-key', AI_MODE: 'live' }), fetchImpl: fetcher as typeof fetch });
+    try {
+      const response = await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: { ...input, text: '米饭换成200g有多少热量', nutrition } });
+      expect(response.statusCode).toBe(200); expect(response.json().draft.intent).toBe('estimate');
+      const body = JSON.parse((fetcher.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+      expect(JSON.parse(body.messages[1].content).nutrition).toEqual(nutrition);
+    } finally { await app.close(); }
+  });
   it('接收图片加描述和历史图片，解码去除EXIF后发送；伪造图片不调用模型', async () => {
     const photo = await sharp({ create: { width: 64, height: 64, channels: 3, background: '#66aa55' } }).withExif({ IFD0: { Artist: 'private-location'.repeat(1400) } }).jpeg().toBuffer();
     const draft = { intent: 'question', date: input.date, mealType: input.mealType, foods: [], message: '可适量搭配蔬菜。' };

@@ -1,7 +1,7 @@
 import type { FoodEntry, MealType } from '@shike/shared'
 export function portionLabel(entry: FoodEntry): string {
-  if (entry.portionSnapshot) {
-    const portion = entry.portionSnapshot, amount = portion.basis === 'ml' ? entry.volumeSnapshot?.amountMl : entry.weightG;
+  if (entry.portionSnapshot || entry.packageSnapshot?.consumptionPortion) {
+    const portion = (entry.portionSnapshot ?? entry.packageSnapshot?.consumptionPortion)!, amount = entry.packageSnapshot?.consumptionPortion ? entry.packageSnapshot.consumedAmount : portion.basis === 'ml' ? entry.volumeSnapshot?.amountMl : entry.weightG;
     return `${portion.quantity === null ? '数量待填写' : `${numberLabel(portion.quantity)} ${portion.unit}`} · ${amount == null ? '份量待补充' : `约 ${numberLabel(amount)} ${portion.basis === 'ml' ? 'mL' : 'g'}`}`
   }
   if (entry.volumeSnapshot) return entry.volumeSnapshot.amountMl === null ? '饮用量待补充' : `${numberLabel(entry.volumeSnapshot.amountMl)} mL`

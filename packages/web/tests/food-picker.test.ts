@@ -38,7 +38,7 @@ describe('食物浏览与本地推荐', () => {
     const all = buildFoodChoices([], undefined, undefined, [food]), id = `package:${food.id}`
     for (const query of ['牛奶', '包装品牌', '3274080005003']) expect(searchFoodChoices(all, query, '包装食品').map(item => item.id)).toContain(id)
     const choice = all.find(item => item.id === id)!; expect(choice.nutritionPerUnit).toMatchObject({ unitLabel: '每100 mL', value: { energyKcal: 60 } }); expect(choice.nutrientsPer100g.energyKcal).toBeNull()
-    const entry = entryForFoodChoice(id, 200, [], [food])!; expect(entry.weightG).toBeNull(); expect(entry.packageSnapshot!.consumedAmount).toBe(250); expect(calculateNutrients(entry).energyKcal).toBe(150); expect(entry.warnings.join(' ')).toContain('常见份量估算')
+    const entry = entryForFoodChoice(id, 200, [], [food])!; expect(entry.weightG).toBeNull(); expect(entry.packageSnapshot!.consumedAmount).toBeNull(); expect(calculateNutrients(entry).energyKcal).toBeNull()
     entry.packageSnapshot!.label.energy!.value = 1; expect(food.label.energy!.value).toBe(60)
   })
   it('日常筛选隐藏生肉、生蛋和待烹饪干料，保留水果、生菜、黄瓜和坚果', () => {

@@ -3,6 +3,31 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, expect, it } from 'vitest'
 import { calculateNutrients, foodEntrySchema, type FoodEntry } from '@shike/shared'
 import ManualFoodSheet from '../src/components/ManualFoodSheet.vue'
+import PortionAmountInput from '../src/components/PortionAmountInput.vue'
+import PortionEstimator from '../src/components/PortionEstimator.vue'
+it('单份AI估重不把明确清空的数量补成1，换量词也不沿用旧数量', () => {
+  const portion = { unit: '个' as const, quantity: null, amountPerUnit: 80, basis: 'g' as const, assumption: '用户清空数量' };
+  const view = mount(PortionAmountInput, { props: { name: '包子', amount: null, basis: 'g', portion, prefix: 'test', amountTestId: 'amount' } });
+  view.findComponent(PortionEstimator).vm.$emit('estimated', { ...portion, quantity: 1, amountPerUnit: 34 });
+  expect(view.emitted('change')![0]![0]).toMatchObject({ amount: null, portion: { quantity: null, amountPerUnit: 34 } });
+  view.findComponent(PortionEstimator).vm.$emit('estimated', { ...portion, unit: '盒', quantity: 1, amountPerUnit: 200 });
+  expect(view.emitted('change')![1]![0]).toMatchObject({ amount: null, portion: { unit: '盒', quantity: null } });
+  view.unmount();
+});
+it('自动份量切回相同量词时保留原有数量和单个大小，不能把两只总重当单只', async () => {
+  const portion = { unit: '个' as const, quantity: 2, amountPerUnit: 80, basis: 'g' as const, assumption: '常见份量估算：2个包子' };
+  const view = mount(PortionAmountInput, { props: { name: '肉包', amount: 160, basis: 'g', portion, prefix: 'test', amountTestId: 'amount' } });
+  await view.get('[data-testid="test-unit"]').setValue('个');
+  expect(view.emitted('change')![0]![0]).toMatchObject({ amount: 160, portion: { quantity: 2, amountPerUnit: 80 } });
+  await view.setProps({ portion: (view.emitted('change')![0]![0] as { portion: typeof portion }).portion });
+  expect(view.get('[data-testid="test-summary"]').text()).toContain('160 g');
+  view.unmount();
+});
+it('把自动参考200g切换成包时，不能把参考总量当成已知每包200g', async () => {
+  const view = mount(PortionAmountInput, { props: { name: '好丽友', amount: 200, basis: 'g', portion: { unit: '份', quantity: 1, amountPerUnit: 200, basis: 'g', assumption: '常见份量估算：未称重的通用200g' }, prefix: 'test', amountTestId: 'amount' } });
+  await view.get('[data-testid="test-unit"]').setValue('包');
+  expect(view.emitted('change')![0]![0]).toMatchObject({ amount: null, portion: { unit: '包', amountPerUnit: null } }); view.unmount();
+});
 let wrapper: VueWrapper | undefined
 afterEach(() => { wrapper?.unmount(); wrapper = undefined })
 function form() {

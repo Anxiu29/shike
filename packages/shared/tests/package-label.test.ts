@@ -3,6 +3,12 @@ import { aggregateNutrients, backupSchema, calculateNutrients, createPackageEntr
 const label = (extra: Partial<PackageLabel> = {}): PackageLabel => ({ basis: '100g', energy: { value: 2092, unit: 'kJ' }, proteinG: 8, fatG: 20, carbsG: 65, servingSize: { amount: 25, unit: 'g' }, netContent: { amount: 100, unit: 'g' }, ...extra });
 function entry(value = label(), amount: number | null = null, unit: 'g' | 'ml' | 'serving' | 'package' = 'g') { const record = createPackageEntry('包装饼干', value, 'qwen', 'test-model'); Object.assign(record.packageSnapshot!, { consumedAmount: amount, consumedUnit: unit }); syncPackageEntry(record); return record; }
 describe('包装标签的原值与实际摄入换算', () => {
+  it('独立小包估重快照与实际摄入一致，篡改个数、总量或质量体积会拒绝', () => {
+    const record = entry(label(), 68);
+    record.packageSnapshot!.consumptionPortion = { unit: '包', quantity: 2, amountPerUnit: 34, basis: 'g', assumption: 'AI估重，非标签实测' };
+    expect(foodEntrySchema.safeParse(record).success).toBe(true);
+    for (const change of [{ quantity: 3 }, { basis: 'ml' as const }, { amountPerUnit: null }]) expect(foodEntrySchema.safeParse({ ...record, packageSnapshot: { ...record.packageSnapshot, consumptionPortion: { ...record.packageSnapshot!.consumptionPortion, ...change } } }).success).toBe(false);
+  });
   it('kJ按4.184换算kcal，不默认把净含量当成摄入量', () => {
     const record = entry(); expect(record.weightG).toBeNull(); expect(record.nutrientsPer100g.energyKcal).toBeCloseTo(500); expect(calculateNutrients(record).energyKcal).toBeNull();
     expect(calculateNutrients(entry(label(), 25))).toEqual({ energyKcal: 125, proteinG: 2, fatG: 5, carbsG: 16.25 });

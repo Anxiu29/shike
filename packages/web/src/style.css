@@ -146,6 +146,19 @@ a { text-decoration: none; color: var(--green); }
 .assistant-bubble.user { align-self: flex-end; background: #367b62; color: white; border-bottom-right-radius: 4px; }
 .assistant-bubble.assistant { align-self: flex-start; background: #f1f5eb; border-bottom-left-radius: 4px; }
 .assistant-bubble svg { vertical-align: middle; }
+.assistant-nutrition { margin-top: 10px; padding-top: 10px; border-top: 1px solid #dce7d4; white-space: normal; min-width: 0; }
+.assistant-nutrition-heading { margin: 0 0 3px; font-size: 11px; color: #63765b; }
+.assistant-nutrition-total { display: block; color: #28694f; font-size: 14px; }
+.assistant-nutrition-items { list-style: none; padding: 0; margin: 8px 0; }
+.assistant-nutrition-items li { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid #e0e9d9; }
+.assistant-nutrition-items li > div { min-width: 0; }
+.assistant-nutrition-items li > span { flex-shrink: 0; font-size: 12px; color: #28694f; }
+.assistant-nutrition-items small { display: block; font-size: 11px; color: #63765b; }
+.assistant-nutrition-sources { font-size: 11px; color: #63765b; line-height: 1.65; }
+.assistant-nutrition-sources summary { cursor: pointer; padding: 4px 0; }
+.assistant-nutrition-sources > div { margin-top: 8px; }
+.assistant-nutrition-sources p { margin: 3px 0; }
+.assistant-food small.assistant-food-energy { color: #28694f; font-size: 12px; }
 .assistant-image-button { display: block; padding: 0; background: transparent; border: 0; border-radius: 10px; overflow: hidden; }
 .assistant-image-button img { display: block; width: 120px; max-height: 140px; object-fit: cover; }
 .assistant-bubble .assistant-image-button { margin-bottom: 6px; }

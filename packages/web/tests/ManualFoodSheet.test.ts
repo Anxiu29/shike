@@ -6,6 +6,12 @@ import ManualFoodSheet from '../src/components/ManualFoodSheet.vue'
 
 function form() { return mount(ManualFoodSheet, { props: { personalFoods: [] }, global: { stubs: { AppSheet: { template: '<section><slot /><slot name="footer" /></section>' } } } }) }
 describe('手动食物输入弹窗', () => {
+  it('打开营养输入区时不抢先补重量，避免失焦插入预览挤走点击目标', async () => {
+    const view = form(); await view.get('[data-testid="manual-food-name"]').setValue('自制牛奶饮品');
+    await view.get('[data-testid="manual-food-unit"]').setValue('ml');
+    await view.get('[data-testid="manual-food-name"]').trigger('blur', { relatedTarget: view.get('.manual-food-nutrition summary').element });
+    expect(view.get('[data-testid="manual-food-weight"]').element).toHaveProperty('value', ''); view.unmount();
+  });
   it('常用库保存失败保留输入并允许重试，保存期间避免重复或取消', async () => {
     const wrapper = form(); await wrapper.setProps({ purpose: 'library' })
     await wrapper.get('[data-testid="manual-food-name"]').setValue('自制早餐')

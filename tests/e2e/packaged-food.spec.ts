@@ -19,9 +19,9 @@ async function tab(page: Page, name: 'diary' | 'settings') {
 test('包装kJ识别后填半包，修正标签、保存刷新和改克数，模拟来源保留', async ({ page }) => {
   await recognize(page, [{ name: '测试饼干', label: cookie }]);
   await expect(page.getByTestId('package-label-0')).toContainText('2,092 kJ');
-  // 既有常见份量功能为饼干带入30g，明确提示估算；不会把100g整包净含量当作已吃完。
-  await expect(page.getByTestId('package-amount-0')).toHaveValue('30'); await expect(page.getByTestId('food-calories-0')).toContainText('150 kcal');
-  await expect(page.getByTestId('food-item-0')).toContainText('份量估算');
+  // 已知标签每份25g时按标签1份参考；不再套通用30g或整包装100g。
+  await expect(page.getByTestId('package-amount-0')).toHaveValue('1'); await expect(page.getByTestId('package-unit-0')).toHaveValue('serving'); await expect(page.getByTestId('food-calories-0')).toContainText('125 kcal');
+  await expect(page.getByTestId('food-item-0')).toContainText('标签参考份量');
   await expect(page.getByTestId('food-weight-0')).toHaveCount(0);
   await page.getByTestId('package-half-0').click(); await expect(page.getByTestId('food-calories-0')).toContainText('250 kcal');
   await page.getByTestId('package-correction-0').locator('summary').click(); await page.getByTestId('package-energy-0').fill('1673.6');

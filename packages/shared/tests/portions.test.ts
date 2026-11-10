@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { backupSchema, calculateNutrients, createFoodEntry, defaultPortion, emptyNutrients, findFood, foodEntrySchema, portionAmount, type FoodEntry } from '../src/index.js';
+import { backupSchema, calculateNutrients, createFoodEntry, defaultPortion, typicalPortion, emptyNutrients, findFood, foodEntrySchema, portionAmount, type FoodEntry } from '../src/index.js';
 function entry(name = '菜包'): FoodEntry {
   const portion = defaultPortion(name, '个', 'g');
   return { ...createFoodEntry(findFood('米饭')!, portionAmount(portion)), name, portionSnapshot: portion };
 }
 describe('日常计量单位估算', () => {
+  it('未知单个或包装大小不硬填100g，混合食品不套原料的个数规则', () => {
+    for (const name of ['鹌鹑蛋', '寿司', '未确认大小的点心']) expect(defaultPortion(name, '个', 'g').amountPerUnit).toBeNull();
+    expect(defaultPortion('好丽友巧克力派', '盒' as any, 'g').amountPerUnit).toBeNull();
+  });
+  it('小笼汤包仍是单个包点，不能被汤类提前命中', () => {
+    expect(typicalPortion('小笼汤包')).toMatchObject({ unit: '个', amountPerUnit: 30 });
+  });
   it('中等包子按80g假设，支持半个和多个，自定义单个重量不改变营养密度', () => {
     const value = entry(); expect(value.weightG).toBe(80); expect(value.portionSnapshot!.assumption).toContain('不是实测');
     value.portionSnapshot!.quantity = .5; value.weightG = portionAmount(value.portionSnapshot!); expect(value.weightG).toBe(40);

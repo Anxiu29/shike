@@ -10,9 +10,10 @@ import { computed } from 'vue'
 import { defaultPortion, portionAmount, portionUnits, type PortionSnapshot } from '@shike/shared'
 import { inputNumber } from '../lib/entries'
 import { inputNumberLabel, numberLabel } from '../lib/dates'
+import PortionEstimator from './PortionEstimator.vue'
 
 const props = defineProps<{ name: string; amount: number | null; basis: 'g' | 'ml'; portion?: PortionSnapshot; allowVolume?: boolean; prefix: string; amountTestId: string; disabled?: boolean }>()
-const emit = defineEmits<{ change: [value: { amount: number | null; basis: 'g' | 'ml'; portion?: PortionSnapshot }] }>()
+const emit = defineEmits<{ change: [value: { amount: number | null; basis: 'g' | 'ml'; portion?: PortionSnapshot }]; estimating: [busy: boolean] }>()
 // 自动补的参考份量仍先展示总克数，方便直接称重修改；用户选“个/碗”才展开数量。
 const displayedPortion = computed(() => props.portion?.assumption.startsWith('常见份量估算') ? undefined : props.portion)
 const unit = computed(() => displayedPortion.value?.unit ?? props.basis)
@@ -21,8 +22,11 @@ function select(event: Event) {
   const value = (event.target as HTMLSelectElement).value
   if (value === 'g' || value === 'ml') { emit('change', { basis: value, amount: value === props.basis ? props.amount : null }); return }
   const portion = defaultPortion(props.name, value as PortionSnapshot['unit'], props.basis)
+  if (props.portion?.unit === value && props.portion.basis === props.basis) {
+    emit('change', { basis: props.basis, amount: props.amount, portion: { ...props.portion, assumption: props.portion.assumption.replace(/^常见份量估算/, '参考份量（请核对数量）') } }); return
+  }
   // 已有称重或AI估重比通用大小假设更具体；切单位时先保留总量，不静默改掉热量。
-  if (props.amount !== null && Number.isFinite(props.amount) && props.amount >= 0) {
+  if (props.amount !== null && Number.isFinite(props.amount) && props.amount >= 0 && !props.portion?.assumption.startsWith('常见份量估算')) {
     if (props.amount === 0) portion.quantity = 0
     else portion.amountPerUnit = props.amount
     portion.assumption = '沿用已有总重量／容量，暂按1个所选单位记录；如包含多个，请同时核对数量与每个大小。不是通用标准大小。'
@@ -34,6 +38,10 @@ function update(key: 'quantity' | 'amountPerUnit', event: Event) {
   const portion = { ...props.portion, [key]: inputNumber(event) }
   if (key === 'amountPerUnit') portion.assumption = '用户调整的单个／单份大小，按数量换算；请按实际称重或标签核对。'
   emit('change', { basis: props.basis, amount: portionAmount(portion), portion })
+}
+function estimated(value: PortionSnapshot) {
+  const portion = { ...value, quantity: props.portion ? (props.portion.unit === value.unit ? props.portion.quantity : null) : 1 }
+  emit('change', { basis: portion.basis, amount: portionAmount(portion), portion })
 }
 </script>
 <template>
@@ -49,6 +57,7 @@ function update(key: 'quantity' | 'amountPerUnit', event: Event) {
       <p class="portion-summary" :data-testid="`${prefix}-summary`">{{ displayedPortion.quantity === null ? '数量待填' : numberLabel(displayedPortion.quantity) + ' ' + displayedPortion.unit }} ≈ {{ amount === null ? '份量待补充' : numberLabel(amount) + ' ' + (basis === 'ml' ? 'mL' : 'g') }}</p>
       <p class="tiny muted portion-assumption">{{ displayedPortion.assumption }}数量和单份大小不确定时请留空；总份量上限20,000 {{ basis === 'ml' ? 'mL' : 'g' }}。</p>
     </template>
+    <PortionEstimator v-if="name.trim()" :name="name" :unit="portion?.unit ?? '个'" :basis="basis" :revision="JSON.stringify({ name, amount, basis, portion })" :disabled="disabled" :auto="!!displayedPortion && displayedPortion.amountPerUnit === null && displayedPortion.quantity !== null" @estimated="estimated" @estimating="emit('estimating', $event)"/>
   </div>
 </template>
 <style scoped>

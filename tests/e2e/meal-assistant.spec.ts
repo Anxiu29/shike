@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { routeApkAssets } from './helpers/apk-assets';
 import sharp from 'sharp';
+import { join } from 'node:path';
 test.beforeEach(async ({ page }) => { await routeApkAssets(page); });
 test.use({ timezoneId: 'Asia/Shanghai' });
 async function native(page: Page) {
@@ -13,10 +14,11 @@ async function native(page: Page) {
         w.__assistantCalls.push(input.request);
         if (w.__assistantFail) throw new Error('网络暂时不可用，草稿已保留。');
         const request = JSON.parse(input.request), amount = /三个/.test(request.text) ? 3 : 2;
-        const intent = /取消/.test(request.text) ? 'clear' : /问一下/.test(request.text) ? 'question' : 'update';
+        const intent = /取消/.test(request.text) ? 'clear' : /多少热量/.test(request.text) ? 'estimate' : /问一下/.test(request.text) ? 'question' : 'update';
         // 模拟模型遵守输入餐次上下文；真实语言理解不由这个测试证明。
         const mealType = /早餐/.test(request.text) ? 'breakfast' : request.previous?.mealType ?? request.mealType;
-        const draft = { intent, date: request.date, mealType, foods: intent === 'update' ? [{ name: '肉包', amount, unit: '个' }, { name: '鸡蛋', amount: null, unit: '份' }] : [], message: intent === 'question' ? '这餐可以搭配蔬菜，份量仍需核对。' : '已整理这一餐草稿，请核对后保存。' };
+        const foods = w.__assistantFoods ?? (/未收录饮品/.test(request.text) ? [{ name: '测试未收录饮品', amount: 250, unit: 'ml' }] : [{ name: '肉包', amount, unit: '个' }, { name: '鸡蛋', amount: null, unit: '份' }]);
+        const draft = { intent, date: request.date, mealType, foods: intent === 'update' || intent === 'estimate' ? foods : [], message: intent === 'question' ? '这餐可以搭配蔬菜，份量仍需核对。' : intent === 'estimate' ? '按本地食品库估算，不会记录。' : '已整理这一餐草稿，请核对后保存。' };
         return { provider: 'qwen', model: 'qwen3.7-flash', data: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft) } }] }) };
       }
     } };
@@ -24,6 +26,73 @@ async function native(page: Page) {
 }
 async function open(page: Page) { await native(page); await page.goto('/'); await page.getByTestId('assistant-open').click(); await expect(page.getByTestId('meal-assistant')).toBeVisible(); }
 async function send(page: Page, text: string) { await page.getByTestId('assistant-input').fill(text); await page.getByTestId('assistant-send').click(); await expect(page.getByTestId('assistant-input')).toHaveValue(''); await expect(page.getByTestId('assistant-draft')).toBeVisible(); }
+
+test('聊天显示热量快照，手改和删除后的追问使用最新结果，保存后仍可追问且新对话清空', async ({ page }) => {
+  await open(page); await send(page, '早餐两个肉包和鸡蛋');
+  const result = page.getByTestId('assistant-messages').getByTestId('assistant-nutrition');
+  await expect(result).toHaveCount(1); await expect(result).toContainText('合计约'); await expect(result).toContainText('kcal');
+  await expect(result).toContainText('160 g'); await expect(page.getByTestId('assistant-food-0')).toContainText('kcal');
+  await result.getByText('查看计算依据').click(); await expect(result).toContainText('未称重');
+  const initial = await result.innerText();
+  await page.getByTestId('assistant-amount-0').fill('3'); await page.getByTestId('assistant-amount-0').dispatchEvent('change');
+  await send(page, '问一下这餐热量');
+  let request = await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1)));
+  expect(request.nutrition[0]).toMatchObject({ scope: 'draft', missingEnergyItems: 0, items: [{ portion: expect.stringContaining('240 g') }, { energyKcal: expect.any(Number) }] });
+  expect(await result.innerText()).toBe(initial);
+  await page.getByTestId('assistant-food-1').getByRole('button', { name: /^移除/ }).click(); await send(page, '问一下现在热量');
+  request = await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1))); expect(request.nutrition[0].items).toHaveLength(1);
+  await page.getByTestId('assistant-save').click();
+  await page.getByTestId('assistant-input').fill('问一下刚保存的热量'); await page.getByTestId('assistant-send').click(); await expect(page.getByTestId('assistant-input')).toHaveValue('');
+  request = await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1))); expect(request.nutrition[0].scope).toBe('saved'); expect(request.previous).toBeUndefined();
+  await send(page, '再来一餐两个肉包'); await send(page, '问一下刚保存的那餐热量');
+  request = await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1)));
+  expect(request.nutrition.map((item: any) => item.scope)).toEqual(['draft', 'saved']);
+  expect(request.nutrition[1].items).toHaveLength(1);
+  await page.getByTestId('assistant-new').click(); await send(page, '两个肉包');
+  request = await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1))); expect(request.nutrition).toBeUndefined();
+});
+
+test('只查热量不创建或替换草稿，未知热量明确缺失，清空不带旧上下文', async ({ page }) => {
+  await open(page);
+  await page.getByTestId('assistant-input').fill('两个肉包多少热量'); await page.getByTestId('assistant-send').click();
+  await expect(page.getByTestId('assistant-input')).toHaveValue(''); await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+  const result = page.getByTestId('assistant-messages').getByTestId('assistant-nutrition');
+  await expect(result).toContainText('仅估算'); await expect(result).toContainText('合计约');
+  await send(page, '两个肉包');
+  await send(page, '问一下刚才估算的热量');
+  expect(await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1)).nutrition.map((item: any) => item.scope))).toEqual(['draft', 'estimate']);
+  await page.getByTestId('assistant-input').fill('未收录饮品多少热量'); await page.getByTestId('assistant-send').click();
+  await expect(page.getByTestId('assistant-input')).toHaveValue('');
+  await expect(result.last()).toContainText('热量待补充'); await expect(result.last()).not.toContainText('约 0 kcal');
+  await expect(page.getByTestId('assistant-food-0')).toContainText('肉包');
+  await send(page, '问一下刚才的估算');
+  const request = await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1)));
+  expect(request.nutrition.map((item: any) => item.scope)).toEqual(['draft', 'estimate']);
+  expect(request.nutrition[1]).toMatchObject({ knownEnergyKcal: 0, missingEnergyItems: 1, items: [{ energyKcal: null }] });
+  await page.getByTestId('assistant-input').fill('取消这餐'); await page.getByTestId('assistant-send').click(); await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+  await send(page, '两个肉包');
+  expect(await page.evaluate(() => JSON.parse((window as any).__assistantCalls.at(-1)).nutrition)).toBeUndefined();
+  const width = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, viewport: innerWidth })); expect(width.scroll).toBeLessThanOrEqual(width.viewport);
+});
+
+test('多项热量结果优先显示合计，长名称和缺失资料不溢出，页面无运行错误', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  await open(page);
+  await page.evaluate(() => { (window as any).__assistantFoods = [{ name: '米饭', amount: 150, unit: 'g' }, ...Array.from({ length: 9 }, (_, index) => ({ name: `测试未收录自制食物${index}号${'长名称'.repeat(10)}`, amount: 1, unit: '份' }))]; });
+  await page.getByTestId('assistant-input').fill('这几种食物多少热量'); await page.getByTestId('assistant-send').click();
+  await expect(page.getByTestId('assistant-input')).toHaveValue('');
+  const result = page.getByTestId('assistant-nutrition');
+  await expect(result.locator('.assistant-nutrition-total')).toHaveText('已知部分约 195 kcal · 9 项待补充');
+  await expect(result.locator('.assistant-nutrition-total')).toBeInViewport();
+  await expect(page.getByRole('heading', { name: 'AI记餐助手' })).toBeInViewport();
+  await expect(page.getByTestId('assistant-send')).toBeInViewport();
+  await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+  expect(await page.getByTestId('assistant-messages').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  expect(errors).toEqual([]);
+  if (process.env.SHIKE_QA_DIR) await page.screenshot({ path: join(process.env.SHIKE_QA_DIR, `assistant-calories-${test.info().project.name}.png`) });
+});
 
 test('未说餐次按发送时间预选，跨时段保留手选，下一餐重算并可明确覆盖', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-10-21T10:59:00+08:00'));

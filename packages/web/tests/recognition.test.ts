@@ -22,8 +22,8 @@ describe('多食物识别到逐项记录', () => {
     input.result.foods[0]!.packageLabel = { ...emptyPackageLabel(), basis: '100g', energy: { value: 837, unit: 'kJ' }, netContent: { amount: 250, unit: 'g' } }
     const draft = prepareRecognition(input)[0]!
     expect(draft.entry.kind).toBe('label'); expect(draft.entry.referenceId).toBeUndefined(); expect(draft.candidate).toBeUndefined()
-    expect(draft.entry.weightG).toBe(150); expect(draft.estimatedWeightG).toBeNull(); expect(calculateNutrients(draft.entry).energyKcal).toBeGreaterThan(0)
-    expect(draft.entry.warnings.join(' ')).toContain('常见份量估算')
+    expect(draft.entry.weightG).toBeNull(); expect(draft.estimatedWeightG).toBeNull(); expect(calculateNutrients(draft.entry).energyKcal).toBeNull()
+    expect(draft.entry.warnings.join(' ')).toContain('大小待确认')
     expect(draft.entry.packageSnapshot!.label.netContent!.amount).toBe(250)
     expect(input.result.foods[0]!.estimatedWeightG).toBe(100)
   })
