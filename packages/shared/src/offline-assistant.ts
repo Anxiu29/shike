@@ -29,7 +29,7 @@ function selectedContext(input: AssistantRequest) {
 }
 export function offlineAssistantInput(input: AssistantRequest) {
   const request = assistantRequestSchema.parse(input);
-  if (request.portionRequest) throw new Error('单个大小估计需要在线模型，请手动切换或填写实际重量；不会自动上传。');
+  if (request.portionRequest || request.enrichment) throw new Error('重量与营养粗估需要在线模型，请手动切换或填写实际资料；不会自动上传。');
   if (request.inputKind === 'order') throw new Error('订单识别需要在线模型，请手动切换；本机文字模型不会自动上传订单。');
   if (request.imageBase64 || request.history?.some(turn => turn.imageBase64)) throw new Error('本机模型目前只支持文字。请新建文字对话，或手动切换在线模型后发送图片。');
   if (!request.text || request.text.length > 600) throw new Error('离线文字描述最多600字，请缩短后重试，原草稿已保留。');
@@ -55,7 +55,7 @@ export function parseOfflineAssistantDraft(text: string, input: AssistantRequest
   const expected = offlineAssistantInput(input);
   const draft = parseAssistantDraft(text);
   const raw = JSON.parse(text);
-  if (draft.foods.some(food => !(expected.schema.properties.foods.items.properties.unit.enum as readonly string[]).includes(food.unit) || food.portionEstimate !== undefined)) throw new Error('本机模型返回了不支持的份量格式，请手动填写或切换在线模型。');
+  if (draft.foods.some(food => !(expected.schema.properties.foods.items.properties.unit.enum as readonly string[]).includes(food.unit) || food.portionEstimate !== undefined || food.referenceId !== undefined || food.nutritionEstimate !== undefined)) throw new Error('本机模型返回了不支持的份量格式，请手动填写或切换在线模型。');
   if (!['update', 'question', 'clear'].includes(raw.intent) || draft.date !== expected.date || draft.mealType !== expected.mealType || (draft.intent === 'update' && !draft.foods.length)) throw new Error('本机模型返回的草稿不完整或日期餐次不符，原草稿已保留，请重试或详细编辑。');
   if (draft.intent === 'clear' && !/^(?:算了[，,。！!]?\s*)?(?:清空|取消|删除)(?:这餐|这一餐|整餐|全部|草稿)?[。！!\s]*$|(?:清空|取消|删除|不要记录)(?:这餐|这一餐|整餐|全部|草稿)/.test(input.text.trim())) throw new Error('本机模型未能确认是否清空整餐，原草稿已保留；可在草稿中手动移除食物。');
   if (draft.intent === 'update' && /明天|后天|明早|明晚|下周/.test(input.text)) throw new Error('本机模型不能把未来计划当作已经吃过的一餐，原草稿已保留；请明确记录日期和已经吃过的内容。');

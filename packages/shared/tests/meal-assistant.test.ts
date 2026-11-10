@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { assistantRequestSchema, assistantDraftSchema, parseAssistantDraft, assistantBody, mockAssistant, typicalPortion, portionAmount } from '../src/index.js';
 const input = { text: '早餐两个肉包', date: '2026-10-20', mealType: 'breakfast' as const };
 describe('文字记餐的结构边界与参考份量', () => {
+  it('允许带假设的每100g营养范围及候选ID，拒绝负值、倒置范围和无界候选', () => {
+    const estimate = { basis: 'g', rangesPer100: { energyKcal: { min: 180, max: 260 }, proteinG: null, fatG: null, carbsG: null }, assumptions: ['合成测试配方假设，非实测'] };
+    const result = { intent: 'estimate', date: input.date, mealType: input.mealType, message: '按参考范围计算', foods: [{ name: '鸡蛋饼', amount: 1, unit: '个', referenceId: null, nutritionEstimate: estimate }] };
+    expect(assistantDraftSchema.safeParse(result).success).toBe(true);
+    for (const change of [{ assumptions: [] }, { basis: 'kg' }, { rangesPer100: { ...estimate.rangesPer100, energyKcal: { min: 260, max: 180 } } }, { rangesPer100: { ...estimate.rangesPer100, energyKcal: { min: -1, max: 260 } } }]) expect(assistantDraftSchema.safeParse({ ...result, foods: [{ ...result.foods[0], nutritionEstimate: { ...estimate, ...change } }] }).success).toBe(false);
+    const candidate = { id: 'test', name: '测试食物', description: '测试参考', basis: 'g' };
+    expect(assistantRequestSchema.safeParse({ ...input, enrichment: result.foods, catalogCandidates: [candidate] }).success).toBe(true);
+    expect(assistantRequestSchema.safeParse({ ...input, catalogCandidates: Array(25).fill(candidate) }).success).toBe(false);
+  });
   it('保留盒包量词及用户说明或AI估计的每单位大小，不允许在g上再乘单份大小', () => {
     const draft = { intent: 'estimate', date: input.date, mealType: input.mealType, message: '单包大小为AI估计，请核对。', foods: [{ name: '好丽友派', amount: 2, unit: '包', portionEstimate: { amountPerUnit: 34, basis: 'g', source: 'ai', assumption: '按单独小包估计，规格未知' } }] };
     expect(assistantDraftSchema.safeParse(draft).success).toBe(true);
@@ -60,7 +69,7 @@ describe('文字记餐的结构边界与参考份量', () => {
   });
   it('平台参数分别处理，不上传图片、不传工具、Gemini关闭会话存储', () => {
     const body = assistantBody('deepseek', 'deepseek-flash', input);
-    expect(body).toMatchObject({ thinking: { type: 'disabled' }, max_tokens: 2048 });
+    expect(body).toMatchObject({ thinking: { type: 'disabled' }, max_tokens: 8192 });
     expect(JSON.stringify(body)).not.toContain('image_url'); expect(body).not.toHaveProperty('tools');
     expect(assistantBody('openrouter', 'nvidia/nemotron-3.5-super-vl:free', input)).toMatchObject({ provider: { max_price: { prompt: 0, completion: 0, request: 0 } } });
     expect(assistantBody('gemini', 'gemini-3.5-flash-lite', input)).toMatchObject({ store: false, response_format: { mime_type: 'application/json' } });

@@ -7,7 +7,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { MessageCircle, Send, LoaderCircle, Plus, Check, Pencil, Trash2, BookHeart, ImagePlus, Camera, X } from '@lucide/vue'
-import { assistantDraftSchema, mealRecordSchema, calculateNutrients, type AssistantNutrition, type AssistantDraft, type AssistantTurn, type MealRecord, type EstimatedFood, type FoodEntry, type PackagedFood } from '@shike/shared'
+import { assistantDraftSchema, mealRecordSchema, calculateNutrients, type AssistantNutrition, type AssistantDraft, type AssistantTurn, type MealRecord, type EstimatedFood, type FoodEntry, type PackagedFood, type LibraryFood } from '@shike/shared'
 import AppSheet from './AppSheet.vue'
 import DateField from './DateField.vue'
 import AssistantNutritionResult from './AssistantNutrition.vue'
@@ -15,7 +15,8 @@ import AssistantModelPicker from './AssistantModelPicker.vue'
 import { offlineAi, offlineAssistantEnabled } from '../lib/offline-ai'
 import { describeMeal, type Health } from '../lib/api'
 import { db, saveMeal, saveLibraryFood } from '../lib/db'
-import { assistantEntry, assistantMeal, assistantNutrition, assistantEnergyLabel, type AssistantFood } from '../lib/meal-assistant'
+import { assistantEntry, assistantMeal, assistantNutrition, assistantEnergyLabel, type AssistantFood, type AssistantEntryContext } from '../lib/meal-assistant'
+import { assistantCandidates, resolveAssistantDraft } from '../lib/assistant-resolution'
 import { numberLabel, portionLabel, suggestedMealType } from '../lib/dates'
 import { compressImage, compressedImageBase64 } from '../lib/image'
 import { systemPhotoAvailable, takeSystemPhoto } from '../lib/system-photo'
@@ -28,6 +29,8 @@ const log = ref<HTMLElement | null>(null), draftPanel = ref<HTMLElement | null>(
 const photo = ref(''), photoBusy = ref(false), gallery = ref<HTMLInputElement | null>(null), camera = ref<HTMLInputElement | null>(null), preview = ref('')
 const launcher = ref<HTMLButtonElement | null>(null)
 const draft = ref<AssistantDraft | null>(null), entries = ref<FoodEntry[]>([]), packages = ref<PackagedFood[]>([]), mode = ref<'live' | 'mock'>('live')
+const library = ref<LibraryFood[]>([])
+let draftEntryContext: AssistantEntryContext = {}
 // 一个对话只处理一种输入，避免订单截图被后续当成餐食照片存入餐次。
 const inputKind = ref<'meal' | 'order'>('meal'), orderReviewed = ref(false)
 const libraryBusy = ref(false), storedEntries = ref<Record<string, boolean>>({})
@@ -37,16 +40,19 @@ const pending = computed(() => busy.value || saving.value || modelChanging.value
 const entryEnergy = (entry: FoodEntry) => { const value = calculateNutrients(entry).energyKcal; return value === null ? '热量待补充' : `约 ${numberLabel(value)} kcal` }
 const usingOffline = ref(offlineAssistantEnabled()), localRequest = ref(false), offlineProgress = ref('')
 let progressTimer: ReturnType<typeof setInterval> | undefined
+let openGeneration = 0
 function updateOfflineProgress() { void offlineAi.getState().then(state => { offlineProgress.value = state.stage === 'loading' ? '正在加载本机模型，首次可能需要较久…' : '正在本机整理并检查记餐草稿…' }).catch(() => {}) }
 async function stopOffline() { try { await offlineAi.cancel(); offlineProgress.value = '正在停止本机操作，原草稿会保留…' } catch { error.value = '暂时无法停止，请稍后重试。' } }
 watch(open, async value => {
   if (!value) {
+    // 关闭后即失效，即使切换模型再重开，也不追加另一条在线请求。
+    openGeneration++
     if (localRequest.value) void stopOffline()
     // 先等入口重新渲染，再等AppSheet关闭dialog解除背景inert，才能聚焦新按钮。
     await nextTick(); await nextTick(); launcher.value?.focus({ preventScroll: true })
   }
 })
-onBeforeUnmount(() => { clearInterval(progressTimer); if (localRequest.value) void stopOffline() })
+onBeforeUnmount(() => { openGeneration++; clearInterval(progressTimer); if (localRequest.value) void stopOffline() })
 const imageUrl = (data: string) => `data:image/jpeg;base64,${data}`
 const lastImage = computed(() => history.value.slice().reverse().find(turn => turn.role === 'user' && turn.imageBase64)?.imageBase64)
 async function reanalyzeImage() {
@@ -99,12 +105,13 @@ function scrollPanel(target: HTMLElement | null, end = false) {
   // 只滚动内容区。scrollIntoView会连overflow:hidden的dialog也滚走，导致标题/关闭按钮消失。
   body.scrollTo({ top: end ? top + target.offsetHeight - body.clientHeight + 16 : top - 14, behavior: 'instant' })
 }
-async function show() { open.value = true; try { packages.value = await db.packagedFoods.toArray() } catch { error.value = '个人包装库暂时不可读，仍可查基础食品库。' } }
+async function show() { open.value = true; try { [packages.value, library.value] = await Promise.all([db.packagedFoods.toArray(), db.libraryFoods.toArray()]) } catch { error.value = '个人食品库暂时不可读，仍可查基础食品库。' } }
 watch(() => props.available, value => { if (!value) open.value = false })
 async function send() {
   if (pending.value || (!input.value.trim() && !photo.value)) return
   if (inputKind.value === 'order' && offlineAssistantEnabled()) { error.value = '订单识别需要在线模型，请手动切换后发送。'; return }
   const text = input.value.trim(), imageBase64 = photo.value; error.value = ''; busy.value = true
+  const requestGeneration = openGeneration
   localRequest.value = offlineAssistantEnabled()
   if (localRequest.value) { offlineProgress.value = '正在检查本机模型状态…'; updateOfflineProgress(); progressTimer = setInterval(updateOfflineProgress, 500) }
   const last = messages.value.at(-1)
@@ -112,23 +119,29 @@ async function send() {
   try {
     // 首次发送时按本地时间建议餐次；跨时段继续修改时仍保留草稿中已选的餐次。
     const nutrition = [draftNutrition.value, latestNutrition.value].filter((value): value is AssistantNutrition => value !== null)
-    const response = await describeMeal({ text, ...(inputKind.value === 'order' ? { inputKind: 'order' as const } : {}), ...(imageBase64 ? { imageBase64 } : {}), history: history.value.slice(imageBase64 ? -4 : -6), date: props.date, mealType: draft.value?.mealType ?? suggestedMealType(), ...(draft.value ? { previous: draft.value } : {}), ...(nutrition.length ? { nutrition } : {}) })
+    const candidates = localRequest.value ? [] : assistantCandidates(text, props.personalFoods, packages.value, library.value, draft.value?.foods.map(food => food.name))
+    const response = await describeMeal({ text, ...(inputKind.value === 'order' ? { inputKind: 'order' as const } : {}), ...(imageBase64 ? { imageBase64 } : {}), history: history.value.slice(imageBase64 ? -4 : -6), date: props.date, mealType: draft.value?.mealType ?? suggestedMealType(), ...(draft.value ? { previous: draft.value } : {}), ...(nutrition.length ? { nutrition } : {}), ...(candidates.length ? { catalogCandidates: candidates } : {}) })
     const next = response.draft
     let resultNutrition: AssistantNutrition | undefined
+    let resolutionNotice = ''
+    const resolved = next.foods.length ? await resolveAssistantDraft(next, { personal: props.personalFoods, packages: packages.value, library: library.value, provider: response.provider, model: response.model, mode: response.mode, inputKind: inputKind.value, candidates, text,
+      canEnrich: () => open.value && requestGeneration === openGeneration && !offlineAssistantEnabled() }, describeMeal) : null
+    if (resolved) { next.foods = resolved.foods; resolutionNotice = resolved.notice }
     if (next.intent === 'clear') { draft.value = null; entries.value = []; draftPhotos.value = []; latestNutrition.value = null; orderReviewed.value = false }
     else if (next.intent === 'update' && next.foods.length) {
       // 全部转换成功后才替换，模型异常或份量超限时保留原草稿。
-      const foods = next.foods.map(food => assistantEntry(food, props.personalFoods, packages.value, inputKind.value))
+      const foods = resolved!.entries
+      draftEntryContext = resolved!.entryContext
       resultNutrition = assistantNutrition(foods, 'draft', next.date, next.mealType, response.mode)
       const previousPhotos = draft.value ? draftPhotos.value : []
       draftPhotos.value = inputKind.value === 'order' ? [] : [...new Set([...previousPhotos, ...(imageBase64 ? [imageUrl(imageBase64)] : [])])].slice(-3)
       draft.value = { ...next, foods: next.foods.map((food, index) => food.amount === null && foods[index]?.portionSnapshot?.quantity != null ? { ...food, amount: foods[index]!.portionSnapshot!.quantity, unit: foods[index]!.portionSnapshot!.unit } : food) }; entries.value = foods; mode.value = response.mode; orderReviewed.value = false
     } else if (next.intent === 'estimate' && next.foods.length) {
-      const foods = next.foods.map(food => assistantEntry(food, props.personalFoods, packages.value, inputKind.value))
+      const foods = resolved!.entries
       resultNutrition = assistantNutrition(foods, 'estimate', next.date, next.mealType, response.mode)
       latestNutrition.value = resultNutrition
     }
-    message('assistant', `${response.mode === 'mock' ? '【模拟模式】' : ''}${next.message}`, undefined, resultNutrition)
+    message('assistant', `${response.mode === 'mock' ? '【模拟模式】' : ''}${next.message}${resolutionNotice ? `\n${resolutionNotice}` : ''}`, undefined, resultNutrition)
     history.value = [...history.value, { role: 'user' as const, text, ...(imageBase64 ? { imageBase64 } : {}) }, { role: 'assistant' as const, text: next.message }].slice(-6)
     input.value = ''; photo.value = ''
     await nextTick()
@@ -145,7 +158,7 @@ function changeAmount(index: number, event: Event) {
   const value = (event.target as HTMLInputElement).value, amount = value === '' ? null : Math.round(Number(value) * 100) / 100
   if (amount !== null && (!Number.isFinite(amount) || amount <= 0 || amount > 20000)) { error.value = '份量需大于0且不超过20000。'; return }
   const next: AssistantFood = { ...food, amount }
-  try { const entry = assistantEntry(next, props.personalFoods, packages.value, inputKind.value); entries.value[index] = entry; draft.value!.foods[index] = next; orderReviewed.value = false; error.value = '' } catch (cause) { error.value = (cause as Error).message }
+  try { const entry = assistantEntry(next, props.personalFoods, packages.value, inputKind.value, draftEntryContext); entries.value[index] = entry; draft.value!.foods[index] = next; orderReviewed.value = false; error.value = '' } catch (cause) { error.value = (cause as Error).message }
 }
 function record(): MealRecord { if (!draft.value) throw new Error('请先描述这一餐。'); assistantDraftSchema.parse(draft.value); return mealRecordSchema.parse(assistantMeal(draft.value, entries.value, mode.value)) }
 function completeReview(meal: MealRecord) {
@@ -203,7 +216,7 @@ async function review() {
       <div class="assistant-photo-tools"><button type="button" class="text-button" :disabled="pending || usingOffline" data-testid="assistant-choose-photo" @click="gallery?.click()"><ImagePlus :size="17"/>选图</button><button type="button" class="text-button" :disabled="pending || usingOffline" data-testid="assistant-take-photo" @click="takePhoto"><Camera :size="17"/>拍照</button><button type="button" class="text-button assistant-new" :disabled="pending" data-testid="assistant-new" @click="newMeal"><Plus :size="15"/>新对话</button><button class="button primary" type="submit" :disabled="pending || (!input.trim() && !photo)" data-testid="assistant-send"><Send :size="16"/>发送</button></div>
       <p v-if="usingOffline" class="tiny muted" data-testid="assistant-offline-notice">仅在手机处理本次文字、当前草稿和最近一轮对话。先手动准备模型；退后台或空闲5分钟释放后需再次点击“准备模型”。图片需手动切换在线模型。</p>
       <p v-else-if="inputKind === 'order'" class="tiny muted">发送订单、当前热量结果和最近3轮上下文，最多3张图片，可能消耗所选模型额度。截图仅留在本次会话；确认后只保存核对过的食物记录。新对话清空未保存的聊天与截图。</p>
-      <p v-else class="tiny muted">发送描述、草稿、当前热量结果及最近3轮上下文，最多3张图片；使用所选模型，可能消耗额度。保存这餐时，相关照片也保存在本机；新对话清空未保存的聊天与照片。</p>
+      <p v-else class="tiny muted">发送描述、相关食品候选、草稿、热量结果及最近3轮上下文，最多3张图片；缺估值时最多自动补问1次，可能消耗所选模型额度。保存这餐时，相关照片也保存在本机；新对话清空未保存的聊天与照片。</p>
     </form></template>
   </AppSheet>
   <AppSheet :open="!!preview && open" title="查看图片" test-id="assistant-image-preview" @close="preview = ''"><img v-if="preview" class="assistant-full-image" :src="imageUrl(preview)" alt="聊天图片大图" /></AppSheet>

@@ -11,6 +11,13 @@ async function native(page: Page) {
     w.Capacitor = { PluginHeaders: [{ name: 'PersonalVision', methods: ['getState', 'activate', 'describeMeal'].map(name => ({ name, rtype: 'promise' })) }], nativePromise: async (_plugin: string, method: string, input: any) => {
       if (method === 'getState' || method === 'activate') return { profiles: [{ id, label: '测试模型', provider: 'qwen', model: 'qwen3.7-flash' }], activeId: id };
       if (method === 'describeMeal') {
+        // 补问单独保留，现有上下文断言针对用户发出的本轮对话请求。
+        const supplemental = JSON.parse(input.request)
+        if (supplemental.enrichment) {
+          w.__assistantEnrichmentCalls = [...(w.__assistantEnrichmentCalls ?? []), supplemental]
+          const draft = { intent: 'estimate', date: supplemental.date, mealType: supplemental.mealType, foods: supplemental.enrichment, message: '合成未知食品无法合理估计，保留待补充。' }
+          return { provider: 'qwen', model: 'qwen3.7-flash', data: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft) } }] }) }
+        }
         w.__assistantCalls.push(input.request);
         if (w.__assistantFail) throw new Error('网络暂时不可用，草稿已保留。');
         const request = JSON.parse(input.request), amount = /三个/.test(request.text) ? 3 : 2;

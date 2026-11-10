@@ -4,6 +4,10 @@ import { calculateNutrients, findRecipe, mealRecordSchema, createRecipeEntry, em
 import { assistantEntry, assistantMeal, assistantNutrition, assistantEnergyLabel } from '../src/lib/meal-assistant';
 import { applyTypicalPortion } from '../src/lib/typical-portions';
 describe('助手草稿和普通份量', () => {
+  it('一个鸡蛋饼可用AI营养范围自动算热量，不再只有重量而营养待补', () => {
+    const entry = assistantEntry({ name: '鸡蛋饼', amount: 1, unit: '个', portionEstimate: { amountPerUnit: 150, basis: 'g', source: 'ai', assumption: '合成测试单个估重' }, nutritionEstimate: { basis: 'g', rangesPer100: { energyKcal: { min: 180, max: 260 }, proteinG: null, fatG: null, carbsG: null }, assumptions: ['合成测试按面糊鸡蛋及少量油，非实测'] } } as any, [], [], 'meal', { provider: 'qwen', model: 'qwen3.7-flash' });
+    expect(entry.kind).toBe('ai'); expect(calculateNutrients(entry).energyKcal).toBe(330);
+  });
   it('详细编辑保存100项后仍能展示完整热量，不影响保存回调或静默漏项', () => {
     const rice = assistantEntry({ name: '米饭', amount: 150, unit: 'g' }, [], []);
     const snapshot = assistantNutrition(Array(100).fill(rice), 'saved', '2026-11-10', 'lunch', 'live');

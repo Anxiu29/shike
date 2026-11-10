@@ -74,6 +74,10 @@ function statedQuantity(text: string, name: string): { mentioned: boolean; quant
   return { mentioned, quantity: unique[0] };
 }
 
+/** 在线模型仅纠正能紧邻定位的明确数量；有歧义时交回模型/用户，不套离线的整餐约束。 */
+export function statedFoodQuantity(text: string, name: string): Quantity | undefined {
+  try { return statedQuantity(text, name).quantity } catch { return undefined }
+}
 export function reconcileOfflineQuantities(draft: AssistantDraft, input: AssistantRequest): Food[] {
   const sameMeal = input.previous?.date === draft.date && input.previous?.mealType === draft.mealType;
   const contextEdit = /(?:改成|改为|换成)(?:早餐|早饭|午餐|午饭|晚餐|晚饭|加餐|夜宵|宵夜|\d{4}-\d{2}-\d{2})/.test(input.text);

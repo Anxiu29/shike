@@ -6,7 +6,7 @@ describe('智谱视觉型号', () => {
     expect(compatibleVisionEndpoint('glm', model)).toBe('https://open.bigmodel.cn/api/paas/v4/chat/completions');
     expect(glmChatOptions(model)).toEqual({ temperature: 1, top_p: 0.95, thinking: { type: 'enabled' }, reasoning_effort: 'low' });
     const body = assistantBody('glm', model, { text: '午餐一碗米饭', date: '2026-10-24', mealType: 'lunch' });
-    expect(body).toMatchObject({ model, max_tokens: 4096, thinking: { type: 'enabled' }, response_format: { type: 'json_object' } });
+    expect(body).toMatchObject({ model, max_tokens: 8192, thinking: { type: 'enabled' }, response_format: { type: 'json_object' } });
     expect(personalModelInfo('glm', model).badge).toBe('资源包／按量');
     expect(personalModelInfo('glm', model).note).toContain('不能保证只扣赠送额度');
     expect(personalModelUsageNotice('glm', model)).toContain('用尽或过期');

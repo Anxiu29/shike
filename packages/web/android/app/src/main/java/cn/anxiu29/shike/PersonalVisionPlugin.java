@@ -234,12 +234,12 @@ public class PersonalVisionPlugin extends Plugin {
                 body.put("store", false).put("system_instruction", prompt)
                     .put("input", content)
                     .put("response_format", new JSONObject().put("type", "text").put("mime_type", "application/json").put("schema", call.getObject("schema")))
-                    .put("generation_config", new JSONObject().put("thinking_level", "minimal").put("max_output_tokens", 2048));
+                    .put("generation_config", new JSONObject().put("thinking_level", "minimal").put("max_output_tokens", 8192));
             } else {
                 JSONObject options = new JSONObject(VisionPolicy.chatOptions(p.getString("provider"), p.getString("model")));
                 for (Iterator<String> names = options.keys(); names.hasNext();) { String name = names.next(); body.put(name, options.get(name)); }
                 if (!p.getString("provider").equals("glm") || VisionPolicy.glm53(p.getString("model"))) body.put("response_format", responseFormat(p, call.getObject("schema")));
-                body.put("max_tokens", p.getString("provider").equals("glm") && VisionPolicy.glm53(p.getString("model")) ? 4096 : 2048)
+                body.put("max_tokens", 8192)
                     .put("messages", new JSONArray().put(new JSONObject().put("role", "system").put("content", prompt)).put(new JSONObject().put("role", "user").put("content", images.length() == 0 ? text : content)));
             }
             String data = request(p, body);

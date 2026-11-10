@@ -34,6 +34,12 @@ async function savedRecord(form: VueWrapper): Promise<MealRecord> {
 }
 
 describe('食物选择弹窗', () => {
+  it('全部热量未知时汇总不显示约0kcal', async () => {
+    const form = openAIEditor()
+    await rename(form, '无法识别的合成测试食品甲')
+    expect(form.get('.footer-calories').text()).toContain('—')
+    expect(form.get('.footer-calories').text()).not.toContain('约 0')
+  })
   it('编辑质量记录拒绝容量结果，不把250mL记成250g且仍可保存原值', async () => {
     const form = openAIEditor({ weight: 200 });
     form.findComponent(PortionAmountInput).vm.$emit('change', { amount: 250, basis: 'ml', portion: { unit: '杯', quantity: 1, amountPerUnit: 250, basis: 'ml', assumption: 'AI容量估计' } });

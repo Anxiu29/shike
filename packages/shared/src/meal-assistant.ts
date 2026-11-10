@@ -1,11 +1,13 @@
 import { z } from 'zod';
-import { dateSchema, mealTypeSchema, healthResponseSchema, packageLabelSchema } from './schemas.js';
+import { dateSchema, mealTypeSchema, healthResponseSchema, packageLabelSchema, nutrientRangesSchema } from './schemas.js';
 import { portionUnits } from './portions.js';
 import { TAKEAWAY_ORDER_PROMPT } from './takeaway-order.js';
 import { compatibleVisionOptions, compatibleVisionResponseFormat, glmChatOptions, isGlm53VisionModel, type PersonalProvider } from './personal-vision.js';
 export const assistantFoodSchema = z.object({
   name: z.string().trim().min(1).max(100), amount: z.number().finite().positive().max(20000).nullable(),
   unit: z.enum(['g', 'ml', ...portionUnits]),
+  referenceId: z.string().min(1).max(200).nullable().optional(),
+  nutritionEstimate: z.object({ basis: z.enum(['g', 'ml']), rangesPer100: nutrientRangesSchema, assumptions: z.array(z.string().min(1).max(300)).min(1).max(5) }).strict().nullable().optional(),
   portionEstimate: z.object({ amountPerUnit: z.number().finite().positive().max(20000), basis: z.enum(['g', 'ml']), source: z.enum(['user', 'ai']), assumption: z.string().trim().min(1).max(300) }).strict().nullable().optional(),
 }).strict().refine(value => !value.portionEstimate || (value.unit !== 'g' && value.unit !== 'ml'), 'g或mL已经是总量，不能再乘单份大小');
 export const assistantDraftSchema = z.object({
@@ -22,6 +24,7 @@ export const assistantNutritionSchema = z.object({
   items: z.array(z.object({
     name: z.string().min(1).max(100), portion: z.string().min(1).max(100),
     energyKcal: z.number().finite().nonnegative().nullable(),
+    energyRange: z.object({ min: z.number().finite().nonnegative(), max: z.number().finite().nonnegative() }).strict().refine(value => value.min <= value.max).optional(),
     source: z.string().max(300), assumptions: z.array(z.string().max(160)).max(3),
   }).strict()).min(1).max(100),
 }).strict().refine(value => value.scope === 'saved' || value.items.length <= 10, '草稿与仅估算最多10项')
@@ -41,6 +44,8 @@ export const assistantRequestSchema = z.object({
   previous: assistantDraftSchema.optional(), imageBase64: assistantImageSchema.optional(),
   nutrition: z.array(assistantNutritionSchema).max(2).optional(),
   portionRequest: z.object({ name: z.string().trim().min(1).max(200), unit: z.enum(portionUnits), basis: z.enum(['g', 'ml']).optional(), label: packageLabelSchema.optional() }).strict().optional(),
+  catalogCandidates: z.array(z.object({ id: z.string().min(1).max(200), name: z.string().min(1).max(200), description: z.string().max(300), basis: z.enum(['g', 'ml', 'unknown']) }).strict()).max(24).optional(),
+  enrichment: z.array(assistantFoodSchema).min(1).max(10).optional(),
   history: z.array(assistantTurnSchema).max(6).optional(),
 }).strict().refine(value => !!value.text || !!value.imageBase64, '请输入描述或选择图片')
   .refine(value => (value.imageBase64 ? 1 : 0) + (value.history?.filter(turn => turn.imageBase64).length ?? 0) <= 3, '每次最多携带三张上下文图片');
@@ -56,11 +61,19 @@ export const ASSISTANT_PROMPT = `你是中文饮食聊天与记餐助手，支�
 用户明确吃过、喝过、要求记录，或仅发食物照片时，才整理一餐草稿。图片可用于判断可见食物，数量或份量不清时amount=null并请核对，不能猜隐藏配料、克数或实际吃下的量；非食物、模糊或无法确认时用question追问。仅发照片不表示已吃完包装整份。多餐请其说明一餐，不猜食物种类。
 intent为update表示更新完整草稿，estimate表示仅查询热量并保留原草稿，question表示仅回复或追问且保留原草稿，clear仅用于用户明确取消或清空整餐。question/clear时foods=[]。不要因一句无关提问清空上一餐。
 输入含text、当前选定date/mealType及可选previous草稿。用户明确说今天、昨天、前天时，按date计算；没说日期沿用previous，否则用当前选择。餐次优先采用用户本次明确说的早餐/早饭、午餐/午饭、晚餐/晚饭、加餐/夜宵等；没说餐次时沿用previous.mealType，再无previous则用输入mealType。输入mealType已由设备本地时间预选，不要根据食物类型或示例擅自改为早餐，也不要因跨时段改掉原草稿餐次。只支持一餐、最多10项；超出请用户拆分，不能静默截断。修改或补充时返回完整更新后的草稿，删掉用户取消的食物；“再来一餐/新记录”表示替换。不要把整道混合菜拆成配料重复计数。
-输出仅含intent、date(YYYY-MM-DD)、mealType(breakfast/lunch/dinner/snack)、foods、message。foods每项为name(中文简洁名称)、amount、unit、portionEstimate（没有时null）。用户明确总克数或毫升数则unit为g/ml，amount保持原数值且portionEstimate=null；千克与升换算为g/ml。用户说两个包子则amount=2、unit=个；一碗饭则1、碗。单位只能g、ml、个、根、块、碗、片、勺、杯、份、盒、包、袋、瓶、罐；枚/只可规范为个。必须区分盒与其中一枚、外袋与独立小袋。没说份量时amount=null、unit=份，由应用补参考份量；单份估重按上方规则标记AI来源，不编造营养表或热量，不把包装净含量当摄入量。食物名称保留糖油做法与品牌；不确定菜包还是肉包就保留“包子”并在message请用户核对。
+输出仅含intent、date(YYYY-MM-DD)、mealType(breakfast/lunch/dinner/snack)、foods、message。foods每项为name(中文简洁名称)、amount、unit、portionEstimate、referenceId、nutritionEstimate（后三者没有时null）。用户明确总克数或毫升数则unit为g/ml，amount保持原数值且portionEstimate=null；千克与升换算为g/ml。用户说两个包子则amount=2、unit=个；一碗饭则1、碗。单位只能g、ml、个、根、块、碗、片、勺、杯、份、盒、包、袋、瓶、罐；枚/只可规范为个。必须区分盒与其中一枚、外袋与独立小袋。没说份量时amount=null、unit=份，由应用补参考份量；单份估重按上方规则标记AI来源，不把营养粗估冒充标签或实测，不把包装净含量当摄入量。食物名称保留糖油做法与品牌；不确定菜包还是肉包就保留“包子”并在message请用户核对。
+本地匹配与营养估算：catalogCandidates是应用检索的相关食品候选，不是已经选中的食物。只有名称、做法、生熟、糖油与品牌规格相符时才把候选id写入referenceId，禁止编造ID或只因字面相似强行匹配；说明采用哪一条参考。中式含面糊的鸡蛋饼不能冒充美式炒蛋/欧姆蛋。库中找不到合适条目时，普通明确食品（如鸡蛋饼）应主动给nutritionEstimate，而不是要求用户填写营养表。nutritionEstimate={basis:g或ml,rangesPer100:{energyKcal:{min,max}或null,proteinG:{min,max}或null,fatG:{min,max}或null,carbsG:{min,max}或null},assumptions:[具体做法/糖油/规格及不确定性]}。这是每100g或每100mL的粗估区间，绝不是整份热量；能合理估计热量时必须提供合理的非零范围，宏量无依据留null。明确0能量食品才给0，未知不能填0。包装优先采用候选的原标签，不能把AI估计冒充品牌官方标签。不能用100g数值当100mL；容量食品的估算必须明确basis=ml，写明配方假设。应用优先采用已有可靠资料，只有缺失才采用粗估，并自行计算整份热量。
+普通食品的份量未知时，可按常见中等大小/一份估计portionEstimate并明确假设，避免只回复“需手填克重”。没说数量时暂按1份并说明，用户明确数量、克数和毫升数不能改。不能确认食品种类、不同规格差别过大或没有合理估计依据时才追问；不要为了有数值而编造具体成分、包装规格、来源或精度。
+可选enrichment表示应用已识别但尚缺重量或营养的食品。此时只返回intent=estimate，foods与enrichment逐项同名同序，补齐portionEstimate、合适的referenceId和nutritionEstimate；原有明确amount与unit照抄，不修改数量、添加食物或创建记录，不再反问用户先填写营养数据；确实不能估计时保留null并在message简短说明。portionRequest仍优先处理且仅估大小，无需营养粗估。
 message简要回答、说明整理或估算结果，或提出必要追问，不能说已保存。示例：{"intent":"update","date":"2026-10-20","mealType":"breakfast","foods":[{"name":"肉包","amount":2,"unit":"个"},{"name":"牛奶","amount":250,"unit":"ml"}],"message":"已整理早餐草稿，请核对份量后保存。"}`;
+const nullableAssistantRange = { type: ['object', 'null'], additionalProperties: false, properties: { min: { type: 'number' }, max: { type: 'number' } }, required: ['min', 'max'] } as const;
+const assistantEstimateJsonSchema = { type: ['object', 'null'], additionalProperties: false, properties: {
+  basis: { type: 'string' }, rangesPer100: { type: 'object', additionalProperties: false, properties: { energyKcal: nullableAssistantRange, proteinG: nullableAssistantRange, fatG: nullableAssistantRange, carbsG: nullableAssistantRange }, required: ['energyKcal', 'proteinG', 'fatG', 'carbsG'] },
+  assumptions: { type: 'array', items: { type: 'string' } },
+}, required: ['basis', 'rangesPer100', 'assumptions'] } as const;
 export const assistantJsonSchema = {
   type: 'object', additionalProperties: false,
-  properties: { intent: { type: 'string' }, date: { type: 'string' }, mealType: { type: 'string' }, message: { type: 'string' }, foods: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { name: { type: 'string' }, amount: { type: ['number', 'null'] }, unit: { type: 'string' }, portionEstimate: { type: ['object', 'null'], additionalProperties: false, properties: { amountPerUnit: { type: 'number' }, basis: { type: 'string' }, source: { type: 'string' }, assumption: { type: 'string' } }, required: ['amountPerUnit', 'basis', 'source', 'assumption'] } }, required: ['name', 'amount', 'unit', 'portionEstimate'] } } },
+  properties: { intent: { type: 'string' }, date: { type: 'string' }, mealType: { type: 'string' }, message: { type: 'string' }, foods: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { name: { type: 'string' }, referenceId: { type: ['string', 'null'] }, nutritionEstimate: assistantEstimateJsonSchema, amount: { type: ['number', 'null'] }, unit: { type: 'string' }, portionEstimate: { type: ['object', 'null'], additionalProperties: false, properties: { amountPerUnit: { type: 'number' }, basis: { type: 'string' }, source: { type: 'string' }, assumption: { type: 'string' } }, required: ['amountPerUnit', 'basis', 'source', 'assumption'] } }, required: ['name', 'amount', 'unit', 'portionEstimate', 'referenceId', 'nutritionEstimate'] } } },
   required: ['intent', 'date', 'mealType', 'foods', 'message'],
 } as const;
 /** 网页服务与安卓直连共用，避免只给其中一条调用链增加订单规则。 */
@@ -79,9 +92,9 @@ export function assistantContext(request: AssistantRequest) {
 export function assistantBody(provider: PersonalProvider, model: string, request: AssistantRequest) {
   const { text, images } = assistantContext(request);
   const prompt = assistantPrompt(request);
-  if (provider === 'gemini') return { model, store: false, system_instruction: prompt, input: [{ type: 'text', text }, ...images.map(data => ({ type: 'image', mime_type: 'image/jpeg', data }))], response_format: { type: 'text', mime_type: 'application/json', schema: assistantJsonSchema }, generation_config: { thinking_level: 'minimal', max_output_tokens: 2048 } };
+  if (provider === 'gemini') return { model, store: false, system_instruction: prompt, input: [{ type: 'text', text }, ...images.map(data => ({ type: 'image', mime_type: 'image/jpeg', data }))], response_format: { type: 'text', mime_type: 'application/json', schema: assistantJsonSchema }, generation_config: { thinking_level: 'minimal', max_output_tokens: 8192 } };
   const options = provider === 'qwen' ? { enable_thinking: false } : provider === 'glm' ? glmChatOptions(model) : compatibleVisionOptions(provider);
-  return { model, ...options, max_tokens: provider === 'glm' && isGlm53VisionModel(model) ? 4096 : 2048, ...(provider === 'glm' && !isGlm53VisionModel(model) ? {} : { response_format: compatibleVisionResponseFormat(provider, model, assistantJsonSchema) }), messages: [{ role: 'system', content: prompt }, { role: 'user', content: images.length ? [{ type: 'text', text }, ...images.map(data => ({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${data}` } }))] : text }] };
+  return { model, ...options, max_tokens: 8192, ...(provider === 'glm' && !isGlm53VisionModel(model) ? {} : { response_format: compatibleVisionResponseFormat(provider, model, assistantJsonSchema) }), messages: [{ role: 'system', content: prompt }, { role: 'user', content: images.length ? [{ type: 'text', text }, ...images.map(data => ({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${data}` } }))] : text }] };
 }
 export function parseAssistantDraft(text: string): AssistantDraft {
   let value: unknown; try { value = JSON.parse(text); } catch { throw new Error('助手返回了无效JSON，请重试；原草稿已保留。'); }
