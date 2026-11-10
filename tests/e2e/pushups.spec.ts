@@ -22,7 +22,7 @@ test('不足一分钟按次数保存，节奏可改，普通运动不带次数�
   await page.getByTestId('open-exercise-history').click(); await expect(page.getByTestId('exercise-record')).toContainText('1 个'); await expect(page.getByTestId('exercise-record')).toContainText('4 秒／个'); await page.getByTestId('edit-exercise').click(); await page.getByTestId('exercise-activity').selectOption('17170'); await expect(page.getByTestId('exercise-count')).toHaveCount(0); await expect(page.getByTestId('exercise-duration')).toHaveValue('30'); await page.getByTestId('save-exercise').click(); await expect(page.getByTestId('exercise-form')).not.toBeVisible(); await page.getByTestId('open-exercise-history').click(); await expect(page.getByTestId('exercise-record')).toContainText('30 分钟'); await expect(page.getByTestId('exercise-record')).not.toContainText('秒／个');
 });
 
-test('首页俯卧撑快捷按个数添加，独立草稿不覆盖普通运动，有手环累计仍额外计入', async ({ page }, info) => {
+test('首页俯卧撑快捷保留独立草稿，无资料时手环只记录，俯卧撑仍独立计入', async ({ page }, info) => {
   await page.goto('/'); await tab(page, 'goals'); await page.getByTestId('goal-step-1').click();
   await page.getByTestId('calorie-mode').selectOption('manual'); await page.getByTestId('manual-calorie-goal').fill('1800'); await page.getByTestId('save-goals').click();
   await expect(page.getByTestId('toast')).toContainText('个人资料与目标已保存'); await tab(page, 'diary');
@@ -41,13 +41,15 @@ test('首页俯卧撑快捷按个数添加，独立草稿不覆盖普通运动�
   if (info.project.name === 'Chrome 手机') await page.getByTestId('pushup-quick-sheet').screenshot({ path: 'docs/screenshots/pushups-quick-mobile.png' });
   await page.getByTestId('save-pushups').click(); await expect(page.getByTestId('pushup-quick-sheet')).not.toBeVisible(); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 4.9');
   await page.getByTestId('add-exercise').click(); await expect(page.getByTestId('exercise-name')).toHaveValue('未保存的散步'); await expect(page.getByTestId('exercise-manual-kcal')).toHaveValue('20');
-  await page.getByTestId('exercise-scope').selectOption('day'); await page.getByTestId('exercise-manual-kcal').fill('500'); await page.getByTestId('save-exercise').click();
-  await expect(page.getByTestId('exercise-form')).not.toBeVisible(); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 504.9');
+  await page.getByTestId('exercise-scope').selectOption('day'); await page.getByTestId('exercise-manual-kcal').fill('500');
+  await expect(page.getByTestId('exercise-preview')).toContainText('缺少可用个人资料，仅记录读数，不增加饮食预算'); await page.getByTestId('save-exercise').click();
+  // 仅设置手动预算，没有个人资料可计算常规活动；手环500仅记录，独立俯卧撑仍计入预算。
+  await expect(page.getByTestId('exercise-form')).not.toBeVisible(); await expect(page.getByTestId('exercise-calories-total')).toContainText('504.9'); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 4.9');
   await page.getByTestId('add-pushups').click(); await expect(page.getByTestId('pushup-quick-count')).toHaveValue(''); await expect(page.getByTestId('pushup-quick-weight')).toHaveValue('70');
   await page.getByTestId('pushup-quick-20').click(); await page.getByTestId('save-pushups').click(); await expect(page.getByTestId('pushup-quick-sheet')).not.toBeVisible();
-  await expect(page.getByTestId('pushup-count-total')).toContainText('50 个'); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 508.17');
-  await page.reload(); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 508.17');
+  await expect(page.getByTestId('pushup-count-total')).toContainText('50 个'); await expect(page.getByTestId('exercise-calories-total')).toContainText('508.17'); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 8.17');
+  await page.reload(); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 8.17');
   await page.getByTestId('open-exercise-history').click(); const first = page.getByTestId('exercise-record').filter({ hasText: '30 个' });
-  await first.getByTestId('delete-exercise').click(); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 503.27');
+  await first.getByTestId('delete-exercise').click(); await expect(page.getByTestId('exercise-budget-credit')).toContainText('+ 3.27');
   await expect(page.getByTestId('pushup-count-total')).toContainText('20 个');
 });

@@ -1,7 +1,11 @@
 import type { ServerConfig } from './config.js';
 import { ApiError } from './errors.js';
 
-/** 单进程内存限额用于本地 MVP；公网多副本部署需换成共享持久化限额。 */
+/**
+ * 三种互相独立的边界：IP滑动分钟窗口、全局处理并发、北京时间全局日计数。
+ * 分钟计数在入口发生（非法请求也可能消耗限频），日计数在图片验证成功后发生。
+ * 状态只存在本Node进程；公网多副本的日总额度必须另外使用quota.ts的共享存储。
+ */
 export class RecognitionLimiter {
   private readonly byIp = new Map<string, number[]>();
   private active = 0;
@@ -9,6 +13,7 @@ export class RecognitionLimiter {
   private dailyCount = 0;
   constructor(private readonly config: ServerConfig, private readonly now: () => number = Date.now) {}
 
+  /** 记录本次尝试；窗口为(now-60s, now]，最早一条记录决定Retry-After。 */
   checkIp(ip: string): void {
     const now = this.now();
     // 定期清掉过期 IP，避免 Map 因长期运行或恶意来源不断增长。
@@ -21,7 +26,8 @@ export class RecognitionLimiter {
     this.byIp.set(ip, recent);
   }
 
-  acquire(): () => void {
+  /** 只检查不扣次，可在解码前拒绝已用尽额度的请求；跨午夜时重置旧计数。 */
+  private checkDaily(): void {
     const now = this.now();
     // 用户日期口径为 Asia/Shanghai，不能依赖部署机器恰好也处于这个时区。
     const currentDay = new Date(now + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -30,10 +36,18 @@ export class RecognitionLimiter {
       const nextUtcDay = Date.parse(`${currentDay}T00:00:00Z`) + 16 * 60 * 60 * 1000;
       throw new ApiError('DAILY_LIMIT_REACHED', '今天的识别次数已达上限，请手动记录或明天再试。', 429, Math.ceil((nextUtcDay - now) / 1000));
     }
+  }
+
+  /** 解码前占用槽位，拒绝忙碌/额度耗尽的请求；验证失败不会扣每日额度。 */
+  acquireSlot(): () => void {
+    this.checkDaily();
     if (this.active >= this.config.concurrency) throw new ApiError('AI_BUSY', '另一张照片正在识别，请稍后重试。', 429, 3);
     this.active += 1;
-    this.dailyCount += 1;
+    // 返回幂等释放函数，调用者在finally使用；误调用两次也不能把active减成负数。
     let released = false;
     return () => { if (!released) { released = true; this.active -= 1; } };
   }
+
+  /** 验证完成后、请求上游前计数；重新检查可防止并发请求超出当日剩余额度。 */
+  consumeDaily(): void { this.checkDaily(); this.dailyCount += 1; }
 }

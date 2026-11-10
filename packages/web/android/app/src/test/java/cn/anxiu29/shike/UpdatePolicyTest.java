@@ -4,6 +4,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -70,5 +72,14 @@ public class UpdatePolicyTest {
         byte[] bytes = new byte[65536]; String sha = UpdatePolicy.hex(MessageDigest.getInstance("SHA-256").digest(bytes)); AtomicBoolean cancelled = new AtomicBoolean(false);
         assertThrows(Exception.class, () -> UpdatePolicy.copyVerified(new ByteArrayInputStream(bytes), new ByteArrayOutputStream(), bytes.length, sha, cancelled::get, received -> cancelled.set(true)));
         assertThrows(Exception.class, () -> UpdatePolicy.copyVerified(new ByteArrayInputStream(bytes), new ByteArrayOutputStream(), bytes.length, sha, () -> true, received -> {}));
+    }
+    @Test public void alreadyCancelledDownloadDoesNotStartAnotherRead() throws Exception {
+        // 此流一旦被读取就失败：取消应在可能阻塞的网络读取之前生效。
+        InputStream source = new InputStream() {
+            @Override public int read() { throw new AssertionError("cancelled download started a read"); }
+        };
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        assertThrows(IOException.class, () -> UpdatePolicy.copyVerified(source, output, 1024, "a".repeat(64), () -> true, value -> {}));
+        assertEquals(0, output.size());
     }
 }

@@ -13,6 +13,13 @@ async function tab(page: Page, name: 'settings' | 'diary') {
   await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click();
 }
 
+test('首次页面资源下载失败时显示刷新提示而非空白', async ({ page }) => {
+  await page.route('**/assets/SettingsView-*.js', route => route.abort('failed'));
+  await page.goto('/'); await tab(page, 'settings');
+  await expect(page.getByTestId('async-panel-error')).toContainText('未保存');
+  await expect(page.getByTestId('async-panel-error').getByRole('button', { name: '刷新重试' })).toBeVisible();
+});
+
 test('设置首页只展示常用入口，详细内容按需打开并返回原位置', async ({ page }) => {
   const calls: string[] = []; page.on('request', request => { if (request.url().includes('/api/models') || request.url().includes('/app-updates') || request.method() === 'POST') calls.push(request.url()); });
   await page.route('**/api/health', route => route.fulfill({ json: { status: 'ok', mode: 'live', provider: 'qwen', model: 'qwen3.7-flash' } }));

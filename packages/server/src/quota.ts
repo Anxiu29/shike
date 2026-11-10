@@ -8,11 +8,14 @@ import Credential from '@alicloud/credentials';
 import type { ServerConfig } from './config.js';
 import { ApiError } from './errors.js';
 
+/** 成功表示预留一次调用资格；抛错必须阻止模型请求，不能当作“额度服务可选”。 */
 export interface DailyQuota { consume(now: number, maximum: number): Promise<void>; }
+/** 存储适配器只暴露读取长度和带预期位置追加，便于用内存实现验证跨实例竞争。 */
 export interface AppendStore {
   size(key: string): Promise<number>;
   append(key: string, position: number): Promise<void>;
 }
+// 给UTC毫秒加8小时后取ISO日期，与主机系统时区无关；统一应用的北京时间计数口径。
 export const shanghaiDay = (now: number): string => new Date(now + 8 * 3600000).toISOString().slice(0, 10);
 export function dailyLimitError(now: number): ApiError {
   const next = Date.parse(`${shanghaiDay(now)}T00:00:00Z`) + 16 * 3600000;
@@ -24,19 +27,37 @@ export function dailyLimitError(now: number): ApiError {
  */
 export class OssDailyQuota implements DailyQuota {
   constructor(private readonly store: AppendStore) {}
+  /**
+   * 最长等待8秒。race只让调用者及时失败，signal阻止迟到读取继续触发新的存储写入。
+   * AppendStore未承诺可中止在途请求；若append已送达OSS，超时后仍可能占用一次额度。
+   * 这与“超时不退款”的保守计费边界一致，不能在未知写入结果时盲目重新预留。
+   */
   async consume(now: number, maximum: number): Promise<void> {
+    const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      await Promise.race([this.reserve(now, maximum), new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new ApiError('QUOTA_UNAVAILABLE', '识别额度服务响应超时，请稍后重试。', 503)), 8000);
+      await Promise.race([this.reserve(now, maximum, controller.signal), new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          const error = new ApiError('QUOTA_UNAVAILABLE', '识别额度服务响应超时，请稍后重试。', 503);
+          controller.abort(error); reject(error);
+        }, 8000);
       })]);
     } finally { if (timer) clearTimeout(timer); }
   }
-  private async reserve(now: number, maximum: number): Promise<void> {
+  /**
+   * 一天对应一个追加对象，长度n等价于已经预留n次；position=n是比较并写入的原子条件。
+   * 两个实例都读到n时只有一个能追加，另一个收到PositionNotEqualToLength后重新读。
+   * 只为明确的竞争冲突最多尝试4次；网络失败的写入结果未知，不能当成冲突重试。
+   */
+  private async reserve(now: number, maximum: number, signal: AbortSignal): Promise<void> {
     const key = `shike-quota/${shanghaiDay(now)}.count`;
     try {
       for (let attempt = 0; attempt < 4; attempt++) {
+        signal.throwIfAborted();
         const size = await this.store.size(key);
+        // Promise.race只停止调用者等待，不能停止迟到的存储请求；过期后禁止再发起追加。
+        // 已在途的append仍可能成功，因此超时不代表已预留额度会自动退还。
+        signal.throwIfAborted();
         if (!Number.isSafeInteger(size) || size < 0) throw new Error('Invalid quota size');
         if (size >= maximum) throw dailyLimitError(now);
         try { await this.store.append(key, size); return; }
@@ -56,6 +77,7 @@ export function createDailyQuota(config: ServerConfig): DailyQuota | undefined {
   if (config.quotaStore !== 'oss') return undefined;
   // 凭证仅由云端环境或官方凭证链提供；可使用最小权限 RAM 用户或可刷新临时凭证。
   const credential = new Credential.default();
+  // 每次操作从官方凭证链取当前凭证，临时STS凭证轮换后不继续使用过期Key。
   const getClient = async () => {
     const keys = await credential.getCredential();
     if (!keys?.accessKeyId || !keys.accessKeySecret) throw new Error('No OSS credential');
@@ -70,6 +92,7 @@ export function createDailyQuota(config: ServerConfig): DailyQuota | undefined {
       try {
         const response = await (await getClient()).head(key);
         const headers = response.res.headers as Record<string, string>;
+        // 普通对象的长度不能作为此协议的原子追加计数，类型不符必须关闭调用资格。
         if (headers['x-oss-object-type'] !== 'Appendable') throw new Error('Invalid quota object type');
         return Number(headers['content-length']);
       } catch (error) {

@@ -5,7 +5,7 @@ import type { MealType } from '@shike/shared'
 import { readBarcode } from '../lib/barcode'
 import { cameraCrop, cameraFocusPoint, continuousFocus, pointFocus } from '../lib/camera'
 import { NativeCameraSession, nativeCameraAvailable, type PreviewBounds } from '../lib/native-camera'
-import ModelPicker from './ModelPicker.vue'
+import PhotoModelPicker from './PhotoModelPicker.vue'
 import { useBackLayer } from '../lib/use-back-layer'
 
 export type CaptureKind = 'food' | 'label' | 'barcode'
@@ -191,7 +191,7 @@ onBeforeUnmount(() => { void stop(); resizeObserver?.disconnect(); cancelAnimati
       <footer ref="controls" class="capture-controls">
         <div class="capture-meals" role="group" aria-label="餐次"><button v-for="item in mealTypes" :key="item.value" :aria-pressed="meal === item.value" :class="{ active: meal === item.value }" :data-testid="`camera-meal-${item.value}`" @click="meal = item.value"><span>{{ item.symbol }}</span>{{ item.label }}</button></div>
         <div class="capture-modes" role="group" aria-label="拍摄类型"><button v-for="item in modes" :key="item.value" :aria-pressed="kind === item.value" :class="{ active: kind === item.value }" :disabled="busy || capturing" :data-testid="`camera-mode-${item.value}`" @click="kind = item.value; if (ready) error = ''">{{ item.label }}</button></div>
-        <ModelPicker v-show="kind !== 'barcode'" compact :busy="busy || capturing" @switching="switching = $event" />
+        <PhotoModelPicker v-if="kind !== 'barcode'" compact :kind="kind" :busy="busy || capturing" @switching="switching = $event" />
         <p v-if="kind === 'barcode'" class="capture-private">本地读码 · 不调用AI</p>
         <div class="capture-actions"><button class="capture-gallery" :disabled="busy || capturing || switching" data-testid="camera-gallery" @click="gallery?.click()"><Image :size="25" /><span>相册</span></button><button class="capture-shutter" aria-label="拍摄照片" data-testid="camera-shutter" :disabled="!ready || busy || capturing || switching" @click="takePhoto"><span></span></button><button class="capture-gallery" :disabled="busy" data-testid="camera-skip" @click="skip"><Keyboard :size="25" /><span>{{ kind === 'barcode' ? '输入条码' : '手动记录' }}</span></button></div>
         <p class="capture-disclosure">{{ busy ? '正在读取条码…' : kind === 'barcode' ? '拍清条码后查询，未收录可改拍营养表' : '拍摄后识别 · 结果可修改' }}</p>

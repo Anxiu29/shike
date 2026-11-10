@@ -4,6 +4,14 @@ import { calculateNutrients, findRecipe, mealRecordSchema, createRecipeEntry, em
 import { assistantEntry, assistantMeal, assistantNutrition, assistantEnergyLabel } from '../src/lib/meal-assistant';
 import { applyTypicalPortion } from '../src/lib/typical-portions';
 describe('助手草稿和普通份量', () => {
+  it('详细编辑保存100项后仍能展示完整热量，不影响保存回调或静默漏项', () => {
+    const rice = assistantEntry({ name: '米饭', amount: 150, unit: 'g' }, [], []);
+    const snapshot = assistantNutrition(Array(100).fill(rice), 'saved', '2026-11-10', 'lunch', 'live');
+    expect(snapshot.items).toHaveLength(100); expect(snapshot.knownEnergyKcal).toBe(19500);
+    expect(() => assistantNutrition(Array(101).fill(rice), 'saved', '2026-11-10', 'lunch', 'live')).toThrow();
+    expect(() => assistantNutrition(Array(11).fill(rice), 'draft', '2026-11-10', 'lunch', 'live')).toThrow();
+    for (const mode of ['mock', 'manual'] as const) expect(assistantNutrition([rice], 'saved', '2026-11-10', 'lunch', mode).mode).toBe(mode);
+  });
   it('好丽友小包由AI估重换算，整包装净含量与每100g营养不被修改', () => {
     const product = packagedCatalogItems([]).find(item => item.food.barcode === '6920907800968')!.food;
     const entry = assistantEntry({ name: product.name, amount: 2, unit: '包', portionEstimate: { amountPerUnit: 34, basis: 'g', source: 'ai', assumption: '按单独小包估计，需核对' } } as any, [], []);
@@ -60,6 +68,18 @@ describe('助手草稿和普通份量', () => {
     const entry = assistantEntry({ name: '容量边界测试', amount: 20000, unit: 'ml' }, [], []);
     entry.volumeSnapshot!.nutrientsPer100ml.energyKcal = 2000;
     expect(assistantNutrition(Array(10).fill(entry), 'estimate', '2026-11-06', 'snack', 'live').knownEnergyKcal).toBe(4_000_000);
+  });
+  it('订单数量保留为待核对份量，来源提醒随快照保存；未知食品不编热量', () => {
+    const food = { name: '肉包', amount: 6, unit: '个' as const };
+    const entry = assistantEntry(food, [], [], 'order');
+    expect(entry.portionSnapshot?.quantity).toBe(6); expect(entry.weightG).toBe(480);
+    expect(entry.portionSnapshot?.assumption).toContain('未称重');
+    expect(entry.provenance).toContain('外卖订单草稿'); expect(entry.warnings.join('')).toContain('下单数量不等于实际摄入');
+    const record = assistantMeal({ intent: 'update', date: '2026-10-28', mealType: 'lunch', foods: [food], message: '核对订单' }, [entry], 'live');
+    expect(mealRecordSchema.parse(record).items[0]?.warnings).toEqual(entry.warnings);
+    const unknown = assistantEntry({ name: '神秘套餐甲', amount: 1, unit: '份' }, [], [], 'order');
+    expect(calculateNutrients(unknown).energyKcal).toBeNull();
+    expect(assistantEntry(food, [], []).warnings.join('')).not.toContain('订单');
   });
   it('数量按食物换算；配方缩放只记整道菜，用户明确克数优先', () => {
     const bun = assistantEntry({ name: '肉包', amount: 2, unit: '个' }, [], []);

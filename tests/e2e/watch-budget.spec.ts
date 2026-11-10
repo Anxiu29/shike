@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { routeApkAssets } from './helpers/apk-assets'
+import { closeSettingsPanel } from './helpers/settings'
 
 async function tab(page: Page, name: 'goals' | 'diary') {
   await closeSettingsPanel(page); const mobile = page.getByTestId(`tab-${name}`); await (await mobile.isVisible() ? mobile : page.getByTestId(`desktop-tab-${name}`)).click() }

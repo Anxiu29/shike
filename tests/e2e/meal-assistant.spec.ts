@@ -94,6 +94,24 @@ test('多项热量结果优先显示合计，长名称和缺失资料不溢出�
   if (process.env.SHIKE_QA_DIR) await page.screenshot({ path: join(process.env.SHIKE_QA_DIR, `assistant-calories-${test.info().project.name}.png`) });
 });
 
+test('详细编辑取消后返回助手保留原草稿，重新编辑保存后清理草稿', async ({ page }) => {
+  await open(page); await send(page, '早餐两个肉包');
+  await page.getByTestId('assistant-review').click();
+  await expect(page.getByTestId('food-editor')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('meal-assistant')).toBeVisible();
+  await expect(page.getByTestId('assistant-food-0')).toContainText('160 g');
+  await expect(page.getByTestId('meal-record')).toHaveCount(0);
+  await page.getByTestId('assistant-review').click();
+  await page.getByTestId('food-portion-0-unit').selectOption('g');
+  await page.getByTestId('food-weight-0').fill('180');
+  await page.getByTestId('save-meal').click();
+  await expect(page.getByTestId('meal-record')).toHaveCount(1);
+  await page.getByTestId('assistant-open').click();
+  await expect(page.getByTestId('assistant-draft')).toHaveCount(0);
+  await expect(page.getByTestId('assistant-messages')).toContainText('已保存');
+});
+
 test('未说餐次按发送时间预选，跨时段保留手选，下一餐重算并可明确覆盖', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-10-21T10:59:00+08:00'));
   await open(page); await send(page, '两个肉包');

@@ -14,6 +14,8 @@ if (lan && !lanAddress) throw new Error('局域网测试需要本机存在局域
 const origin = lan ? `http://${lanAddress}:3101` : 'http://127.0.0.1:3101';
 // localhost 被浏览器特殊信任；LAN 测试必须真正使用非安全的 HTTP IP 来源，避免漏测受限 API。
 const env = { ...process.env, PORT: '3101', HOST: lan ? '0.0.0.0' : '127.0.0.1', PUBLIC_ORIGIN: origin, SHIKE_E2E_ORIGIN: origin, SHIKE_E2E_LAN: lan ? '1' : '0', AI_MODE: 'mock', AI_REQUESTS_PER_MINUTE: '100', AI_REQUESTS_PER_DAY: '10000' };
+// 子进程继承隔离环境，原终端和.env不变；只在health确认mock之后才启动浏览器。
+// E2E读取生产dist，不是Vite源码服务，因此只改源码而未重建会测到上一份产物。
 console.log(`浏览器测试地址：${origin} (${lan ? 'LAN HTTP，非安全上下文' : 'localhost'})`);
 const server = spawn(process.execPath, ['scripts/start.mjs'], { env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 let serverError = '';

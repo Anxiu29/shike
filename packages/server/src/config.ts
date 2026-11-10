@@ -36,6 +36,8 @@ export interface ServerConfig {
   ossRegion: string | undefined;
 }
 
+// 环境变量均从字符串进入，数值必须显式coerce并限制范围；默认值也属于服务成本策略。
+// 这里只定义字段级规则，公网模式的跨字段约束放在loadConfig中集中检查。
 const envSchema = z.object({
   AI_PROVIDER: personalProviderSchema.default('gemini'),
   AI_MODE: z.enum(['auto', 'mock', 'live']).default('auto'),
@@ -65,7 +67,11 @@ const envSchema = z.object({
   OSS_QUOTA_REGION: z.string().regex(/^oss-[a-z0-9-]+$/).optional(),
 });
 
-/** 只在后端加载根目录 .env。不能用 VITE_ 前缀保存密钥。 */
+/**
+ * 只在后端加载根目录.env，返回通过字段及跨字段检查的完整ServerConfig。
+ * 传入env时直接验证该对象，不读取磁盘；测试因此能用字面量隔离开发机真实凭证。
+ * 不能用VITE_前缀保存密钥，不能记录整个ServerConfig；它包含apiKey和签名材料。
+ */
 export function loadConfig(env?: NodeJS.ProcessEnv): ServerConfig {
   if (!env) dotenv.config({ path: fileURLToPath(new URL('../../../.env', import.meta.url)), quiet: true });
   const parsed = envSchema.safeParse(env ?? process.env);
@@ -76,6 +82,7 @@ export function loadConfig(env?: NodeJS.ProcessEnv): ServerConfig {
   const models = { gemini: 'gemini-3.5-flash-lite', glm: e.GLM_MODEL, qwen: e.QWEN_MODEL, siliconflow: 'Qwen/Qwen3.5-4B', openrouter: e.OPENROUTER_MODEL, deepseek: 'deepseek-flash' };
   const apiKey = keys[e.AI_PROVIDER]?.trim() || undefined;
   if (e.AI_MODE === 'live' && !apiKey) throw new Error('AI_MODE=live 时必须配置所选模型的服务端 API Key。');
+  // publicMode是部署者显式开启的策略，不能根据Host/Origin等客户端请求头推测。
   const publicMode = e.APP_PUBLIC_MODE === 'true';
   if (publicMode && e.PUBLIC_ORIGIN && new URL(e.PUBLIC_ORIGIN).protocol !== 'https:') throw new Error('公网 PUBLIC_ORIGIN 必须使用 HTTPS。');
   const accessCode = e.APP_ACCESS_CODE?.trim() || undefined;
@@ -83,9 +90,11 @@ export function loadConfig(env?: NodeJS.ProcessEnv): ServerConfig {
   const allowedOrigins = e.APP_ALLOWED_ORIGINS.split(',').map(value => value.trim()).filter(Boolean);
   if (allowedOrigins.some(value => { try { const url = new URL(value); return url.protocol !== 'https:' || url.origin !== value; } catch { return true; } })) throw new Error('APP_ALLOWED_ORIGINS 必须是逗号分隔的精确 HTTPS 来源。');
   if (accessCode && (accessCode.length < 16 || !tokenSecret || tokenSecret.length < 32)) throw new Error('访问保护需要至少 16 位 APP_ACCESS_CODE 与至少 32 位 APP_TOKEN_SECRET。');
+  // 公网必须把身份保护和持久化配额一起配齐；否则重启/扩容会重置付费调用的日上限。
   if (publicMode && (!accessCode || !tokenSecret || e.QUOTA_STORE !== 'oss' || !e.OSS_QUOTA_BUCKET || !e.OSS_QUOTA_REGION)) throw new Error('公网模式必须配置访问保护与 OSS 持久化限额。');
   if (e.QUOTA_STORE === 'oss' && (!e.OSS_QUOTA_BUCKET || !e.OSS_QUOTA_REGION)) throw new Error('OSS 限额需要配置 OSS_QUOTA_BUCKET 和 OSS_QUOTA_REGION。');
   return {
+    // 所有可选条目都由共享模型白名单×本机已配置Key生成；接口只向页面返回非秘密字段。
     modelProfiles: Object.entries(keys).flatMap(([provider, key]) => key?.trim() ? [...personalProviders.find(item => item.id === provider)!.models].map(model => ({ id: `${provider}:${model}`, provider: provider as Provider, model, apiKey: key.trim() })) : []),
     provider: e.AI_PROVIDER, aiMode: e.AI_MODE, apiKey,
     model: models[e.AI_PROVIDER],

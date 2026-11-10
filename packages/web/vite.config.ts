@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 import { createReadStream, existsSync, statSync } from 'node:fs'
 
 export default defineConfig({
+  // 按真实功能边界进行动态import，而不靠改分包名字或调高warning阈值掩盖首屏负担。
+  // shared声明无全局副作用后，首页只用快照计算时可裁剪食品库；新注册逻辑需重新核实该声明。
   // 独立 APK 构建不能覆盖普通网页产物，否则 npm start 会误用 App 的离线配置。
   build: { outDir: process.env.VITE_APP_STANDALONE === 'true' ? 'dist-android' : 'dist' },
   plugins: [vue(), tailwindcss(), {

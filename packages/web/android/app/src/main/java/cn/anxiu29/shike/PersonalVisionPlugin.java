@@ -55,6 +55,11 @@ public class PersonalVisionPlugin extends Plugin {
     private interface Action { JSObject run() throws Exception; }
     private static class SafeFailure extends Exception { SafeFailure(String message) { super(message); } }
 
+    /**
+     * 所有配置与请求操作共用串行入口，避免“读取旧配置 → 并行修改 → 覆盖新配置”的竞态。
+     * busy 在排队前抢占，因此等待中的网络任务也会拒绝重入；finally 清除桥接参数中的明文 Key。
+     * 只有 SafeFailure/受控参数错误可回传具体提示，其他异常使用固定文案，避免泄露内部配置。
+     */
     private void run(PluginCall call, Action action) {
         // 不允许局域网预览页面访问手机上保存的 Key。
         if (getBridge().getServerUrl() != null) { call.reject("自配 Key 仅在内置页面的独立 APK 中开放。"); return; }
@@ -76,6 +81,7 @@ public class PersonalVisionPlugin extends Plugin {
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).setKeySize(256).build());
         return generator.generateKey();
     }
+    /** 解密后只在工作线程持有配置；迁移仅处理已明确移除的型号，不能静默发送新的模型请求。 */
     private JSONObject read() throws Exception {
         String saved = prefs().getString("sealed-v1", null);
         if (saved == null) return new JSONObject().put("profiles", new JSONArray()).put("activeId", JSONObject.NULL);
@@ -99,6 +105,7 @@ public class PersonalVisionPlugin extends Plugin {
         if (changed) write(state);
         return state;
     }
+    /** 每次加密由 Cipher 生成新 IV；AAD 绑定本配置用途，commit 成功后才向页面报告保存成功。 */
     private void write(JSONObject state) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding"); cipher.init(Cipher.ENCRYPT_MODE, encryptionKey()); cipher.updateAAD(AAD);
         JSONObject sealed = new JSONObject().put("iv", Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP))
@@ -110,7 +117,7 @@ public class PersonalVisionPlugin extends Plugin {
         for (int i = 0; i < profiles.length(); i++) if (profiles.getJSONObject(i).getString("id").equals(id)) return profiles.getJSONObject(i);
         throw new SafeFailure("尚未选择模型配置，请到设置添加并选用一组配置。");
     }
-    /** 仅返回白名单元数据，不能把包含 apiKey 的内部对象直接 resolve。 */
+    /** 将旧单型号配置和新多型号配置统一成经过白名单检查的列表。 */
     private List<String> profileModels(JSONObject profile) throws Exception {
         JSONArray array = profile.optJSONArray("models"); List<String> requested = null;
         if (array != null) { requested = new ArrayList<>(); for (int i = 0; i < array.length(); i++) requested.add(array.getString(i)); }
@@ -122,6 +129,7 @@ public class PersonalVisionPlugin extends Plugin {
         if (!profileModels(original).contains(selected)) throw new SafeFailure("此模型未加入这组 Key，请先在设置勾选。");
         return new JSONObject(original.toString()).put("model", selected);
     }
+    /** 仅投影可公开元数据；内部 profile 含 apiKey，不能将原对象直接 resolve 给页面。 */
     private JSObject publicState(JSONObject state) throws Exception {
         JSONArray profiles = state.getJSONArray("profiles"), safe = new JSONArray();
         for (int i = 0; i < profiles.length(); i++) {
@@ -239,6 +247,11 @@ public class PersonalVisionPlugin extends Plugin {
         });
     }
 
+    /**
+     * 先检查编码与像素边界，再解码重压缩，移除原图容器携带的额外元数据。
+     * 将文本对象中的大块 base64 替换为 imageNumber，图像仅通过提供商的图片字段传一次。
+     * Bitmap 持有原生内存，成功或失败都在 finally recycle，不能只等待 Java GC。
+     */
     private void assistantImage(JSONObject turn, JSONArray images) throws Exception {
         if (!turn.has("imageBase64")) return;
         String encoded = turn.getString("imageBase64");
@@ -306,6 +319,7 @@ public class PersonalVisionPlugin extends Plugin {
                     .put(new JSONObject().put("type", "text").put("text", probe ? (p.getString("model").equals("glm-4.1v-thinking-flash") ? "请观察这张测试图。连接测试：最终答案只输出 {\"ok\":true}，不要解释，不要添加Markdown。" : "Return the requested JSON.") : "识别食物或包装标签。包装输出packageLabel原数值和单位，不猜摄入量或营养；普通餐食提供可判断的每100g三档营养范围。只输出JSON。"))
                     .put(new JSONObject().put("type", "image_url").put("image_url", new JSONObject().put("url", "data:" + mime + ";base64," + encoded).put("detail", "high"))))));
     }
+    /** 在实际请求前消耗本机保护计数，失败请求也计入；这不是提供商账单或跨设备全局限额。 */
     private void consumeAttempt() throws Exception {
         long now = System.currentTimeMillis();
         while (!attempts.isEmpty() && attempts.peek() <= now - 60_000) attempts.remove();
@@ -316,6 +330,11 @@ public class PersonalVisionPlugin extends Plugin {
         if (!prefs().edit().putLong("request-day", day).putInt("request-count", count + 1).commit()) throw new SafeFailure("无法保存用量计数，请检查手机存储。");
         attempts.add(now);
     }
+    /**
+     * p 是本次请求快照，地址由原生白名单得出，页面不能指定目标；禁止带 Key 的请求自动跟随跳转。
+     * 连接/单次读取超时之外再设置总时限，避免持续少量返回让请求无限延长。
+     * 响应限制为有界正文，出错时不回显提供商原文；finally 同时取消定时任务并断开连接。
+     */
     private String request(JSONObject p, JSONObject body) throws Exception {
         String endpoint = VisionPolicy.endpoint(p.getString("provider"), p.getString("model"));
         consumeAttempt();

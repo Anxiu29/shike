@@ -48,7 +48,9 @@ test('TFDA馒头按重量换算并保存来源，设置显示数据归属', asyn
   await page.goto('/'); await page.getByTestId('manual-add').click(); await page.getByTestId('food-picker-manual').click(); await page.getByTestId('manual-food-choose').click(); await page.getByTestId('food-picker-search').fill('馒头');
   await page.getByTestId('food-option-tfda-R2400201').click(); await page.getByTestId('manual-food-weight').fill('150'); await page.getByTestId('confirm-manual-food').click();
   await expect(page.getByTestId('food-calories-0')).toContainText('372'); await page.getByTestId('save-meal').click(); await expect(page.getByTestId('food-editor')).toHaveCount(0); await page.reload();
-  await expect(page.getByTestId('daily-calories')).toContainText('372'); await tab(page, 'settings'); await expect(page.getByRole('link', { name: 'TFDA 数据集' })).toBeVisible();
+  await expect(page.getByTestId('daily-calories')).toContainText('372'); await tab(page, 'settings');
+  await openSettingsPanel(page, 'sources'); await page.getByTestId('settings-detail').getByText('查看来源、许可与使用建议', { exact: true }).click();
+  await expect(page.getByRole('link', { name: 'TFDA 数据集' })).toBeVisible();
   const download = page.waitForEvent('download'); await openSettingsPanel(page, 'backup'); await page.getByTestId('export-backup').click(); const stream = await (await download).createReadStream(); if (!stream) throw Error('未导出备份');
   const chunks: Buffer[] = []; for await (const chunk of stream) chunks.push(Buffer.from(chunk)); const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   expect(data.meals[0].items[0].provenance).toContain('样本 R2400201'); expect(data.meals[0].items[0].nutrientsPer100g.energyKcal).toBe(248);

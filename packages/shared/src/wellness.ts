@@ -24,6 +24,10 @@ export const activityLevels = [
   { id: 'moderate', label: '中度活动', factor: 1.8 },
   { id: 'active', label: '较多体力活动', factor: 2.0 },
 ] as const;
+/**
+ * 查询指定日期可用的体重：先排除未来记录，再比较最新称重与个人资料的参考起点。
+ * 返回weightDate便于页面解释采用哪一天的依据，不能只返回一个无法追溯的数值。
+ */
 export function weightOnDate(date: string, weights: WeightRecord[], profile?: PersonalInfo | null) {
   const record = weights.filter(value => value.date <= date).sort((a, b) => b.date.localeCompare(a.date))[0];
   // 新起点后的体重记录优先；不把未来体重倒灌到旧日期。
@@ -31,6 +35,7 @@ export function weightOnDate(date: string, weights: WeightRecord[], profile?: Pe
   if (profile && profile.startingDate <= date) return { weightKg: profile.startingWeightKg, weightDate: profile.startingDate };
   return record ? { weightKg: record.weightKg, weightDate: record.date } : { weightKg: null, weightDate: null };
 }
+/** 冻结当日计算输入；深复制设置，防止之后改目标时连带改变已保存的历史预算依据。 */
 export function makeDailyPlan(date: string, settings: Settings, weights: WeightRecord[], now = new Date().toISOString()): DailyPlan {
   return { date, formulaVersion: 'mifflin-1990-v1', settingsSnapshot: JSON.parse(JSON.stringify(settings)) as Settings,
     ...weightOnDate(date, weights, settings.personalInfo), createdAt: now, updatedAt: now };
@@ -38,6 +43,11 @@ export function makeDailyPlan(date: string, settings: Settings, weights: WeightR
 export function restingCalories(profile: PersonalInfo, weightKg: number): number {
   return 10 * weightKg + 6.25 * profile.heightCm - 5 * profile.age + (profile.sex === 'male' ? 5 : -161);
 }
+/**
+ * 先计算基础预算，再合并允许计入的活动，最后减去“已知摄入”。
+ * 返回各中间值供页面说明来源；只要摄入或活动不完整，remaining=null，不把缺失当零。
+ * 这是本应用的估算记账规则，代码中的范围保护不意味着对任何人的摄入量作出医学保证。
+ */
 export function calorieBudget(plan: DailyPlan, exercises: ExerciseRecord[], consumedKcal: number, missingCalories = 0) {
   const profile = plan.settingsSnapshot.personalInfo;
   const goals = plan.settingsSnapshot.dailyGoals ?? defaultDailyGoals;

@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { MAX_IMAGE_BYTES, sanitizeImage } from './image.js';
+import * as imageProcessing from './image.js';
 import { ApiError } from './errors.js';
 import type { VisionService } from './vision/types.js';
 
@@ -27,6 +28,58 @@ function multipart(buffer: Buffer, mime = 'image/png', extra = '') {
 const validResult = { isFood: false, foods: [], uncertainties: ['看不出食物'] };
 
 describe('本地识别 API', () => {
+  it('解码跨北京时间午夜后才计数，并发竞争最后一个额度只有一次上游调用', async () => {
+    let now = Date.parse('2026-10-29T15:59:59Z');
+    const resume = Promise.withResolvers<void>(), original = imageProcessing.sanitizeImage;
+    const decode = vi.spyOn(imageProcessing, 'sanitizeImage').mockImplementation(async (...args) => { await resume.promise; return original(...args); });
+    const recognize = vi.fn().mockResolvedValue(validResult);
+    const app = await appWith({ config: loadConfig({ AI_MODE: 'mock', AI_CONCURRENCY: '2', AI_REQUESTS_PER_DAY: '1', AI_REQUESTS_PER_MINUTE: '100' }), now: () => now,
+      service: { mode: 'live', provider: 'gemini', model: 'test', recognize } });
+    const request = { method: 'POST' as const, url: '/api/recognitions', ...multipart(await png()) };
+    const pending = [app.inject(request).then(value => value), app.inject(request).then(value => value)];
+    try {
+      await vi.waitFor(() => expect(decode).toHaveBeenCalledTimes(2));
+      now += 2000; resume.resolve();
+      const results = await Promise.all(pending);
+      expect(results.map(value => value.statusCode).sort()).toEqual([200, 429]);
+      expect(results.find(value => value.statusCode === 429)!.json().error.code).toBe('DAILY_LIMIT_REACHED');
+      expect(recognize).toHaveBeenCalledTimes(1);
+      now += 86400000;
+      expect((await app.inject(request)).statusCode).toBe(200);
+    } finally { resume.resolve(); await Promise.all(pending); decode.mockRestore(); }
+  });
+  it('图片仍在解码时就占用共享并发槽位，后续图片和文字请求不进入处理', async () => {
+    const entered = Promise.withResolvers<void>(), resume = Promise.withResolvers<void>();
+    const original = imageProcessing.sanitizeImage;
+    const decode = vi.spyOn(imageProcessing, 'sanitizeImage').mockImplementationOnce(async (...args) => {
+      entered.resolve(); await resume.promise; return original(...args);
+    });
+    const app = await appWith({ config: loadConfig({ AI_MODE: 'mock', AI_REQUESTS_PER_MINUTE: '100' }) });
+    const request = { method: 'POST' as const, url: '/api/recognitions', ...multipart(await png()) };
+    const first = app.inject(request).then(response => response);
+    try {
+      await entered.promise;
+      const second = await app.inject(request);
+      expect(second.statusCode).toBe(429); expect(second.json().error.code).toBe('AI_BUSY');
+      const text = await app.inject({ method: 'POST', url: '/api/meal-assistant', payload: { text: '两个鸡蛋', date: '2026-10-29', mealType: 'breakfast', history: [] } });
+      expect(text.statusCode).toBe(429); expect(text.json().error.code).toBe('AI_BUSY');
+      expect(decode).toHaveBeenCalledTimes(1);
+    } finally { resume.resolve(); await first; decode.mockRestore(); }
+    expect((await app.inject(request)).statusCode).toBe(200);
+  });
+
+  it('无效图片释放处理槽位且不扣每日额度，额度耗尽不会再次解码', async () => {
+    const decode = vi.spyOn(imageProcessing, 'sanitizeImage');
+    try {
+      const app = await appWith({ config: loadConfig({ AI_MODE: 'mock', AI_REQUESTS_PER_MINUTE: '100', AI_REQUESTS_PER_DAY: '1' }) });
+      const invalid = await app.inject({ method: 'POST', url: '/api/recognitions', ...multipart(Buffer.from('bad-image')) });
+      expect(invalid.statusCode).toBe(415);
+      const request = { method: 'POST' as const, url: '/api/recognitions', ...multipart(await png()) };
+      expect((await app.inject(request)).statusCode).toBe(200);
+      expect((await app.inject(request)).json().error.code).toBe('DAILY_LIMIT_REACHED');
+      expect(decode).toHaveBeenCalledTimes(2);
+    } finally { decode.mockRestore(); }
+  });
   it('health 和 mock 识别结果持续标识模拟', async () => {
     const app = await appWith();
     expect((await app.inject({ url: '/api/health' })).json()).toEqual({ status: 'ok', mode: 'mock', provider: 'mock', model: 'mock-demo-v1' });

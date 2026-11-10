@@ -65,7 +65,7 @@ function run(file, arguments_, cwd, childEnv = env) {
     child.once('exit', code => code === 0 ? done() : reject(new Error(`构建命令失败，退出码 ${code}`)));
   });
 }
-console.log(preview ? `生成局域网联调 APK，连接 ${origin}` : '生成独立 APK：内置页面，可在手机设置多组模型与 API Key，无需自建后端。');
+console.log(preview ? `生成局域网联调 APK，连接 ${origin}` : '生成独立 APK：内置页面、手机 Key 与本机离线文字记餐，无需自建后端。');
 // 先构建正常H5，再单独生成App资源，避免APK构建让npm start继续提供旧网页。
 const webEnv = { ...env }; delete webEnv.VITE_APP_STANDALONE;
 await run(process.execPath, [npm, 'run', 'build'], root, webEnv);
@@ -75,6 +75,8 @@ const fallback = await readFile(fallbackPath, 'utf8');
 if (origin) await writeFile(fallbackPath, fallback.replace('const target = null', `const target = ${JSON.stringify(origin).replace(/</g, '\\u003c')}`));
 if (!existsSync(android)) await run(process.execPath, [cap, 'add', 'android'], web);
 await run(process.execPath, [cap, 'sync', 'android'], web);
+const nativePlugins = JSON.parse(await readFile(join(android, 'app/src/main/assets/capacitor.plugins.json'), 'utf8'));
+if (nativePlugins.some(plugin => plugin.pkg === '@capgo/camera-preview')) throw new Error('系统相机版本不应包含CameraPreview，请检查capacitor.config.ts的Android插件清单。');
 // Windows 的 java @argfile 使用系统代码页；中文路径时让 Gradle 按该代码页写文件。
 // 源码编译编码仍在 build.gradle 中显式固定 UTF-8。
 if (process.platform === 'win32') await run(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', 'gradlew.bat :app:testDebugUnitTest :app:assembleDebug --no-daemon --console=plain -Dorg.gradle.jvmargs=-Dfile.encoding=COMPAT'], android);
@@ -90,7 +92,7 @@ await run(java, ['-jar', tools, 'verify', '--verbose', output], root);
 const bytes = await readFile(output);
 const { builtinPackagedFoods, foods, catalogFoods, recipes, updateManifestSchema } = await import('../packages/shared/dist/index.js');
 const sha256 = createHash('sha256').update(bytes).digest('hex');
-const metadata = { appId: 'cn.anxiu29.shike', versionCode: appRelease.versionCode, versionName: appRelease.versionName, packagedFoodCount: builtinPackagedFoods.length, foodCount: foods.length, catalogFoodCount: catalogFoods.length, chineseFoodCount: foods.filter(food => food.source.dataset === 'TFDA 食品营养成分').length, recipeCount: recipes.length, mode: preview ? 'LAN preview' : 'standalone', server: origin ?? null, bytes: bytes.length, sha256 };
+const metadata = { appId: 'cn.anxiu29.shike', versionCode: appRelease.versionCode, versionName: appRelease.versionName, camera: 'system', packagedFoodCount: builtinPackagedFoods.length, foodCount: foods.length, catalogFoodCount: catalogFoods.length, chineseFoodCount: foods.filter(food => food.source.dataset === 'TFDA 食品营养成分').length, recipeCount: recipes.length, mode: preview ? 'LAN preview' : 'standalone', server: origin ?? null, bytes: bytes.length, sha256 };
 await writeFile(join(dirname(output), `${basename}.json`), JSON.stringify(metadata, null, 2) + '\n');
 if (!preview) {
   const variables = await readFile(join(android, 'variables.gradle'), 'utf8');
@@ -105,5 +107,5 @@ if (!preview) {
   await copyFile(join(dirname(output), 'shike-update.json'), versioned + '-update.json');
   console.log('Gitee / GitHub Releases发布文件已准备：shike.apk、shike-update.json、shike.apk.sha256；此命令不会自动上传。');
 }
-console.log(`\nAPK 已生成并验签：${output}\n${preview ? '联调模式需要电脑服务。' : '独立模式：设置 → 手机自配 Key → 添加模型配置 → 测试并保存，即可联网识别。'}\n这是调试签名测试包，不是商店发行版。`);
+console.log(`\nAPK 已生成并验签：${output}\n${preview ? '联调模式需要电脑服务。' : '独立模式：首页 AI记餐 → 文字记餐方式 → 本机离线。设置 → 手机离线 AI 可下载/导入及测试模型；在线拍照仍可使用原Key。'}\n这是调试签名测试包，不是商店发行版。`);
 if (candidates.length === 1) console.log(`一次性下载安装（需局域网开发服务运行）：http://${candidates[0].ip}:5180/downloads/${basename}.apk`);

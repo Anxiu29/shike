@@ -11,12 +11,12 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Camera, ImagePlus, X, Plus, Trash2, Check, LoaderCircle, RotateCcw, ChevronDown, ChevronRight, Sparkles, Info, Scale, PackageOpen, BookHeart, Copy } from '@lucide/vue'
 import { createId, createPackageEntry, emptyPackageLabel, syncPackageEntry, packageSnapshotSchema, type PackageSnapshot, type PackagedFood, foods, recipes, normalizeFoodName, createFoodEntry, createRecipeEntry, createEstimatedFoodEntry, calculateNutrients, aggregateNutrients, applyEstimateLevel, calculateEnergyRange, selectedEstimateOption, mealRecordSchema, type MealRecord, type MealType, type FoodEntry, type Nutrients, type EstimatedFood, type EstimateLevel } from '@shike/shared'
 import FoodPicker from './FoodPicker.vue'
-import CaptureCamera from './CaptureCamera.vue'
+import CapturePhoto from './CapturePhoto.vue'
 import { db, saveLibraryFood, saveLibraryFoods } from '../lib/db'
 import { entryForFoodChoice } from '../lib/food-picker'
 import PackageLabelEditor from './PackageLabelEditor.vue'
 import PackagedLibrary from './PackagedLibrary.vue'
-import ModelPicker from './ModelPicker.vue'
+import PhotoModelPicker from './PhotoModelPicker.vue'
 import ManualFoodSheet from './ManualFoodSheet.vue'
 import AppSheet from './AppSheet.vue'
 import PhotoViewer from './PhotoViewer.vue'
@@ -25,6 +25,7 @@ import { compressImage, compressedImageBase64 } from '../lib/image'
 import { recognizeImage, type Health } from '../lib/api'
 import { manualEntry, rematchRenamedEntry, discardEstimateContext, entryBasis, resizeEntry, recalculateRecipe, inputNumber } from '../lib/entries'
 import { prepareRecognition } from '../lib/recognition'
+import { offlinePhotoEnabled, recognizeOfflineImage, prepareOfflineImage } from '../lib/offline-photo'
 import { inputNumberLabel, numberLabel, rangeLabel, portionLabel } from '../lib/dates'
 import { useBackLayer } from '../lib/use-back-layer'
 import DateField from './DateField.vue'
@@ -33,6 +34,8 @@ import type { PortionSnapshot } from '@shike/shared'
 
 const props = defineProps<{ date: string; mealType: MealType; record?: MealRecord; health: Health | null; estimatedFoods: EstimatedFood[]; start: 'photo' | 'manual' | 'edit'; initialItems?: FoodEntry[]; initialMode?: MealRecord['mode']; reuseSource?: string; initialPhoto?: File; initialPhotos?: string[]; photoKind?: 'food' | 'label'; initialBarcode?: string }>()
 const emit = defineEmits<{ close: []; save: [record: MealRecord, photos?: string[]] }>()
+// undefined 表示“未改照片”，保存时让数据库保留旧值；[] 表示用户明确移除。
+// storedPhotos 仅供预览，不能加载完就回填 retainedPhotos，否则普通编辑也会重写照片。
 const retainedPhotos = ref<string[] | undefined>(props.initialPhotos)
 const storedPhotos = ref<string[]>([])
 const previewPhotos = computed(() => retainedPhotos.value ?? storedPhotos.value)
@@ -47,6 +50,7 @@ async function reloadPackages() { try { packagedFoods.value = await db.packagedF
 function closeLibrary() { libraryOpen.value = false; void reloadPackages() }
 function openLibrary(entry?: FoodEntry) { libraryCandidate.value = entry; libraryOpen.value = true }
 function usePackage(entry: FoodEntry) { if (items.value.length === 1 && !items.value[0]!.name.trim()) items.value = []; items.value.push(entry); previousNames.value[entry.id] = entry.name }
+// 深拷贝隔开父组件/历史记录与当前草稿；取消编辑不需要撤回数据库或父组件上的修改。
 const items = ref<FoodEntry[]>(JSON.parse(JSON.stringify(props.record?.items ?? props.initialItems ?? [])))
 const previousNames = ref<Record<string, string>>(Object.fromEntries(items.value.map(item => [item.id, item.name])))
 // 候选仅留在面板内存。可靠库优先，用户仍可主动改选本次模型粗估。
@@ -57,16 +61,20 @@ const personalFoods = computed(() => props.estimatedFoods.filter(food => food.pr
 const mealType = ref<MealType>(props.record?.mealType ?? props.mealType)
 const date = ref(props.record?.date ?? props.date)
 const mode = ref<MealRecord['mode']>(props.record?.mode ?? props.initialMode ?? 'manual')
+// phase 管照片处理，saveBusy 管持久化确认；识图完成不等于这餐已经保存。
 const phase = ref<'idle' | 'compressing' | 'recognizing' | 'done' | 'error'>('idle')
 const error = ref('')
 const notice = ref('')
 const globalWarnings = ref<string[]>([])
+const recognitionOffline = ref(false), recognitionProgress = ref(''), offlineActive = ref(false)
+let offlineController: AbortController | null = null
 const imageUrl = ref(props.initialPhotos?.[0] ?? '')
 async function loadSavedPhotos() {
   if (!props.record || props.initialPhotos !== undefined) return
   try {
     const photos = await db.mealPhotos.where('mealId').equals(props.record.id).sortBy('position')
     storedPhotos.value = photos.map(photo => photo.dataUrl)
+    // 读取可能晚于“移除/换图”；只在用户尚未修改照片时填充预览，避免旧照片回跳。
     if (retainedPhotos.value === undefined) imageUrl.value = storedPhotos.value[0] ?? ''
   } catch { notice.value = '原照片暂时无法读取，修改餐食仍会保留原照片。' }
 }
@@ -90,6 +98,8 @@ const recognitionWeights = ref<Record<string, number | null>>({})
 const photoItems = computed(() => items.value.filter(entry => recognitionContexts.value[entry.id]))
 const photoMatches = computed(() => photoItems.value.filter(entry => ['database', 'recipe', 'label'].includes(entry.kind) || (entry.kind === 'ai' && entry.provenance.startsWith('个人估算库'))).length)
 const photoWeights = computed(() => photoItems.value.filter(entry => recognitionWeights.value[entry.id] !== null).length)
+const photoFilledAmounts = computed(() => photoItems.value.filter(entry => entry.packageSnapshot ? entry.packageSnapshot.consumedAmount !== null : entry.volumeSnapshot ? entry.volumeSnapshot.amountMl !== null : entry.weightG !== null).length)
+const offlinePhotoSummary = computed(() => `已匹配 ${photoMatches.value} 项${photoWeights.value ? ` · ${photoWeights.value} 项照片估重（试验）` : ''} · ${photoFilledAmounts.value ? `已填 ${photoFilledAmounts.value}/${photoItems.value.length} 项份量` : '重量与份量待填写'}`)
 let pickerReturnFocus: HTMLElement | null = null
 let previousFocus: HTMLElement | null = null
 let manualReturnFocus: HTMLElement | null = null
@@ -110,11 +120,12 @@ function openManualFields(entry: FoodEntry) {
 }
 
 onMounted(() => { previousFocus = document.activeElement as HTMLElement; document.body.style.overflow = 'hidden'; window.visualViewport?.addEventListener('resize', updateEditorViewport); window.visualViewport?.addEventListener('scroll', updateEditorViewport); void reloadPackages(); void loadSavedPhotos(); if (props.initialPhoto) void processFile(props.initialPhoto); if (props.initialBarcode !== undefined) libraryOpen.value = true; if (props.start === 'manual') addItem(); document.querySelector<HTMLElement>('.modal-header .icon-button')?.focus() })
-onBeforeUnmount(() => { window.visualViewport?.removeEventListener('resize', updateEditorViewport); window.visualViewport?.removeEventListener('scroll', updateEditorViewport); document.body.style.overflow = ''; if (imageUrl.value) URL.revokeObjectURL(imageUrl.value); previousFocus?.focus() })
+onBeforeUnmount(() => { offlineController?.abort(); window.visualViewport?.removeEventListener('resize', updateEditorViewport); window.visualViewport?.removeEventListener('scroll', updateEditorViewport); document.body.style.overflow = ''; if (imageUrl.value) URL.revokeObjectURL(imageUrl.value); previousFocus?.focus() })
 
 function keydown(event: KeyboardEvent) {
   if (childDialogOpen.value) return
-  if (event.key === 'Escape') { close(); return }
+  // 关闭后可能立即恢复助手的原生 dialog，阻止同一次 Escape 再触发其 cancel。
+  if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return }
   if (event.key !== 'Tab') return
   const focusable = [...document.querySelectorAll<HTMLElement>('.editor-modal button:not(:disabled), .editor-modal input:not(.sr-only):not(:disabled), .editor-modal select, .editor-modal summary')].filter(element => element.getClientRects().length > 0)
   const first = focusable[0], last = focusable.at(-1)
@@ -171,6 +182,7 @@ async function processFile(file: File) {
   error.value = ''; phase.value = 'compressing'
   try {
     const compressed = await compressImage(file)
+    // 同一压缩结果用于预览、推理与保存；原始照片只在解码过程中短暂使用。
     const dataUrl = `data:image/jpeg;base64,${await compressedImageBase64(compressed)}`
     photoFile.value = compressed
     retainedPhotos.value = [dataUrl]
@@ -180,16 +192,27 @@ async function processFile(file: File) {
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '图片处理失败。'; phase.value = 'error' }
 }
 async function runRecognition() {
-  if (!photoFile.value) return
+  if (!photoFile.value || modelChanging.value || phase.value === 'recognizing' || saveBusy.value) return
   if (items.value.length && !window.confirm('重新识别会替换当前编辑的食物列表，继续吗？')) { phase.value = 'idle'; return }
   phase.value = 'recognizing'; error.value = ''; notice.value = ''
+  recognitionProgress.value = ''
+  const local = offlinePhotoEnabled()
+  const controller = local ? new AbortController() : null
+  offlineController = controller
+  offlineActive.value = local
   try {
-    const response = await recognizeImage(photoFile.value)
-    if (photoKind.value === 'label' && !response.result.foods.some(food => food.packageLabel)) throw new Error('没有读清包装营养表。请拍清单位和数值后重试，或手动填写标签。')
-    mode.value = response.mode
-    globalWarnings.value = response.result.uncertainties
+    const response = local ? null : await recognizeImage(photoFile.value)
+    const offlineResult = local ? await recognizeOfflineImage(photoFile.value, photoKind.value === 'label' ? 'label' : 'food', { signal: controller!.signal, onProgress: value => { recognitionProgress.value = value } }) : null
+    if (controller?.signal.aborted) throw new Error('本机识图已停止，原草稿保留。')
+    if (response && photoKind.value === 'label' && !response.result.foods.some(food => food.packageLabel)) throw new Error('没有读清包装营养表。请拍清单位和数值后重试，或手动填写标签。')
+    // 完整转换成功后才替换 items；请求失败、停止或响应无效时，原清单仍可手动编辑。
+    // 纯转换负责匹配/快照，组件只维护草稿与界面状态，不另写营养换算公式。
+    const drafts = response ? prepareRecognition(response, personalFoods.value) : prepareOfflineImage(offlineResult!, personalFoods.value)
+    mode.value = response?.mode ?? 'live'
+    recognitionOffline.value = local
+    globalWarnings.value = response?.result.uncertainties ?? offlineResult!.warnings
     aiCandidates.value = {}; sourceSelections.value = {}; recognitionWarnings.value = {}; previousNames.value = {}; recognitionContexts.value = {}; recognitionWeights.value = {}
-    items.value = prepareRecognition(response, personalFoods.value).map(draft => {
+    items.value = drafts.map(draft => {
       const { entry, candidate, context, estimatedWeightG, warnings } = draft
       previousNames.value[entry.id] = entry.name
       recognitionContexts.value[entry.id] = context
@@ -199,12 +222,14 @@ async function runRecognition() {
       recognitionWarnings.value[entry.id] = warnings
       return entry
     })
-    notice.value = !response.result.isFood || !items.value.length ? '没有可靠识别到食物。你可以换一张照片，或手动添加食物。' : '已识别并估算这一餐。核对份量，也可以打开食物库，更换更符合实际的食物或做法。'
+    notice.value = !items.value.length ? '没有可靠识别到食物。你可以换一张照片，或手动添加食物。' : local ? '本机识图已生成待核对清单。请对照照片核对食物、克数或标签原值，并填写实际摄入量，确认后才保存。' : '已识别并估算这一餐。核对份量，也可以打开食物库，更换更符合实际的食物或做法。'
     phase.value = 'done'
     await nextTick()
     document.querySelector<HTMLElement>('[data-testid="recognition-summary"]')?.scrollIntoView({ block: 'start' })
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '识别失败，请稍后再试。'; phase.value = 'error' }
+  finally { if (offlineController === controller) { offlineController = null; offlineActive.value = false } }
 }
+function stopRecognition() { offlineController?.abort(); recognitionProgress.value = '已请求停止，正在保留照片与草稿…' }
 async function selectFood(id: string) {
   const entry = pickerEntry.value
   if (!entry) return
@@ -325,7 +350,9 @@ async function submit() {
   if (items.value.some(item => item.packageSnapshot && !packageSnapshotSchema.safeParse(item.packageSnapshot).success)) { error.value = '请核对包装标签：营养表单位、每份大小和净含量需匹配；实际摄入最多100份／包或20000g／mL。'; return }
   const parsed = mealRecordSchema.safeParse(record)
   if (!parsed.success) { error.value = '请填写食物名称并检查数值：食物重量 0–20,000 g，每 100 g 热量 0–1,000 kcal，蛋白质、脂肪与碳水各 0–100 g。不确定的数据可留空。'; return }
-  // 父组件在 IndexedDB 事务成功后关闭面板；失败时原草稿仍在。
+  // emit 不是 awaitable 的数据库写入：先锁住表单，父组件事务成功后卸载面板，
+  // 失败则调用暴露的 saveFailed 解锁。不能在 emit 后立即解锁/显示“已保存”。
+  // record.items 已独立克隆，保存库中的历史快照不会再跟随 Vue 草稿变化。
   saveBusy.value = true
   emit('save', parsed.data, retainedPhotos.value)
 }
@@ -340,9 +367,13 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
           <div><span class="eyebrow">记录每一口的美好</span><h2 id="editor-title">{{ record ? '编辑饮食记录' : reuseSource ? '复用这一餐' : '记录这一餐' }}</h2></div>
           <button class="icon-button" aria-label="关闭记录面板" :disabled="busy || saveBusy" @click="close"><X :size="22" /></button>
         </header>
-        <div class="editor-scroll"><div v-if="reuseSource" class="reuse-source-note" data-testid="reuse-source-note"><Copy :size="19" /><div><strong>来自 {{ reuseSource }}</strong><p>已带入完整清单。这是一份新记录，核对日期和份量后保存。</p></div></div>
+        <!-- 保存交给父组件异步事务：fieldset 统一冻结全部原生表单控件，
+             防止已提交快照与用户随后删改的清单不同；失败时 saveFailed 解锁原草稿。 -->
+        <!-- 滚动留给普通div：fieldset有浏览器内部内容盒，直接作为flex滚动区时，
+             长配方可能越过底边并遮挡保存按钮。内层仅承担原生禁用和表单分组。 -->
+        <div class="editor-scroll"><fieldset class="editor-fields" :disabled="saveBusy" aria-label="餐食编辑内容" style="border: 0; margin: 0; padding: 0; min-inline-size: 0"><div v-if="reuseSource" class="reuse-source-note" data-testid="reuse-source-note"><Copy :size="19" /><div><strong>来自 {{ reuseSource }}</strong><p>已带入完整清单。这是一份新记录，核对日期和份量后保存。</p></div></div>
           <div v-if="mode === 'mock' || containsMockEstimate || (!record && selectedAiMode === 'mock')" class="notice warning" data-testid="mock-editor"><Info :size="17" /><span>{{ mode === 'mock' || containsMockEstimate ? '当前餐食包含模拟数据，保存后也会保留模拟标识。' : 'AI 当前为模拟模式：拍照识别使用示例食物，手动添加仍按你填写的数据记录。' }}</span></div>
-          <ModelPicker collapsible :busy="busy || saveBusy" @switching="modelChanging = $event" @mode="selectedAiMode = $event" />
+          <PhotoModelPicker collapsible :kind="photoKind" :busy="busy || saveBusy" @switching="modelChanging = $event" @mode="selectedAiMode = $event" />
           <div v-if="!initialItems?.length || imageUrl" class="capture-area" :class="{ 'has-photo': imageUrl }">
             <button v-if="imageUrl" type="button" class="photo-preview-button" data-testid="enlarge-photo" aria-label="查看识别照片大图" @click="photoPreviewOpen = true"><img :src="imageUrl" alt="本餐识别照片" class="photo-preview" /><span>查看大图{{ previewPhotos.length > 1 ? ` · ${previewPhotos.length}张` : '' }}</span></button>
             <div class="capture-content">
@@ -350,16 +381,17 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
               <h3>{{ imageUrl ? '照片已就绪' : '拍一张，记下这一餐' }}</h3>
               <p>一张照片，识别食物或包装标签<br />餐食核对重量，包装核对营养表</p>
               <div class="capture-buttons"><button class="button primary compact" :disabled="busy" @click="cameraOpen = true"><Camera :size="17" /> 拍照</button><button class="button white compact" :disabled="busy" @click="gallery?.click()"><ImagePlus :size="17" /> 选照片</button></div>
+              <template v-if="photoFile"><button type="button" class="button secondary compact" :disabled="busy || saveBusy" data-testid="reanalyze-photo" @click="runRecognition"><RotateCcw :size="16"/>用当前模型重新分析</button><p class="tiny muted">可在上方切换模型，再分析同一张照片；替换食物清单前会确认。</p></template>
               <p class="tiny muted">JPEG / PNG / WebP · 原图最多 20 MB · 保存这餐时保留压缩照片到本机</p>
               <button v-if="imageUrl" type="button" class="text-button" :disabled="busy || saveBusy" data-testid="remove-meal-photo" @click="removePhotos">移除照片</button>
             </div>
           </div>
           <input ref="camera" data-testid="camera-input" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="chooseFile" />
           <input ref="gallery" data-testid="gallery-input" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" @change="chooseFile" />
-          <div v-if="busy" class="notice"><LoaderCircle class="spin" :size="18" /><span>{{ phase === 'compressing' ? '正在压缩照片…' : '正在识别食物，请稍等…' }}</span></div>
+          <div v-if="busy" class="notice" role="status" data-testid="photo-recognition-progress"><LoaderCircle class="spin" :size="18" /><span>{{ phase === 'compressing' ? '正在压缩照片…' : recognitionProgress || '正在识别食物，请稍等…' }}</span><button v-if="offlineActive" type="button" class="text-button" data-testid="offline-photo-stop" @click="stopRecognition">停止识图</button></div>
           <div v-if="error" class="notice danger" role="alert" data-testid="editor-error"><Info :size="18" /><div>{{ error }}<button v-if="photoFile && phase === 'error'" class="text-button" @click="runRecognition"><RotateCcw :size="14" /> 重试识别</button></div></div>
           <div v-if="notice" class="notice"><Check :size="18" /><span>{{ notice }}</span></div>
-          <div v-if="phase === 'done' && photoItems.length" class="recognition-summary" data-testid="recognition-summary"><div><span class="recognition-summary-icon"><Sparkles :size="19" /></span><div><h3>{{ mode === 'mock' ? '模拟识别' : '照片识别' }} {{ photoItems.length }} 项食物</h3><p>已自动匹配 {{ photoMatches }} 项 · {{ photoWeights }} 项已带入{{ mode === 'mock' ? '示例重量' : '照片估重' }}</p></div></div><ul class="recognition-overview"><li v-for="(entry, index) in photoItems" :key="entry.id"><button type="button" :data-testid="`recognized-row-${index}`" @click="scrollToFood(entry)"><span><strong>{{ entry.name }}</strong><small>{{ entryBasis(entry) }}</small></span><span :class="{ 'amber-text': entry.packageSnapshot ? entry.packageSnapshot.consumedAmount === null : entry.weightG === null }">{{ portionLabel(entry) }}<ChevronRight :size="14" /></span></button></li></ul><span>点击某项可修改，核对后一起保存</span></div>
+          <div v-if="phase === 'done' && photoItems.length" class="recognition-summary" data-testid="recognition-summary"><div><span class="recognition-summary-icon"><Sparkles :size="19" /></span><div><h3>{{ recognitionOffline ? '本机离线识图' : mode === 'mock' ? '模拟识别' : '照片识别' }} {{ photoItems.length }} 项食物</h3><p>{{ recognitionOffline ? offlinePhotoSummary : `已自动匹配 ${photoMatches} 项 · ${photoWeights} 项已带入${mode === 'mock' ? '示例重量' : '照片估重'}` }}</p></div></div><ul class="recognition-overview"><li v-for="(entry, index) in photoItems" :key="entry.id"><button type="button" :data-testid="`recognized-row-${index}`" @click="scrollToFood(entry)"><span><strong>{{ entry.name }}</strong><small>{{ entryBasis(entry) }}</small></span><span :class="{ 'amber-text': entry.packageSnapshot ? entry.packageSnapshot.consumedAmount === null : entry.weightG === null }">{{ portionLabel(entry) }}<ChevronRight :size="14" /></span></button></li></ul><span>点击某项可修改，核对后一起保存</span></div>
           <div v-if="globalWarnings.length" class="notice warning"><Info :size="18" /><span>{{ globalWarnings.join(' ') }}</span></div>
           <div class="form-row meal-meta"><label>记录日期<DateField v-model="date" data-testid="editor-date" required /></label><label>餐次<select v-model="mealType" data-testid="editor-meal-type"><option v-for="type in mealTypes" :key="type.value" :value="type.value">{{ type.label }}</option></select></label></div>
           <button class="button secondary full package-library-entry" data-testid="open-package-library" :disabled="busy || saveBusy" @click="openLibrary()"><PackageOpen :size="17" />包装食品库 · 搜索／扫码</button>
@@ -390,13 +422,13 @@ defineExpose({ saveFailed: (message: string) => { saveBusy.value = false; error.
             <div class="food-estimate"><span>{{ entryBasis(entry) }}</span><strong :data-testid="`food-calories-${index}`">{{ calculateNutrients(entry).energyKcal === null ? '待补充' : `约 ${numberLabel(calculateNutrients(entry).energyKcal)} kcal` }}</strong></div>
           </article>
           <p class="editor-footnote">照片无法准确判断份量、烹饪方式和隐藏配料。称重与包装营养表能帮助你记录得更准确。</p>
-        </div>
+        </fieldset></div>
         <div v-if="items.length > 1" class="editor-store-all"><BookHeart :size="18" /><div><strong>这几样，经常吃？</strong><span>存下当前份量和营养，下次直接选</span></div><button type="button" class="button secondary compact" data-testid="save-all-library-foods" :disabled="busy || saveBusy || storingFood || mode === 'mock' || containsMockEstimate" @click="storeAllFoods">{{ storingFood ? '存入中…' : '全部存为常用' }}</button></div>
         <footer class="editor-footer"><div><span class="tiny muted">{{ !items.length ? '添加食物后汇总' : totals.incompleteEntries ? '已知部分估算' : '这一餐估算' }}</span><div class="footer-calories">{{ items.length ? "约 " + numberLabel(totals.energyKcal.known) : "—" }} <span>kcal</span></div><span v-if="totals.incompleteEntries" class="tiny amber-text">{{ totals.incompleteEntries }} 项营养待补充</span></div><button class="button primary" data-testid="save-meal" :disabled="busy || saveBusy || !items.length" @click="submit"><LoaderCircle v-if="saveBusy" class="spin" :size="18" /><Check v-else :size="18" /> {{ saveBusy ? '保存中' : '保存记录' }}</button></footer>
       </section>
     </div>
   </Teleport>
-  <CaptureCamera v-if="cameraOpen" :meal-type="mealType" @close="cameraOpen = false" @capture="captured" @barcode="scanned" @skip="skipCamera" />
+  <CapturePhoto v-if="cameraOpen" :meal-type="mealType" @close="cameraOpen = false" @capture="captured" @barcode="scanned" @skip="skipCamera" />
   <PhotoViewer v-if="photoPreviewOpen" :photos="previewPhotos" title="查看照片" test-id="photo-preview-sheet" @close="photoPreviewOpen = false"/>
   <PackagedLibrary v-if="libraryOpen" :candidate="libraryCandidate" :initial-barcode="barcodeFromCamera" @close="closeLibrary" @select="usePackage" />
   <ManualFoodSheet v-if="manualFoodOpen" initial-stage="foods" :personal-foods="personalFoods" :packaged-foods="packagedFoods" @changed="reloadPackages" @close="cancelManualFood" @add="confirmManualFood" />

@@ -7,7 +7,7 @@
  */
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import { serviceConnectionsEnabled } from './features'
-import { ASSISTANT_PROMPT, assistantJsonSchema, assistantRequestSchema, parseAssistantDraft, type AssistantRequest, type AssistantResponse } from '@shike/shared'
+import { assistantPrompt, assistantJsonSchema, assistantRequestSchema, parseAssistantDraft, type AssistantRequest, type AssistantResponse } from '@shike/shared'
 import { FOOD_PROMPT, GLM_FOOD_PROMPT, recognitionJsonSchema, personalStateSchema, personalProfileSchema, parseRecognition, geminiOutputText, chatCompletionOutputText, glmOutputText, type PersonalProfile, type PersonalState, type RecognitionResponse, type HealthResponse } from '@shike/shared'
 
 export interface SavePersonalProfile { id?: string; label: string; provider: PersonalProfile['provider']; model: string; models?: string[]; apiKey: string }
@@ -86,7 +86,7 @@ export async function describePersonalMeal(input: AssistantRequest): Promise<Ass
   const request = assistantRequestSchema.parse(input), state = await getPersonalState()
   const profile = state.profiles.find(profile => profile.id === state.activeId)
   if (!profile) throw new Error('请先到设置添加并选用一组模型配置。')
-  const response = await native.describeMeal({ id: profile.id, model: profile.model, prompt: ASSISTANT_PROMPT, request: JSON.stringify(request), schema: assistantJsonSchema })
+  const response = await native.describeMeal({ id: profile.id, model: profile.model, prompt: assistantPrompt(request), request: JSON.stringify(request), schema: assistantJsonSchema })
   if (response.provider !== profile.provider || response.model !== profile.model || typeof response.data !== 'string' || response.data.length > 524288) throw new Error('助手响应与所选模型不一致，请重试。')
   let payload: unknown; try { payload = JSON.parse(response.data) } catch { throw new Error('助手接口返回无效JSON，当前草稿已保留。') }
   return { mode: 'live', provider: profile.provider, model: profile.model, draft: parseAssistantDraft(profile.provider === 'gemini' ? geminiOutputText(payload) : profile.provider === 'glm' ? glmOutputText(payload, profile.model) : chatCompletionOutputText(payload, true)) }

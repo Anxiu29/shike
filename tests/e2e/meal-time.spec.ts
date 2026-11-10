@@ -17,13 +17,15 @@ async function closeEditor(page: Page) {
 }
 
 test('普通添加用当前时段，跨时段不改草稿，历史餐次及指定餐次保持不变', async ({ page }) => {
-  await page.clock.setFixedTime(new Date('2026-10-21T10:59:00+08:00'));
+  // Date.now 必须继续递增：固定时间会让 Vue capture/bubble 监听共享相同事件时间戳，
+  // 触发框架的旧事件保护，导致首页按钮的正常点击被忽略。
+  await page.clock.install({ time: new Date('2026-10-21T10:59:00+08:00') });
   await page.goto('/'); await page.getByTestId('previous-date').click();
   const selectedDate = await page.getByTestId('diary-date').inputValue();
   await addRice(page);
   await expect(page.getByTestId('editor-meal-type')).toHaveValue('breakfast');
   await expect(page.getByTestId('editor-date')).toHaveValue(selectedDate);
-  await page.clock.setFixedTime(new Date('2026-10-21T19:00:00+08:00'));
+  await page.clock.setSystemTime(new Date('2026-10-21T19:00:00+08:00'));
   await expect(page.getByTestId('editor-meal-type')).toHaveValue('breakfast');
   await page.getByTestId('save-meal').click(); await page.getByTestId('edit-meal').click();
   await expect(page.getByTestId('editor-meal-type')).toHaveValue('breakfast');
@@ -35,7 +37,7 @@ test('普通添加用当前时段，跨时段不改草稿，历史餐次及指�
 
 test('拍照快捷入口按打开时间预选，相机手选能交接到编辑器', async ({ page }, info) => {
   const mobile = Boolean(info.project.use.isMobile);
-  await page.clock.setFixedTime(new Date('2026-10-21T21:59:00+08:00'));
+  await page.clock.install({ time: new Date('2026-10-21T21:59:00+08:00') });
   await page.goto('/'); await page.getByTestId('hero-camera').click();
   if (mobile) {
     await expect(page.getByTestId('camera-meal-dinner')).toHaveAttribute('aria-pressed', 'true');
@@ -45,7 +47,7 @@ test('拍照快捷入口按打开时间预选，相机手选能交接到编辑�
     await page.getByTestId('editor-meal-type').selectOption('breakfast');
   }
   await expect(page.getByTestId('editor-meal-type')).toHaveValue('breakfast'); await closeEditor(page);
-  await page.clock.setFixedTime(new Date('2026-10-21T22:00:00+08:00'));
+  await page.clock.setSystemTime(new Date('2026-10-21T22:00:00+08:00'));
   await page.getByTestId(mobile ? 'mobile-camera' : 'header-camera').click();
   if (mobile) {
     await expect(page.getByTestId('camera-meal-snack')).toHaveAttribute('aria-pressed', 'true');

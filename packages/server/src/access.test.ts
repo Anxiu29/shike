@@ -65,6 +65,20 @@ describe('公网内测访问保护', () => {
 });
 
 describe('OSS 持久化日限额', () => {
+  it('额度读取超时后迟到的长度不会再发起扣额写入', async () => {
+    vi.useFakeTimers();
+    const size = Promise.withResolvers<number>();
+    let reserved = 0;
+    const quota = new OssDailyQuota({ size: () => size.promise, append: async () => { reserved++; } });
+    const outcome = quota.consume(Date.now(), 10).then(() => 'unexpected-success', error => error.code);
+    try {
+      await vi.advanceTimersByTimeAsync(8000);
+      expect(await outcome).toBe('QUOTA_UNAVAILABLE');
+      size.resolve(0);
+      await vi.runAllTimersAsync();
+      expect(reserved).toBe(0);
+    } finally { size.resolve(0); vi.useRealTimers(); }
+  });
   it('两个服务实例竞争最后一个名额时只有一个成功；重建对象仍保留日限额', async () => {
     const values = new Map<string, number>();
     const store: AppendStore = {

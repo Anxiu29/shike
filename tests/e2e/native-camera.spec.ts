@@ -55,6 +55,37 @@ async function nativeCamera(page: Page, delayedPermission = false, delayedRecogn
   }, { jpeg, delayedPermission, delayedRecognition, freeVision });
 }
 
+test('首页、设置与文字助手不请求相机权限，进入取景后也不会自动拍照', async ({ page }) => {
+  await nativeCamera(page); await page.goto('/');
+  await expect(page.getByTestId('daily-summary')).toBeVisible();
+  await page.locator('[data-testid="tab-settings"]:visible, [data-testid="desktop-tab-settings"]:visible').click(); await expect(page.getByTestId('settings-open-privacy')).toBeVisible();
+  await page.locator('[data-testid="tab-diary"]:visible, [data-testid="desktop-tab-diary"]:visible').click(); await page.getByTestId('assistant-open').click();
+  await page.getByTestId('assistant-input').fill('午餐吃了两个鸡蛋');
+  expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => call.plugin === 'CameraPreview'))).toEqual([]);
+  expect(await page.evaluate(() => (window as any).__webCameraCalls)).toBe(0);
+  await page.getByTestId('meal-assistant').getByTestId('close-sheet').click();
+  await page.getByTestId('hero-camera').click(); await expect(page.getByTestId('camera-shutter')).toBeEnabled();
+  expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => call.method === 'start'))).toHaveLength(1);
+  expect(await page.evaluate(() => (window as any).__nativeCalls.some((call: any) => call.method === 'capture'))).toBe(false);
+  await page.getByTestId('close-camera').click();
+  await expect.poll(() => page.evaluate(() => (window as any).__nativeCalls.some((call: any) => call.method === 'stop'))).toBe(true);
+});
+
+test('取景页隐藏时释放相机，重新可见后等待手动继续拍摄', async ({ page }) => {
+  await nativeCamera(page);
+  await page.addInitScript(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => !!(window as any).__testCameraHidden }); });
+  await page.goto('/'); await page.getByTestId('hero-camera').click(); await expect(page.getByTestId('camera-shutter')).toBeEnabled();
+  await page.evaluate(() => { (window as any).__testCameraHidden = true; document.dispatchEvent(new Event('visibilitychange')); });
+  await expect.poll(() => page.evaluate(() => (window as any).__nativeCalls.some((call: any) => call.method === 'stop'))).toBe(true);
+  await expect(page.getByTestId('camera-retry')).toHaveText('继续拍摄');
+  await page.evaluate(() => { (window as any).__testCameraHidden = false; document.dispatchEvent(new Event('visibilitychange')); });
+  await expect(page.getByTestId('camera-shutter')).toBeDisabled();
+  expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => call.method === 'start'))).toHaveLength(1);
+  await page.getByTestId('camera-retry').click(); await expect(page.getByTestId('camera-shutter')).toBeEnabled();
+  expect(await page.evaluate(() => (window as any).__nativeCalls.filter((call: any) => call.method === 'start'))).toHaveLength(2);
+  await page.getByTestId('close-camera').click();
+});
+
 test('安卓返回先关拍摄帮助再关相机，释放原生摄像头并恢复首页', async ({ page }) => {
   await nativeCamera(page); await page.goto('/'); await page.getByTestId('hero-camera').click(); await expect(page.getByTestId('camera-shutter')).toBeEnabled();
   await page.getByRole('button', { name: '拍摄帮助' }).click(); await page.evaluate(() => (window as any).__appEmit('backButton'));

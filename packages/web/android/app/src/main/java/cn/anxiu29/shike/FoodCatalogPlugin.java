@@ -16,6 +16,10 @@ public class FoodCatalogPlugin extends Plugin {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private long previous = 0;
     private static final String FIELDS = "code,product_name,product_name_zh,brands,product_quantity,product_quantity_unit,quantity,serving_size,serving_quantity,serving_quantity_unit,nutrition_data_per,nutriments";
+    /**
+     * 只接受标准位数条码，拼到固定商品库地址；调用入口限频，网络与有界正文读取交给 worker。
+     * 原生只返回原 JSON，商品字段与营养单位仍由共享层验证，HTTP 成功不能等同于数据可靠。
+     */
     @PluginMethod public void lookup(PluginCall call) {
         String code = call.getString("barcode", "");
         if (!code.matches("(?:\\d{8}|\\d{12}|\\d{13}|\\d{14})")) { call.reject("商品条码格式无效。"); return; }
